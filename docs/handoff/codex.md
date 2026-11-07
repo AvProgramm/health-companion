@@ -13,6 +13,24 @@ Read `CLAUDE.md` first; its invariants and rules apply to you too, along with `.
 ## Next milestones, in order
 Work on one branch per milestone, with small commits.
 
+### M3a (do first, Yash's priority): AI nutrition estimates instead of typing label numbers
+Goal: when the composer meets an unknown food ("nasi lemak", "2 weetabix"), the app proposes the nutrition itself. The user should not have to type label values. Manual editing stays as the fallback.
+
+1. **Laptop service** `services/coach` (FastAPI on 127.0.0.1:8000, proxied as `/api`), with a new endpoint `POST /api/estimate { name, portionText }`.
+   - **Database first:** look the food up in public composition data, using USDA FoodData Central (free API key, laptop `.env` only) and Open Food Facts. The Malaysian Food Composition Database (MyFCD) can come later. Return each nutrient as the **average across matches, with low/high** from their spread, plus every source used.
+   - **LLM second:** use Claude, Groq or a local model, with structured JSON output. Use it only to map the dish to database entries, or to estimate when nothing matches. Its numbers are labelled `ai_estimate` with a range and a short reason. The prompt must say to return null for anything unknown, never 0.
+   - **Privacy:** send only the food name and portion text. Never send diary history or other entries.
+2. **Domain:**
+   - Add `SourceKind` `'ai_estimate' | 'database'`.
+   - Add an optional `range` per nutrient on `FoodVersion`.
+   - Day totals show "≈" and the range when an item is estimated.
+   - **Unknown is still not zero.**
+3. **UI:** the draft row shows "Estimated: 133 kcal (110–160) · USDA + AI" with the sources. The user taps **Use estimate** (which saves a food version) or **Edit**. Nothing saves without that tap.
+4. **Offline:** with no laptop reachable (phone unplugged), the draft says "Estimates need the laptop. Add it manually or log it now and estimate later." The diary keeps working.
+5. **Tests:**
+   - The service: the parser for each database's response, averaging and range, an LLM output validator (rejects missing or negative values), and a timeout fallback.
+   - The app: the draft states (estimated, offline, edited).
+
 ### M3b: diet rules, photos, reminder (UI + domain; Codex can own this)
 1. **Diet rules (FR02/FR03/FR43, journeys J1 and J11).**
    - New `domain/nutrition/rules.ts`. A rule has a kind (`allergy` | `exclusion` | `dislike`), food tags (meat, poultry, fish, egg, dairy, beef, pork, alcohol, caffeine), and optional inclusive `startDate`/`endDate`.
