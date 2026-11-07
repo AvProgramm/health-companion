@@ -25,6 +25,11 @@ describe('resolveSleep', () => {
     expect(interval).toMatchObject({ bedDate: '2026-11-10', bedTime: '08:30', wakeTime: '15:00', timeInBedMin: 390 });
   });
 
+  it('takes a picked 24-hour bedtime exactly, so 09:00 stays morning', () => {
+    const interval = resolveSleep('2026-11-10', { hour: 9, minute: 0, meridiem: '24h' }, { hour: 15, minute: 0, meridiem: '24h' });
+    expect(interval).toMatchObject({ bedDate: '2026-11-10', bedTime: '09:00', wakeTime: '15:00', timeInBedMin: 360 });
+  });
+
   it('reads 12 am as midnight and 12 pm as noon', () => {
     const interval = resolveSleep('2026-11-10', { hour: 12, minute: 0, meridiem: 'am' }, { hour: 12, minute: 0, meridiem: 'pm' });
     expect(interval).toMatchObject({ bedTime: '00:00', wakeTime: '12:00', timeInBedMin: 720 });

@@ -9,6 +9,9 @@ import { startMeal } from '../domain/meals/revisions';
 import type { FoodVersion, NutrientKey } from '../domain/nutrition/types';
 import type { MealComponent } from '../domain/meals/types';
 import { areCompatible, type Unit } from '../domain/shared/units';
+import type { ClockTime, SleepEntry } from '../domain/sleep/sleep';
+import type { WorkoutDraft, WorkoutEntry } from '../domain/training/workouts';
+import { logsOn } from '../storage/logsRepo';
 import { commitEdit, confirmMeal, mealsOn, type CommitResult, type SavedMeal } from '../storage/mealsRepo';
 import type { Durability } from '../storage/persistence';
 import { CorrectionCard } from './CorrectionCard';
@@ -18,15 +21,20 @@ import { FoodEditor } from './FoodEditor';
 import { NUTRIENT_LABELS, formatDiaryDate, formatTotal } from './format';
 import { MealCard } from './MealCard';
 import { MealSheet } from './MealSheet';
+import { SleepCard } from './SleepCard';
+import { SleepDraftCard } from './SleepDraftCard';
+import { errorText, type Notice } from './useSave';
+import { WorkoutCard } from './WorkoutCard';
+import { WorkoutDraftCard } from './WorkoutDraftCard';
 
 // What the area under the composer is showing
 type Panel =
   | { kind: 'draft'; rows: DraftRow[] }
   | { kind: 'correction'; amount: ParsedAmount; foodHint: string | null }
+  | { kind: 'workout'; draft: WorkoutDraft }
+  | { kind: 'sleep'; bed: ClockTime | null; wake: ClockTime | null; asleepMin: number | null }
   | { kind: 'answer'; nutrient: NutrientKey }
   | { kind: 'note'; text: string };
-
-type Notice = { kind: 'saved' | 'conflict' | 'error'; text: string };
 
 // What the status line under the date says for each storage answer
 export const DURABILITY_TEXT: Record<Durability, string> = {
@@ -54,6 +62,8 @@ export function TodayView({ db, foods, currentFoods, hideNumbers, durability, on
   const today = localDateIn(deviceZone(), new Date());
   const [date, setDate] = useState(today);
   const [meals, setMeals] = useState<SavedMeal[]>([]);
+  const [workouts, setWorkouts] = useState<WorkoutEntry[]>([]);
+  const [sleeps, setSleeps] = useState<SleepEntry[]>([]);
   const [text, setText] = useState('');
   const [panel, setPanel] = useState<Panel | null>(null);
   const [openMealId, setOpenMealId] = useState<string | null>(null);
@@ -66,18 +76,25 @@ export function TodayView({ db, foods, currentFoods, hideNumbers, durability, on
 
   const dateLabel = date === today ? 'today' : formatDiaryDate(date);
 
-  // Load the meals of the shown date
-  const reloadMeals = useCallback(async () => {
+  // Load the meals, training and sleep of the shown date
+  const reloadDay = useCallback(async () => {
     try {
-      setMeals(await mealsOn(db, date));
+      const [dayMeals, dayWorkouts, daySleep] = await Promise.all([
+        mealsOn(db, date),
+        logsOn<WorkoutEntry>(db, 'workouts', date),
+        logsOn<SleepEntry>(db, 'sleep', date),
+      ]);
+      setMeals(dayMeals);
+      setWorkouts(dayWorkouts);
+      setSleeps(daySleep);
     } catch (problem) {
       setNotice({ kind: 'error', text: errorText(problem) });
     }
   }, [db, date]);
 
   useEffect(() => {
-    reloadMeals();
-  }, [reloadMeals]);
+    reloadDay();
+  }, [reloadDay]);
 
   // The day's totals, from the latest revision of each meal
   const summary = useMemo(() => summariseDay(date, meals.map((meal) => meal.latest), foods), [date, meals, foods]);
@@ -107,11 +124,17 @@ export function TodayView({ db, foods, currentFoods, hideNumbers, durability, on
       case 'correction':
         showPanel({ kind: 'correction', amount: result.amount, foodHint: result.foodHint });
         break;
+      case 'workout':
+        showPanel({ kind: 'workout', draft: result.draft });
+        break;
+      case 'sleep':
+        showPanel({ kind: 'sleep', bed: result.bed, wake: result.wake, asleepMin: result.asleepMin });
+        break;
       case 'question':
         showPanel({ kind: 'answer', nutrient: result.nutrient });
         break;
       case 'unknown':
-        showPanel({ kind: 'note', text: 'That is not something the diary can answer yet. Log food like "2 weetabix and 300 ml milk", or ask "how much protein today?".' });
+        showPanel({ kind: 'note', text: 'That is not something the diary can answer yet. Try "2 weetabix and 300 ml milk", "row 3x8 at 5kg each hand", "slept 23:30 to 7", or "how much protein today?".' });
         return;
     }
     setText('');
@@ -170,7 +193,7 @@ export function TodayView({ db, foods, currentFoods, hideNumbers, durability, on
         setNotice({ kind: 'saved', text: successText(result) });
         operationKey.current = crypto.randomUUID();
       }
-      await reloadMeals();
+      await reloadDay();
     } catch (problem) {
       setNotice({ kind: 'error', text: errorText(problem) });
     } finally {
@@ -195,13 +218,13 @@ export function TodayView({ db, foods, currentFoods, hideNumbers, durability, on
       </header>
 
       <form className="composer" onSubmit={handleSubmit}>
-        <label htmlFor="composer" className="label">What did you eat, or what should change?</label>
+        <label htmlFor="composer" className="label">What did you eat, train or sleep, or what should change?</label>
         <textarea
           id="composer"
           className="input composer-input"
           rows={2}
           value={text}
-          placeholder={'2 weetabix and 300 ml milk\nactually 250 ml'}
+          placeholder={'2 weetabix and 300 ml milk\nrow 3x8 at 5kg each hand · slept 23:30 to 7'}
           onChange={(event) => setText(event.target.value)}
           onKeyDown={(event) => {
             // Enter sends, Shift+Enter makes a new line
@@ -254,6 +277,40 @@ export function TodayView({ db, foods, currentFoods, hideNumbers, durability, on
         />
       )}
 
+      {panel?.kind === 'workout' && (
+        <WorkoutDraftCard
+          db={db}
+          date={date}
+          dateLabel={dateLabel}
+          zone={deviceZone()}
+          draft={panel.draft}
+          onSaved={(savedText) => {
+            showPanel(null);
+            setNotice({ kind: 'saved', text: savedText });
+            reloadDay();
+          }}
+          onCancel={() => showPanel(null)}
+        />
+      )}
+
+      {panel?.kind === 'sleep' && (
+        <SleepDraftCard
+          db={db}
+          date={date}
+          dateLabel={dateLabel}
+          zone={deviceZone()}
+          bed={panel.bed}
+          wake={panel.wake}
+          asleepMin={panel.asleepMin}
+          onSaved={(savedText) => {
+            showPanel(null);
+            setNotice({ kind: 'saved', text: savedText });
+            reloadDay();
+          }}
+          onCancel={() => showPanel(null)}
+        />
+      )}
+
       {panel?.kind === 'answer' && (
         <section className="card" aria-live="polite">
           <p className="body">{answerText(panel.nutrient, summary, dateLabel, hideNumbers)}</p>
@@ -272,9 +329,15 @@ export function TodayView({ db, foods, currentFoods, hideNumbers, durability, on
         </section>
       )}
 
-      <section className="timeline" aria-label={`Meals for ${dateLabel}`}>
+      <section className="timeline" aria-label={`Diary for ${dateLabel}`}>
+        {sleeps.map((entry) => (
+          <SleepCard key={entry.id} db={db} entry={entry} onChanged={reloadDay} />
+        ))}
         {meals.map((meal) => (
           <MealCard key={meal.header.mealId} meal={meal} foods={foods} hideNumbers={hideNumbers} onOpen={() => setOpenMealId(meal.header.mealId)} />
+        ))}
+        {workouts.map((entry) => (
+          <WorkoutCard key={entry.id} db={db} entry={entry} onChanged={reloadDay} />
         ))}
       </section>
 
@@ -287,7 +350,7 @@ export function TodayView({ db, foods, currentFoods, hideNumbers, durability, on
           foods={foods}
           currentFoods={currentFoods}
           onClose={() => setOpenMealId(null)}
-          onChanged={reloadMeals}
+          onChanged={reloadDay}
         />
       )}
 
@@ -331,11 +394,4 @@ function answerText(nutrient: NutrientKey, summary: ReturnType<typeof summariseD
   }
   const meals = `${summary.mealCount} ${summary.mealCount === 1 ? 'meal' : 'meals'}`;
   return `${label} for ${dateLabel}: ${formatTotal(summary.totals[nutrient], unit)}, from ${meals} logged.`;
-}
-
-/**
- * Return an error as a sentence the page can show.
- */
-function errorText(problem: unknown): string {
-  return problem instanceof Error ? problem.message : String(problem);
 }

@@ -6,14 +6,16 @@ import { listFoods, saveFoodVersion } from '../storage/foodsRepo';
 import { openDiary } from '../storage/connection';
 import { readDurability, requestDurability, type Durability } from '../storage/persistence';
 import { FoodsView } from './FoodsView';
+import { GymView } from './GymView';
 import { MeView } from './MeView';
 import { readHideNumbers, writeHideNumbers } from './preferences';
 import { TodayView } from './TodayView';
 
-type Tab = 'today' | 'foods' | 'me';
+type Tab = 'today' | 'gym' | 'foods' | 'me';
 
 const TABS: readonly { id: Tab; label: string }[] = [
   { id: 'today', label: 'Today' },
+  { id: 'gym', label: 'Gym' },
   { id: 'foods', label: 'Foods' },
   { id: 'me', label: 'Me' },
 ];
@@ -113,6 +115,7 @@ export function App() {
         {tab === 'today' && (
           <TodayView key={diaryVersion} db={db} foods={foods} currentFoods={currentFoods} hideNumbers={hideNumbers} durability={durability} onSaveFood={handleSaveFood} />
         )}
+        {tab === 'gym' && <GymView key={diaryVersion} db={db} />}
         {tab === 'foods' && <FoodsView currentFoods={currentFoods} hideNumbers={hideNumbers} onSaveFood={handleSaveFood} />}
         {tab === 'me' && (
           <MeView

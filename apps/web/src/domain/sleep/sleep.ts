@@ -12,12 +12,13 @@ import { assertPositive } from '../shared/validate';
 const MINUTES_PER_DAY = 24 * 60;
 
 /**
- * A clock time as typed. meridiem is null when no am/pm was given.
+ * A clock time. meridiem is null when typed without am/pm (so "bed at 11" can be read
+ * as evening), and '24h' when it came from a time picker and means exactly what it says.
  */
 export interface ClockTime {
   hour: number;
   minute: number;
-  meridiem: 'am' | 'pm' | null;
+  meridiem: 'am' | 'pm' | '24h' | null;
 }
 
 export interface SleepEntry {
@@ -118,13 +119,17 @@ function toMinutes(time: ClockTime, role: 'bed' | 'wake'): number {
   if (!Number.isInteger(time.hour) || !Number.isInteger(time.minute) || time.minute < 0 || time.minute > 59) {
     throw new RangeError(`That ${role} time is not a real time`);
   }
-  if (time.hour < 0 || time.hour > 23 || (time.meridiem !== null && (time.hour < 1 || time.hour > 12))) {
+  const twelveHour = time.meridiem === 'am' || time.meridiem === 'pm';
+  if (time.hour < 0 || time.hour > 23 || (twelveHour && (time.hour < 1 || time.hour > 12))) {
     throw new RangeError(`That ${role} time is not a real time`);
   }
 
-  // am/pm given: 12 am is midnight and 12 pm is noon
+  // A picked 24-hour time is exact; am/pm given: 12 am is midnight and 12 pm is noon
   let hour = time.hour;
-  if (time.meridiem !== null) {
+  if (time.meridiem === '24h') {
+    return hour * 60 + time.minute;
+  }
+  if (twelveHour) {
     hour = (time.hour % 12) + (time.meridiem === 'pm' ? 12 : 0);
   } else if (role === 'bed' && hour >= 7 && hour <= 11) {
     // "bed at 11" means 23:00

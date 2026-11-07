@@ -1,11 +1,11 @@
 import { useEffect, useState, type ChangeEvent } from 'react';
-import { exportDiary, restoreDiary } from '../storage/backup/transfer';
+import type { BackupCheck } from '../storage/backup/format';
+import { exportDiary, restoreDiary, wipeDiary } from '../storage/backup/transfer';
 import { validateBackup } from '../storage/backup/validate';
-import { type BackupCheck } from '../storage/backup/format';
 import { countMeals } from '../storage/mealsRepo';
-import { wipeDiary } from '../storage/backup/transfer';
 import type { Durability } from '../storage/persistence';
 import { DURABILITY_TEXT } from './TodayView';
+import { errorText } from './useSave';
 
 interface MeViewProps {
   db: IDBDatabase;
@@ -192,11 +192,4 @@ export function MeView({ db, durability, foodCount, hideNumbers, onHideNumbersCh
       </section>
     </>
   );
-}
-
-/**
- * Return an error as a sentence the page can show.
- */
-function errorText(problem: unknown): string {
-  return problem instanceof Error ? problem.message : String(problem);
 }
