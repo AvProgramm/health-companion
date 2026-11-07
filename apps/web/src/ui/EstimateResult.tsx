@@ -1,5 +1,5 @@
 import type { NutritionEstimate } from '../domain/nutrition/estimates';
-import { formatQuantity, formatTotal } from './format';
+import { formatQuantity, formatTotal, SOURCE_LABELS } from './format';
 
 interface EstimateResultProps {
   estimate: NutritionEstimate;
@@ -15,7 +15,7 @@ export function EstimateResult({ estimate, hideNumbers, typicalServing, busy, on
   const kcal = estimate.nutrients.kcal;
   return (
     <div className="estimate-result" aria-live="polite">
-      <div className="card-head"><span className="badge badge-estimate">{estimate.sourceKind === 'database' ? 'Database estimate' : 'AI estimate'}</span><span className="hint">Not saved</span></div>
+      <div className="card-head"><span className="badge badge-estimate">{SOURCE_LABELS[estimate.sourceKind]}</span><span className="hint">Not saved</span></div>
       {!hideNumbers && <p className="estimate-energy numbers">{kcal == null ? 'Energy unknown' : formatTotal({ known: kcal, unknownItems: 0,
         ...(estimate.range.kcal == null ? {} : { range: estimate.range.kcal }) }, 'kcal')}</p>}
       <p className="hint">{typicalServing ? 'For 1 typical serving. Review the assumptions below.' : `For ${formatQuantity(estimate.basis)}.`}</p>

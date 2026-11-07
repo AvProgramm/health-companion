@@ -23,6 +23,12 @@ def proposal():
 class RetrievalTests(unittest.TestCase):
     """Check evidence filtering and the database to web to model order."""
 
+    def setUp(self):
+        """Keep automatic enrichment independent of the laptop credentials."""
+        environment = patch.dict('os.environ', {'TAVILY_API_KEY': ''})
+        environment.start()
+        self.addCleanup(environment.stop)
+
     def test_filters_unsafe_irrelevant_and_non_nutrition_results(self):
         """Keep only relevant public nutrition snippets with a bounded length."""
         results = parse_search_results({'results': [

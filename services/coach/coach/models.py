@@ -48,9 +48,9 @@ class Estimate(StrictModel):
     basis: Basis
     nutrients: Nutrients
     range: dict[str, Spread | None]
-    sourceKind: Literal['database', 'ai_estimate']
+    sourceKind: Literal['database', 'ai_estimate', 'web_estimate']
     reason: str = Field(min_length=1, max_length=500)
-    sources: list[Source] = Field(min_length=1, max_length=10)
+    sources: list[Source] = Field(min_length=1, max_length=12)
 
     @model_validator(mode='after')
     def check_ranges(self):

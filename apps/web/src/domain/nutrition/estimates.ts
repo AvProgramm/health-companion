@@ -8,7 +8,7 @@ export interface NutritionEstimate {
   basis: Quantity;
   nutrients: FoodVersion['nutrients'];
   range: Partial<Record<NutrientKey, NutrientRange | null>>;
-  sourceKind: 'database' | 'ai_estimate';
+  sourceKind: 'database' | 'ai_estimate' | 'web_estimate';
   reason: string;
   sources: { provider: string; description: string; url: string }[];
 }
@@ -39,9 +39,9 @@ export function validateRanges(nutrients: FoodVersion['nutrients'], range: unkno
 /** Return a checked estimate from an untrusted service response. */
 export function readEstimate(value: unknown): NutritionEstimate {
   if (!record(value) || !record(value.basis) || !record(value.nutrients) || !record(value.range) ||
-      !['database', 'ai_estimate'].includes(String(value.sourceKind)) ||
+      !['database', 'ai_estimate', 'web_estimate'].includes(String(value.sourceKind)) ||
       typeof value.reason !== 'string' || value.reason.length === 0 || value.reason.length > 500 ||
-      !Array.isArray(value.sources) || value.sources.length === 0 || value.sources.length > 10) {
+      !Array.isArray(value.sources) || value.sources.length === 0 || value.sources.length > 12) {
     throw new Error('The estimate is incomplete. Edit this food manually.');
   }
   for (const key of SUMMARY_NUTRIENTS) {

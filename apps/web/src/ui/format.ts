@@ -19,6 +19,7 @@ export const SOURCE_LABELS: Record<SourceKind, string> = {
   fixture: 'Sample',
   database: 'Database estimate',
   ai_estimate: 'AI estimate',
+  web_estimate: 'Web supplemented',
 };
 
 /**

@@ -9,7 +9,7 @@ export type NutrientValue = number | null;
 export type NutrientKey = 'kcal' | 'protein_g' | 'fat_g' | 'satfat_g' | 'total_sugar_g' | 'added_sugar_g';
 
 // Where a food's numbers came from, shown as a badge beside every row
-export type SourceKind = 'label' | 'user_estimate' | 'fixture' | 'database' | 'ai_estimate';
+export type SourceKind = 'label' | 'user_estimate' | 'fixture' | 'database' | 'ai_estimate' | 'web_estimate';
 
 /** Describe the spread of known estimates on the same basis. */
 export interface NutrientRange { low: number; high: number }

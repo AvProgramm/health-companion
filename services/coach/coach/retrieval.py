@@ -76,3 +76,32 @@ async def search_nutrition(name, portion_text):
         })
     response.raise_for_status()
     return parse_search_results(response.json(), name)
+
+
+async def search_missing_nutrients(name, portion_text, missing):
+    """Search once for missing labels with two small snippets and no generated answer."""
+    key = os.getenv('TAVILY_API_KEY', '')
+    if not key:
+        return []
+    labels = {'kcal': 'energy kcal', 'protein_g': 'protein', 'fat_g': 'total fat',
+        'satfat_g': 'saturated fat', 'total_sugar_g': 'total sugar', 'added_sugar_g': 'added sugar'}
+    query = f'{name} {portion_text} ' + ' '.join(labels[item] for item in missing) + ' nutrition per 100 g'
+    async with httpx.AsyncClient(timeout=1.5) as client:
+        response = await client.post('https://api.tavily.com/search', headers={'Authorization': f'Bearer {key}'}, json={
+            'query': query, 'search_depth': 'basic', 'max_results': 2,
+            'include_answer': False, 'include_raw_content': False, 'include_images': False,
+        })
+    response.raise_for_status()
+    payload = response.json()
+    results = payload.get('results', []) if isinstance(payload, dict) else []
+    evidence = []
+    for item in results if isinstance(results, list) else []:
+        if not isinstance(item, dict) or not public_url(item.get('url')):
+            continue
+        title, content = item.get('title'), item.get('content')
+        if not isinstance(title, str) or not isinstance(content, str) or not relevant(name, title + ' ' + content):
+            continue
+        evidence.append(WebEvidence(f'missing-{len(evidence)+1}', title[:240], item['url'], content[:600]))
+        if len(evidence) == 2:
+            break
+    return evidence

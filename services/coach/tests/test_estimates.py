@@ -16,6 +16,12 @@ from coach.pipeline import estimate_food
 class EstimateTests(unittest.TestCase):
     """Check database-first estimates without contacting a provider."""
 
+    def setUp(self):
+        """Keep automatic enrichment independent of the laptop credentials."""
+        environment = patch.dict('os.environ', {'TAVILY_API_KEY': ''})
+        environment.start()
+        self.addCleanup(environment.stop)
+
     def test_usda_preserves_unknown_and_checks_units(self):
         """Return only nutrients expressed in the expected unit."""
         payload = {'foods': [{'fdcId': 123, 'description': 'Fictional oats', 'foodNutrients': [

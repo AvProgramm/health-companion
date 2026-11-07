@@ -48,3 +48,7 @@ describe('empty nutrition proposals', () => {
     expect(readEstimate({ ...proposal, nutrients: { ...proposal.nutrients, kcal: 0 }, range: { ...proposal.range, kcal: { low: 0, high: 0 } } }).nutrients.kcal).toBe(0);
   });
 });
+
+it('accepts explicit web supplementation with its own provenance badge', () => {
+  expect(readEstimate({ ...proposal, sourceKind: 'web_estimate' }).sourceKind).toBe('web_estimate');
+});

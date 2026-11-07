@@ -39,7 +39,7 @@ export function FoodEditor({ previous, initialFood, initialName, initialUnit, on
   // Labels are usually per 100 g or 100 mL; counted foods usually per 1 piece
   const [basisAmount, setBasisAmount] = useState(seed !== undefined ? String(seed.basis.amount) : startUnit === 'piece' ? '1' : '100');
   const [basisUnit, setBasisUnit] = useState<Unit>(startUnit);
-  const [sourceKind, setSourceKind] = useState<SourceKind>(initialFood !== undefined || previous?.source.kind === 'user_estimate' || previous?.source.kind === 'database' || previous?.source.kind === 'ai_estimate' ? 'user_estimate' : 'label');
+  const [sourceKind, setSourceKind] = useState<SourceKind>(initialFood !== undefined || previous?.source.kind === 'user_estimate' || previous?.source.kind === 'database' || previous?.source.kind === 'ai_estimate' || previous?.source.kind === 'web_estimate' ? 'user_estimate' : 'label');
   const [values, setValues] = useState<Record<NutrientKey, string>>(() => {
     const start = {} as Record<NutrientKey, string>;
     for (const key of EDITABLE_NUTRIENTS) {
