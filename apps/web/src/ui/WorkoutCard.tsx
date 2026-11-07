@@ -20,7 +20,7 @@ export function WorkoutCard({ db, entry, onChanged }: WorkoutCardProps) {
           {entry.status === 'skipped' ? 'Rest day' : entry.movement} · {formatTime(entry.savedAt)}
           {deleted && ' · deleted'}
         </h3>
-        <DeleteToggle db={db} store="workouts" entry={entry} onChanged={onChanged} />
+        <DeleteToggle db={db} store="workouts" entry={entry} onChanged={onChanged} label={entry.movement} />
       </div>
       {!deleted && entry.status === 'done' && <p className="body numbers">{describeSets(entry)}</p>}
     </article>

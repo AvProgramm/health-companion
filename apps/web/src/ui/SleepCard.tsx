@@ -19,7 +19,7 @@ export function SleepCard({ db, entry, onChanged }: SleepCardProps) {
           Sleep · {entry.bedTime} → {entry.wakeTime}
           {deleted && ' · deleted'}
         </h3>
-        <DeleteToggle db={db} store="sleep" entry={entry} onChanged={onChanged} />
+        <DeleteToggle db={db} store="sleep" entry={entry} onChanged={onChanged} label="sleep" />
       </div>
       {!deleted && (
         <p className="body numbers">

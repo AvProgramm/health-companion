@@ -7,12 +7,14 @@ interface DeleteToggleProps {
   store: LogStore;
   entry: LogEntry;
   onChanged: () => Promise<void>;
+  // What the entry is called, so screen readers can tell several Delete buttons apart
+  label: string;
 }
 
 /**
  * Delete or restore a workout or sleep entry, based on the version on screen.
  */
-export function DeleteToggle({ db, store, entry, onChanged }: DeleteToggleProps) {
+export function DeleteToggle({ db, store, entry, onChanged, label }: DeleteToggleProps) {
   const { busy, notice, run } = useSave();
   const deleted = entry.deleted === true;
 
@@ -31,7 +33,7 @@ export function DeleteToggle({ db, store, entry, onChanged }: DeleteToggleProps)
 
   return (
     <>
-      <button type="button" className="button button-quiet" disabled={busy} onClick={toggle}>
+      <button type="button" className="button button-quiet" aria-label={`${deleted ? 'Restore' : 'Delete'} ${label}`} disabled={busy} onClick={toggle}>
         {deleted ? 'Restore' : 'Delete'}
       </button>
       {notice?.kind !== 'saved' && <NoticeLine notice={notice} />}

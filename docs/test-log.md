@@ -24,6 +24,15 @@ Record only what was actually observed. Put "NOT TESTED" if a step was skipped.
 | | Me → Download backup | A `.json` file appears in Downloads | | |
 | | Airplane mode, close Chrome, reopen | Today still shows the meal | | |
 
+## Milestone 3 phone checks
+| Date | Step | Expected | Observed | Pass? |
+|---|---|---|---|---|
+| | Reload twice after plugging in | Tabs read Today / Gym / Foods / Me; earlier meals still there (v3 upgrade) | | |
+| | "add gym: row 3 x 8 at 5 kg each hand", then save | "3 × 8 @ 5 kg each hand", not 15 kg | | |
+| | "slept 23:30 to 7", then save | 7 h 30 min in bed, counted under the waking date | | |
+| | Gym tab | Row appears under "Last time" | | |
+| | Airplane mode, then reopen | Sleep, meals and training still shown | | |
+
 ## If the offline reopen fails, check these in order
 Open `chrome://inspect` → inspect the phone tab → Application. Write each finding in the table above.
 1. **Same origin?** The address must be exactly `http://localhost:4173`. `127.0.0.1` or an IP address is a different origin, and so a different, empty database.
