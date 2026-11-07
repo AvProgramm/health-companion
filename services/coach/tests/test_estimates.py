@@ -54,6 +54,31 @@ class EstimateTests(unittest.TestCase):
         payload['foods'][0]['foodNutrients'] = payload['foods'][0]['foodNutrients'][:4]
         self.assertIsNone(parse_usda(payload, 'oats')[0].nutrients.unsatfat_g)
 
+    # Reported on 8 Nov: "milk" with "250 ml" lost USDA's calories and fell through to the model
+    def test_usda_liquid_records_are_per_100_ml(self):
+        """Read a branded record served in millilitres as per 100 mL, so a volume portion can use it."""
+        payload = {'foods': [{'fdcId': 1, 'description': 'MILK', 'dataType': 'Branded', 'servingSize': 240.0,
+            'servingSizeUnit': 'MLT', 'foodNutrients': [
+                {'nutrientId': 1008, 'unitName': 'KCAL', 'value': 62.0},
+                {'nutrientId': 1003, 'unitName': 'G', 'value': 3.33},
+            ]}, {'fdcId': 2, 'description': 'MILK', 'dataType': 'Branded', 'servingSize': 236.0,
+            'servingSizeUnit': 'ml', 'foodNutrients': [{'nutrientId': 1008, 'unitName': 'KCAL', 'value': 55.0}]}]}
+        result = average_matches(parse_usda(payload, 'milk'), portion_basis('250 ml'))
+        self.assertIsNotNone(result)
+        self.assertAlmostEqual(result.nutrients.kcal, (62.0 + 55.0) / 2 * 2.5)
+        # A record without a serving unit keeps the published 100 g basis
+        del payload['foods'][0]['servingSizeUnit']
+        self.assertEqual(parse_usda(payload, 'milk')[0].unit, 'g')
+
+    def test_usda_foundation_total_sugar_is_read(self):
+        """Read total sugar from the Foundation identifier when the older one is absent."""
+        payload = {'foods': [{'fdcId': 3, 'description': 'Bananas, ripe and slightly ripe, raw', 'dataType': 'Foundation',
+            'foodNutrients': [{'nutrientId': 1063, 'unitName': 'G', 'value': 15.8}]}]}
+        self.assertEqual(parse_usda(payload, 'bananas raw')[0].nutrients.total_sugar_g, 15.8)
+        # When both identifiers are published, the first one listed is kept rather than overwritten
+        payload['foods'][0]['foodNutrients'].append({'nutrientId': 2000, 'unitName': 'G', 'value': 99})
+        self.assertEqual(parse_usda(payload, 'bananas raw')[0].nutrients.total_sugar_g, 15.8)
+
     def test_off_converts_sodium_grams_to_milligrams(self):
         """Open Food Facts publishes sodium in grams; the diary stores milligrams."""
         payload = {'products': [{'code': '111', 'product_name': 'Fictional oats', 'nutriments': {
