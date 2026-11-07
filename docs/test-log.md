@@ -124,3 +124,18 @@ Final automated checkpoint for this follow-up: 150 app tests, 15 coach tests, ty
 | Older day picked on purpose | Stays on that day (unit test `followToday`) | PASS (automated) |
 | First attempt | Date did not follow: the state updater read the ref after it had moved on. Fixed by reading it first | FOUND AND FIXED |
 | Phone left open overnight | Should show the new day on return | NOT TESTED |
+
+## Estimate accuracy and phone diagnosis (7 Nov 2026, Claude)
+
+| Check | Observed | Result |
+|---|---|---|
+| Yash's phone: "nasi lemak", portion "2" | "Estimates need the laptop" (the request never reached the laptop) | Laptop path re-tested: proxy → service answered in 2.8 s. Likely cause: the 4173 server was restarting (new PID). Messages now name the cause |
+| Same request on the laptop before fixes | 494 kcal, range 494–494, read as "2 cups (494 g)" | FOUND: false certainty and wrong portion |
+| Live after fixes: nasi lemak "2" | 696 kcal (600–800); asked as one plate (~300 g) × 2 in code | PASS (plausible; published plates ≈ 400–650 kcal) |
+| Live: nasi lemak "1 plate" | 500 kcal (480–520) on one run | Range narrower than real stall variation; prompt now asks for wider ranges for mixed dishes |
+| Live: Weetabix "2" (before the per-serving change) | 136 kcal (130–140), 4.5 g protein | PASS (UK label: 68 kcal per biscuit) |
+| Live: rolled oats 50 g (database path) | 188 kcal (187.5–191), 6.2 g protein, 3.5 g fat, 5 USDA records | PASS (USDA ≈ 379 kcal/100 g) |
+| Later live calls | Groq HTTP 429 (free-tier rate limit from repeated testing) | Not a code fault; the service then returns 503 and the app says sources may be busy |
+| Estimate card sources | Plain text ("USDA: ROLLED OATS"), 0 links | PASS (browser pane) |
+| Automated | App tests, hook tests, 22 coach tests incl. zero-width range rejection and serving multiplication | PASS |
+| Phone, after restarting the estimate service | Retry "nasi lemak" / "2" with both servers up | NOT TESTED |

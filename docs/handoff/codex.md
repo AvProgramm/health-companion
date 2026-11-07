@@ -76,6 +76,9 @@ Goal: when the composer meets an unknown food ("nasi lemak", "2 weetabix"), the 
 
 Read `docs/handoff/integrations.md`: Tavily and Hugging Face credentials are available in the ignored laptop `.env` for later retrieval/DL work. Tavily is now used after a database miss. Hugging Face is the final hosted-model fallback; live availability still requires resolving its HTTP 402 response. Do not copy secrets into notes, fixtures, Vite variables or tool output. Visual redesign and signup/security remain explicit later milestones; available credentials alone do not change the current data-sharing or confirmation rules.
 - Photo → ViT/LoRA food suggestions and nutrition lookup by retrieval or web search. These fill a **draft with a source badge and a range**; the user still confirms. Manual edit stays.
+  - **Ranges, not single numbers (Yash, 7 Nov).** A photo of a whole meal cannot see oil, sauce or what was left behind, so the model proposes the dishes (top-k with confidence) and a portion range. Nutrition comes from the same estimate pipeline, and the shown range combines portion uncertainty with the source spread.
+  - **Avoid one-source bias.** Average across several databases or sources wherever possible, keep their spread as the range, and say when only one source was found. Never present a model's single guess as a measurement.
+  - **Keep the 7 Nov estimate rules** (`services/coach/coach/model_client.py`): a model estimate needs a real low-high range, and a count of servings is asked as one serving and multiplied in code, never by the model.
 - An LLM or BERT parser for free text. Same rule: it only fills drafts.
 - An RL experiment (Q-learning/SARSA from FIT3080), for example adaptive reminder timing in a simulator. It needs an honest baseline, and real diary data must never be used as reward.
 
