@@ -14,6 +14,16 @@ Record only what was actually observed. Put "NOT TESTED" if a step was skipped.
 - Desktop Chrome `chrome://inspect` showed the device as "Pending authentication" until the USB debugging prompt was accepted on the phone.
 - Port forwarding needed a new row `4173 → 127.0.0.1:4173` with **Enable port forwarding** ticked. Only an old 8080 row existed before.
 
+## Milestone 2 phone checks
+| Date | Step | Expected | Observed | Pass? |
+|---|---|---|---|---|
+| | Plug in and reload twice so the new version takes over | The Today screen has a composer and a Foods/Me tab bar | | |
+| | Milestone 1 meal still there (v1 → v2 upgrade) | 7 Nov shows the earlier milk meal | | |
+| | Type "2 weetabix and 300 ml milk", add both foods from the draft, save | 266.0 kcal · 14.3 g · added sugar 0 g known + 1 unknown (with the golden label values) | | |
+| | "actually 250 ml" → Save correction | 243.8 kcal · 12.6 g, still one meal | | |
+| | Me → Download backup | A `.json` file appears in Downloads | | |
+| | Airplane mode, close Chrome, reopen | Today still shows the meal | | |
+
 ## If the offline reopen fails, check these in order
 Open `chrome://inspect` → inspect the phone tab → Application. Write each finding in the table above.
 1. **Same origin?** The address must be exactly `http://localhost:4173`. `127.0.0.1` or an IP address is a different origin, and so a different, empty database.
