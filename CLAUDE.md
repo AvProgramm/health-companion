@@ -9,7 +9,7 @@ A free, local-first diary for balancing food, exercise and sleep. It remembers w
   - No backend for the diary.
 - `services/coach`: optional FastAPI nutrition estimates on 127.0.0.1:8000, proxied as `/api`. USDA/Open Food Facts first, Tavily public nutrition retrieval on a miss, then Groq with Hugging Face hosted inference as a final optional fallback. BM25 retrieval and MCP stdio tools remain planned; the diary never depends on this service.
   - Model output is never trusted for arithmetic or certainty: a model estimate needs a real low-high range, its energy must agree with 4 × protein + 4 × carbohydrate + 9 × fat within 25%, and a count of servings is asked as one serving and multiplied in code (`model_client.py`). Sources are shown as plain text, not links.
-- `experiments/router` (planned, Codex harness, Yash's training loop): frozen MiniLM + `Linear(384, 6)` intent head.
+- `experiments/router` (M4, FIT3181): fictional family-split data, baselines, frozen MiniLM encoder and runner are built; Yash writes the training loop in `router/train.py`. Its own `.venv` reuses `fit3181` packages read-only. Explain-back: `experiments/router/README.md`.
 
 ## Commands
 ```bash

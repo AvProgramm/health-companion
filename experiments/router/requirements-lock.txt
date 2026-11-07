@@ -1,0 +1,14 @@
+# Exact versions the router experiment was run with (7 Nov 2026), python 3.11.15.
+# On Yash's laptop the router .venv reuses these from the fit3181 conda env read-only
+# (python -m venv --system-site-packages); nothing is installed into fit3181.
+# Elsewhere, install torch for your CUDA first (https://pytorch.org/get-started/locally/), then the rest.
+torch==2.13.0+cu130
+transformers==4.57.6
+tokenizers==0.22.2
+safetensors==0.8.0
+huggingface-hub==0.36.2
+scikit-learn==1.9.0
+scipy==1.17.1
+numpy==2.4.4
+joblib==1.5.3
+threadpoolctl==3.6.0
