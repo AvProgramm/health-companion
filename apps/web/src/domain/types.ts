@@ -24,6 +24,8 @@ export interface FoodVersion {
   id: string;
   version: number;
   name: string;
+  // Other names the composer should recognise, e.g. "milo" for "Milo powder"
+  aliases?: string[];
   basis: Quantity;
   nutrients: Partial<Record<NutrientKey, NutrientValue>>;
   source: { kind: SourceKind; reference?: string };
@@ -56,6 +58,32 @@ export interface MealRevision {
   zone: string;
   savedAt: string;
   components: readonly MealComponent[];
+  // A deleted meal keeps its history and can be restored; totals leave it out
+  deleted?: boolean;
+}
+
+/**
+ * One change a user can make to a saved meal.
+ *
+ * Every edit produces a new revision; none of them edits a snapshot in place.
+ */
+export type MealEdit =
+  | { kind: 'change_amount'; componentId: string; amount: Quantity }
+  | { kind: 'update_component'; componentId: string; served: Quantity; eatenFraction: number }
+  | { kind: 'replace_food'; componentId: string; replacement: MealComponent }
+  | { kind: 'remove_component'; componentId: string }
+  | { kind: 'delete_meal' }
+  | { kind: 'restore'; fromRevision: number; components: readonly MealComponent[]; deleted: boolean };
+
+/**
+ * A request to apply one edit, based on the revision the user was looking at.
+ */
+export interface MealEditRequest {
+  mealId: string;
+  expectedRevision: number;
+  edit: MealEdit;
+  operationKey: string;
+  savedAt: string;
 }
 
 /**

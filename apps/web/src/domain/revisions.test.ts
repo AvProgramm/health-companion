@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import { foodKey, totalNutrient } from './aggregate';
 import { caseAComponents, expectedNumber, fixtureFoods, goldenCase } from './goldenFixture';
-import { reviseAmount, startMeal } from './revisions';
-import type { ChangeAmountRequest, MealRevision } from './types';
+import { reviseAmount, reviseMeal, startMeal } from './revisions';
+import type { ChangeAmountRequest, MealEdit, MealRevision } from './types';
 import { UnitMismatchError } from './units';
 
 // Foods keyed the way totalNutrient looks them up
@@ -121,5 +121,63 @@ describe('reviseAmount', () => {
 
   it('refuses a request for a different meal', () => {
     expect(() => reviseAmount(revisionOne(), caseBRequest({ mealId: 'm2' }))).toThrow(/meal m2/);
+  });
+});
+
+describe('reviseMeal', () => {
+  // Apply one edit to revision 1 and return revision 2, or fail the test
+  function edit(meal: MealRevision, mealEdit: MealEdit): MealRevision {
+    const result = reviseMeal(meal, { mealId: 'm1', expectedRevision: meal.revision, operationKey: `op-${meal.revision}`, savedAt: '2026-11-09T08:00:00+08:00', edit: mealEdit });
+    if (result.status !== 'revised') {
+      throw new Error('Expected a revision');
+    }
+    return result.next;
+  }
+
+  it('leaves half the biscuits uneaten without changing the served amount', () => {
+    const next = edit(revisionOne(), { kind: 'update_component', componentId: 'demo_biscuit', served: { amount: 2, unit: 'piece' }, eatenFraction: 0.5 });
+    // 300 mL milk (132.96) + half of 133 kcal of biscuit (66.5)
+    expect(totalNutrient(next, foods, 'kcal').known).toBeCloseTo(132.96 + 66.5, 9);
+  });
+
+  it('refuses an eaten fraction outside [0, 1]', () => {
+    expect(() => edit(revisionOne(), { kind: 'update_component', componentId: 'demo_biscuit', served: { amount: 2, unit: 'piece' }, eatenFraction: 1.5 })).toThrow(RangeError);
+  });
+
+  it('replaces a food, keeping the old item in the snapshot but out of the totals', () => {
+    const replacement = { id: 'c3', foodId: 'demo_milk', foodVersion: 1, served: { amount: 100, unit: 'mL' as const }, eatenFraction: 1, active: true };
+    const next = edit(revisionOne(), { kind: 'replace_food', componentId: 'demo_biscuit', replacement });
+    expect(next.components.map((component) => [component.id, component.active])).toEqual([
+      ['demo_milk', true],
+      ['demo_biscuit', false],
+      ['c3', true],
+    ]);
+    // 300 mL + 100 mL of milk, and no biscuit
+    expect(totalNutrient(next, foods, 'kcal').known).toBeCloseTo(110.8 * 400 / 250, 9);
+    expect(totalNutrient(next, foods, 'added_sugar_g')).toEqual({ known: 0, unknownItems: 0 });
+  });
+
+  it('removes an item so it no longer counts', () => {
+    const next = edit(revisionOne(), { kind: 'remove_component', componentId: 'demo_milk' });
+    expect(totalNutrient(next, foods, 'kcal').known).toBeCloseTo(133, 9);
+    expect(() => edit(next, { kind: 'remove_component', componentId: 'demo_milk' })).toThrow(/no active component/);
+  });
+
+  it('deletes a meal and refuses further edits until it is restored', () => {
+    const first = revisionOne();
+    const deleted = edit(first, { kind: 'delete_meal' });
+    expect(deleted.deleted).toBe(true);
+    expect(() => edit(deleted, { kind: 'remove_component', componentId: 'demo_milk' })).toThrow(/deleted/);
+
+    // Undo = a new revision with revision 1's contents, not a rewind
+    const restored = edit(deleted, { kind: 'restore', fromRevision: 1, components: first.components, deleted: false });
+    expect(restored.revision).toBe(3);
+    expect(restored.deleted).toBe(false);
+    expect(restored.components).toEqual(first.components);
+  });
+
+  it('only restores an earlier revision', () => {
+    const first = revisionOne();
+    expect(() => edit(first, { kind: 'restore', fromRevision: 1, components: first.components, deleted: false })).toThrow(/Cannot restore/);
   });
 });

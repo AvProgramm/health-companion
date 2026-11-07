@@ -10,6 +10,18 @@ export function localDateIn(zone: string, instant: Date): string {
 }
 
 /**
+ * Return the diary date a number of days before or after the given one.
+ *
+ * Done on the calendar date at noon UTC, so daylight-saving changes in the
+ * device's zone can never skip or repeat a day.
+ */
+export function addDays(date: string, days: number): string {
+  const moved = new Date(`${date}T12:00:00Z`);
+  moved.setUTCDate(moved.getUTCDate() + days);
+  return moved.toISOString().slice(0, 10);
+}
+
+/**
  * Return the device's IANA time zone, e.g. "Asia/Kuala_Lumpur".
  */
 export function deviceZone(): string {
