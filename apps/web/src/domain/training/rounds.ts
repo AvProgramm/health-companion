@@ -77,15 +77,58 @@ export function fillRepeatedRound(cards: readonly MovementCard[], target: number
     }
   }
 
-  // Reconstruct only the short tail and add its counts to the compact full-round counts.
-  const counts = cards.map(() => fullRounds);
+  // Reconstruct the shortest tail, which proves its minutes can be made from these blocks.
+  const shortest = cards.map(() => 0);
   let remainder = bestRemainder;
-  let extraBlocks = 0;
   while (remainder !== 0) {
-    counts[via[remainder]!]! += 1;
-    extraBlocks += 1;
+    shortest[via[remainder]!]! += 1;
     remainder = previous[remainder]!;
   }
+
+  // Spread the same tail minutes over different blocks, so no exercise repeats more than it must.
+  const tailMinutes = bestMinutes - fullRounds * roundMinutes;
+  const extras = evenTail(cards, tailMinutes, Math.max(...shortest)) ?? shortest;
+  const counts = extras.map(extra => fullRounds + extra);
   return { blocks: cards.map((card, index) => ({ card, repeatCount: counts[index]!, minutes: card.minutes * counts[index]! })),
-    minutes: bestMinutes, unfilledMinutes: target - bestMinutes, fullRounds, extraBlocks };
+    minutes: bestMinutes, unfilledMinutes: target - bestMinutes, fullRounds, extraBlocks: extras.reduce((sum, extra) => sum + extra, 0) };
+}
+
+/**
+ * Return extra blocks per card that add up to the tail minutes, repeating no card more than needed.
+ *
+ * Try at most one extra of each card, then two, and so on: the first limit that reaches the
+ * tail exactly is the most even spread. The shortest tail's largest count bounds the search.
+ */
+function evenTail(cards: readonly MovementCard[], tailMinutes: number, maxExtra: number): number[] | null {
+  for (let limit = 1; limit <= maxExtra; limit += 1) {
+    const extras = boundedExtras(cards, tailMinutes, limit);
+    if (extras !== null) return extras;
+  }
+  // Ignore a tail of zero minutes because no extra block is needed
+  return tailMinutes === 0 ? cards.map(() => 0) : null;
+}
+
+/**
+ * Return extra counts, each at most limit, whose minutes add up to exactly tailMinutes, or null.
+ *
+ * A bounded subset-sum table: reach[minutes] keeps the first counts found for that total,
+ * card by card, so the result is the same every time.
+ */
+function boundedExtras(cards: readonly MovementCard[], tailMinutes: number, limit: number): number[] | null {
+  let reach: (number[] | null)[] = Array<number[] | null>(tailMinutes + 1).fill(null);
+  reach[0] = cards.map(() => 0);
+  for (let index = 0; index < cards.length; index += 1) {
+    const next = [...reach];
+    for (let minutes = 0; minutes <= tailMinutes; minutes += 1) {
+      const counts = reach[minutes];
+      // Ignore a total no earlier card could make, because it cannot be extended
+      if (counts === null || counts === undefined) continue;
+      for (let copies = 1; copies <= limit && minutes + copies * cards[index]!.minutes <= tailMinutes; copies += 1) {
+        const total = minutes + copies * cards[index]!.minutes;
+        if (next[total] === null) next[total] = counts.map((count, position) => (position === index ? copies : count));
+      }
+    }
+    reach = next;
+  }
+  return reach[tailMinutes] ?? null;
 }

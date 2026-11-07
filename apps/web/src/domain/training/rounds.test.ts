@@ -56,3 +56,31 @@ it('rejects malformed or oversized source rounds before creating a residue table
     expect(() => fillRepeatedRound(blocks(durations), 1000)).toThrow('Choose a fitting round');
   }
 });
+
+// Seen on 8 Nov: 90 minutes with all eight starter blocks gave one block five times and the rest once
+it('spreads the extra blocks over different exercises before repeating one', () => {
+  const result = fillRepeatedRound(blocks([5, 8, 8, 8, 5, 4, 8, 6]), 90);
+  expect(result.minutes).toBe(90);
+  const counts = result.blocks.map(block => block.repeatCount);
+  expect(Math.max(...counts) - Math.min(...counts)).toBeLessThanOrEqual(1);
+});
+
+it.each([[3, 5], [4, 5, 6], [6, 10], [7, 11], [2, 3, 7]])('repeats no block more often than a brute-force search says is needed: %j', (...durations) => {
+  const round = durations.reduce((sum, minutes) => sum + minutes, 0);
+  for (let extra = 0; extra <= 60; extra += 1) {
+    const result = fillRepeatedRound(blocks(durations), round + extra);
+    const tail = result.minutes - result.fullRounds * round;
+    // Try every way of making the tail from extra blocks, and keep the smallest largest count
+    let best = Number.POSITIVE_INFINITY;
+    const search = (index: number, left: number, largest: number): void => {
+      if (index === durations.length) {
+        if (left === 0) best = Math.min(best, largest);
+        return;
+      }
+      for (let copies = 0; copies * durations[index]! <= left; copies += 1) search(index + 1, left - copies * durations[index]!, Math.max(largest, copies));
+    };
+    search(0, tail, 0);
+    const largestExtra = Math.max(...result.blocks.map(block => block.repeatCount - result.fullRounds));
+    expect(largestExtra, `${round + extra} min`).toBe(best);
+  }
+});

@@ -44,7 +44,8 @@ function oracle(request: PlanRequest, catalogue: readonly MovementCard[]): Candi
     const allowed = chosen.every((card) =>
       !request.neverSuggest.includes(card.id)
       && card.requires.every((capability) => !request.unableTo.includes(capability))
-      && card.equipment.every((item) => request.equipment.includes(item)));
+      && card.equipment.every((item) => request.equipment.includes(item))
+      && request.categories.includes(card.category));
     if (chosen.length <= 12 && minutes <= request.minutes && allowed) {
       sessions.push({ cards: chosen, minutes,
         covered: request.categories.filter(category => chosen.some(card => card.category === category)).length,
@@ -89,6 +90,15 @@ describe('ineligibleReason', () => {
     expect(ineligibleReason(row, { ...OPEN, minutes: 5 })).toBe('it takes 8 min and you have 5');
     expect(ineligibleReason(row, { ...OPEN, neverSuggest: ['db_row'], equipment: [] })).toBe('you asked never to suggest it');
     expect(ineligibleReason(row, OPEN)).toBeNull();
+  });
+
+  // Seen on 8 Nov: asking for push and pull returned jump squats and a plank
+  it('leaves out an area the person did not choose today, after equipment and before time', () => {
+    const plank = MOVEMENT_CARDS.find((card) => card.id === 'plank')!;
+    const row = MOVEMENT_CARDS.find((card) => card.id === 'db_row')!;
+    expect(ineligibleReason(plank, { ...OPEN, categories: ['push', 'pull'] })).toBe('it trains core, which you did not choose today');
+    expect(ineligibleReason(row, { ...OPEN, categories: ['push'], equipment: [] })).toBe('it needs dumbbells');
+    expect(ineligibleReason(row, { ...OPEN, categories: ['push'], minutes: 1 })).toBe('it trains pull, which you did not choose today');
   });
 });
 
@@ -271,4 +281,81 @@ it('repeats only selected, eligible blocks while preserving equipment exclusions
   expect(result.schedule?.minutes).toBe(60);
   expect(result.schedule?.blocks.map(block => block.card.id)).toEqual(['plank', 'push_up']);
   expect(result.excluded.some(entry => entry.card.id === 'jump_squat')).toBe(true);
+});
+
+describe('allocation across every whole-minute target (checked 8 Nov)', () => {
+  // The app's real setups: the default form (no kit, push and pull), every area, dumbbells, and all kit
+  const SETUPS: [string, PlanRequest][] = [
+    ['no kit, push and pull', { ...OPEN, equipment: [], categories: ['push', 'pull'] }],
+    ['no kit, every area', { ...OPEN, equipment: [] }],
+    ['dumbbells, push and pull', { ...OPEN, equipment: ['dumbbells'], categories: ['push', 'pull'] }],
+    ['all kit, every area', OPEN],
+  ];
+  // Every target up to two and a half hours, minute by minute
+  const TARGETS = Array.from({ length: 151 }, (_, minutes) => minutes);
+
+  /**
+   * Return the largest total reachable with at least one full round, found by direct reachability.
+   *
+   * Independent of rounds.ts: no remainders and no shortest paths, just which totals can be made.
+   */
+  function fillOracle(durations: readonly number[], target: number): number {
+    const round = durations.reduce((sum, minutes) => sum + minutes, 0);
+    const reachable = Array<boolean>(target + 1).fill(false);
+    reachable[0] = true;
+    for (let total = 1; total <= target; total += 1) {
+      reachable[total] = durations.some(minutes => total >= minutes && reachable[total - minutes]);
+    }
+    let extra = target - round;
+    while (!reachable[extra]) extra -= 1;
+    return round + extra;
+  }
+
+  it.each(SETUPS)('plans exactly what the oracle finds, once each, for every target: %s', (_name, setup) => {
+    for (const minutes of TARGETS) {
+      const request = { ...setup, minutes };
+      const result = bestPlan(request, MOVEMENT_CARDS);
+      const expected = oracle(request, MOVEMENT_CARDS)[0];
+      expect(result.status === 'plan' ? result.plan : undefined, `${minutes} min`).toEqual(expected);
+      if (result.status === 'plan') {
+        // Only the chosen areas and the equipment available, never over the target
+        expect(result.plan.cards.every(card => setup.categories.includes(card.category) && card.equipment.every(item => setup.equipment.includes(item)))).toBe(true);
+        expect(result.unfilledMinutes).toBe(minutes - result.plan.minutes);
+      }
+    }
+  });
+
+  it.each(SETUPS)('fills the target as far as whole blocks can, never shrinking as time grows: %s', (_name, setup) => {
+    let previous = 0;
+    for (const minutes of TARGETS) {
+      const result = bestPlan({ ...setup, minutes }, MOVEMENT_CARDS, true);
+      if (result.status !== 'plan') continue;
+      const schedule = result.schedule!;
+      expect(schedule.minutes, `${minutes} min`).toBe(fillOracle(result.plan.cards.map(card => card.minutes), minutes));
+      expect(schedule.blocks.every(block => block.repeatCount >= 1)).toBe(true);
+      expect(schedule.blocks.reduce((sum, block) => sum + block.minutes, 0)).toBe(schedule.minutes);
+      expect(result.unfilledMinutes).toBe(minutes - schedule.minutes);
+      expect(schedule.minutes, `${minutes} min`).toBeGreaterThanOrEqual(previous);
+      previous = schedule.minutes;
+    }
+  });
+
+  // Worked by hand: what a person sees for a few common targets
+  it('returns these sessions for common targets', () => {
+    const counts = (setup: PlanRequest, minutes: number) => {
+      const result = bestPlan({ ...setup, minutes }, MOVEMENT_CARDS, true);
+      return result.status === 'plan' ? result.schedule!.blocks.map(block => `${block.card.id}×${block.repeatCount}`) : result.reason;
+    };
+    const [noKit, , dumbbells, allKit] = SETUPS.map(([, setup]) => setup);
+    // Push-ups are the only bodyweight push or pull card, and take six minutes
+    expect(counts(noKit!, 5)).toBe('No exercise fits today: every card was left out for a reason below.');
+    expect(counts(noKit!, 60)).toEqual(['push_up×10']);
+    // 22-minute round twice, plus one more floor press and row: 3 + 3 + 2 blocks
+    expect(counts(dumbbells!, 60)).toEqual(['db_floor_press×3', 'db_row×3', 'push_up×2']);
+    // All eight cards (52 min) once, then the 38 minutes left spread with no card twice
+    const ninety = bestPlan({ ...allKit!, minutes: 90 }, MOVEMENT_CARDS, true);
+    const repeats = ninety.status === 'plan' ? ninety.schedule!.blocks.map(block => block.repeatCount) : [];
+    expect(ninety.status === 'plan' && ninety.schedule!.minutes).toBe(90);
+    expect(Math.max(...repeats) - Math.min(...repeats)).toBeLessThanOrEqual(1);
+  });
 });

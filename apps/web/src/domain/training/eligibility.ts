@@ -52,6 +52,11 @@ export function ineligibleReason(card: MovementCard, request: PlanRequest): stri
     return `it needs ${EQUIPMENT_TEXT[missing]}`;
   }
 
+  // Ignore a card from an area the person did not choose, because filling time is not a reason to add it
+  if (!request.categories.includes(card.category)) {
+    return `it trains ${card.category}, which you did not choose today`;
+  }
+
   // Ignore a card that is longer than the whole session on its own
   if (card.minutes > request.minutes) {
     return `it takes ${card.minutes} min and you have ${request.minutes}`;

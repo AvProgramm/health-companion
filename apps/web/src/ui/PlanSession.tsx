@@ -53,6 +53,12 @@ export function PlanSession({ cards }: { cards: readonly MovementCard[] }) {
       return;
     }
 
+    // Ignore a session with no area chosen, because every exercise would be left out
+    if (categories.length === 0) {
+      setError('Choose at least one area to train.');
+      return;
+    }
+
     // Ignore an equipment session without selected gear because ownership must not be guessed.
     if (equipmentMode === 'with' && equipment.length === 0) {
       setError('Choose the equipment available today, or switch to Without equipment.');
@@ -109,6 +115,7 @@ export function PlanSession({ cards }: { cards: readonly MovementCard[] }) {
           <p className="body numbers">
             {plannedMinutes} of {minutesText} min · covers {result.plan.covered} of {categories.length} chosen areas
           </p>
+          {result.plan.cards.length === 1 && <p className="hint">Only {result.plan.cards[0]!.name} fits these choices. Add exercises from the library, or try a ready-made day, for more variety.</p>}
           {result.unfilledMinutes > 0 && <p className="notice">{result.unfilledMinutes} min unfilled. These reviewed blocks do not fill the last part of this target. Adjust the target or choose additional blocks.</p>}
           {result.schedule && <p className="body">{result.schedule.fullRounds} full {result.schedule.fullRounds === 1 ? 'round' : 'rounds'}{result.schedule.extraBlocks > 0 && ` + ${result.schedule.extraBlocks} extra blocks`}. Review these repeated blocks before training.</p>}
           <p className="hint">Up to {MAX_CARDS} distinct exercises; planning blocks keep their reviewed durations.{!result.schedule && ' Each exercise is used once.'}</p>
