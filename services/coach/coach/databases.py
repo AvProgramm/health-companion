@@ -30,6 +30,8 @@ def number(value):
 
 def relevant(name, description):
     """Require every query word in the record name before averaging it."""
+    if not isinstance(description, str):
+        return False
     words = set(re.findall(r'[a-z0-9]+', name.lower()))
     return bool(words) and words <= set(re.findall(r'[a-z0-9]+', description.lower()))
 
@@ -38,13 +40,20 @@ def parse_usda(payload, name):
     """Return relevant USDA search records on their published 100 g basis."""
     matches = []
     seen = set()
-    for food in payload.get('foods', []):
+    if not isinstance(payload, dict) or not isinstance(payload.get('foods'), list):
+        return []
+    for food in payload['foods']:
+        if not isinstance(food, dict):
+            continue
         description = food.get('description', '')
         identity = food.get('fdcId')
         if not isinstance(identity, int) or identity in seen or not relevant(name, description):
             continue
         values = dict.fromkeys(Nutrients.model_fields)
-        for nutrient in food.get('foodNutrients', []):
+        raw = food.get('foodNutrients')
+        for nutrient in raw if isinstance(raw, list) else []:
+            if not isinstance(nutrient, dict):
+                continue
             field = USDA_KEYS.get(nutrient.get('nutrientId'))
             if field and str(nutrient.get('unitName', '')).upper() == field[1]:
                 values[field[0]] = number(nutrient.get('value'))
@@ -60,12 +69,18 @@ def parse_off(payload, name):
     """Return relevant Open Food Facts records without filling missing values."""
     matches = []
     seen = set()
-    for product in payload.get('products', []):
+    if not isinstance(payload, dict) or not isinstance(payload.get('products'), list):
+        return []
+    for product in payload['products']:
+        if not isinstance(product, dict):
+            continue
         description = product.get('product_name', '')
         identity = str(product.get('code', ''))
         if not identity.isdigit() or identity in seen or not relevant(name, description):
             continue
-        raw = product.get('nutriments', {})
+        raw = product.get('nutriments')
+        if not isinstance(raw, dict):
+            continue
         values = {key: number(raw.get(f'{field}_100g')) for field, key in OFF_KEYS.items()}
         if all(value is None for value in values.values()):
             continue

@@ -32,7 +32,7 @@ interface FoodEditorProps {
  * saved earlier keep the numbers they were saved with.
  */
 export function FoodEditor({ previous, initialFood, initialName, initialUnit, onSave, onClose }: FoodEditorProps) {
-  const seed = previous ?? initialFood;
+  const seed = initialFood ?? previous;
   const startUnit = seed?.basis.unit ?? initialUnit ?? 'g';
   const [name, setName] = useState(seed?.name ?? initialName ?? '');
   const [aliases, setAliases] = useState((seed?.aliases ?? []).join(', '));

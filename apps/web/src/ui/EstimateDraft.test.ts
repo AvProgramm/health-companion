@@ -3,6 +3,9 @@ import { act, createElement } from 'react';
 import { createRoot, type Root } from 'react-dom/client';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { EstimateDraft } from './EstimateDraft';
+import { DraftCard } from './DraftCard';
+import { FoodEditor } from './FoodEditor';
+import { estimatedFood, readEstimate } from '../domain/nutrition/estimates';
 
 // A fictional response makes the confirmation test independent of a provider.
 const proposal = {
@@ -80,5 +83,44 @@ describe('estimate draft', () => {
     await tap('Estimate nutrition');
     expect(container.textContent).not.toContain('60.0');
     expect(container.textContent).toContain('USDA');
+  });
+});
+
+describe('accepted and deferred estimate rows', () => {
+  it('keeps an accepted estimate labelled with its source and range', async () => {
+    const food = estimatedFood('Fictional oats', readEstimate(proposal), 'food');
+    await act(async () => root.render(createElement(DraftCard, {
+      rows: [{ key: 'row', text: '50 g Fictional oats', foodKey: 'food@1', amountText: '50', unit: 'g', eatenFraction: 1, problem: null }],
+      foods: new Map([['food@1', food]]), currentFoods: [food], hideNumbers: false, dateLabel: 'today', busy: false,
+      onRowsChange: vi.fn(), onSave: vi.fn(), onCancel: vi.fn(), onCreateFood: vi.fn(), onUseEstimate: vi.fn(), onEditEstimate: vi.fn(),
+    })));
+    expect(container.textContent).toContain('Database estimate');
+    expect(container.textContent).toContain('60.0 kcal (50.0–70.0)');
+    expect(container.textContent).not.toContain('50 g label');
+  });
+
+  it('offers estimation again for a food previously logged with unknown values', async () => {
+    const food = { ...estimatedFood('Fictional oats', readEstimate(proposal), 'food'),
+      nutrients: { kcal: null, protein_g: null, fat_g: null, satfat_g: null, total_sugar_g: null, added_sugar_g: null }, range: undefined };
+    await act(async () => root.render(createElement(DraftCard, {
+      rows: [{ key: 'row', text: 'Fictional oats', foodKey: 'food@1', amountText: '1', unit: 'g', eatenFraction: 1, problem: null }],
+      foods: new Map([['food@1', food]]), currentFoods: [food], hideNumbers: false, dateLabel: 'today', busy: false,
+      onRowsChange: vi.fn(), onSave: vi.fn(), onCancel: vi.fn(), onCreateFood: vi.fn(), onUseEstimate: vi.fn(), onEditEstimate: vi.fn(),
+    })));
+    expect(container.textContent).toContain('Estimate nutrition');
+  });
+});
+
+describe('manual estimate editing', () => {
+  it('seeds the editor but drops database attribution and ranges when values are edited', async () => {
+    const onSave = vi.fn().mockResolvedValue(undefined);
+    const initialFood = estimatedFood('Fictional oats', readEstimate(proposal), 'food');
+    await act(async () => root.render(createElement(FoodEditor, { initialFood, onSave, onClose: vi.fn() })));
+    expect(onSave).not.toHaveBeenCalled();
+    const form = container.querySelector('form')!;
+    await act(async () => { form.dispatchEvent(new Event('submit', { bubbles: true, cancelable: true })); });
+    expect(onSave.mock.calls[0]![0].nutrients.kcal).toBe(60);
+    expect(onSave.mock.calls[0]![0].source.kind).toBe('user_estimate');
+    expect(onSave.mock.calls[0]![0].range).toBeUndefined();
   });
 });

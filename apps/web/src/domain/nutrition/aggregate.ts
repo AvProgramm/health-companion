@@ -21,7 +21,7 @@ export interface NutrientTotal {
  * and either added to the known subtotal or counted as an unknown item.
  */
 export function totalNutrient(
-  revision: MealRevision,
+  revision: Pick<MealRevision, 'components'>,
   foods: ReadonlyMap<string, FoodVersion>,
   nutrient: NutrientKey,
 ): NutrientTotal {

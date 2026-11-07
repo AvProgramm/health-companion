@@ -71,6 +71,7 @@ export function MealCard({ meal, foods, hideNumbers, onOpen }: MealCardProps) {
                   </span>
                 )}
               </div>
+              {food.source.reference && <details className="hint"><summary>Sources and assumptions</summary><p>{food.source.reference}</p></details>}
             </li>
           );
         })}

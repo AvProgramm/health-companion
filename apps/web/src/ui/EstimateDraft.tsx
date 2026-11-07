@@ -80,7 +80,7 @@ export function EstimateDraft({ name: initialName, portionText: initialPortion, 
       {estimate !== null && (
         <div aria-live="polite">
           <p className="badge">{estimate.sourceKind === 'database' ? 'Database estimate' : 'AI estimate'} · Not saved</p>
-          {!hideNumbers && <p className="numbers">Estimated: {formatTotal({ known: estimate.nutrients.kcal ?? 0,
+          {!hideNumbers && <p className="numbers">Estimated: {estimate.nutrients.kcal == null ? 'kcal unknown' : formatTotal({ known: estimate.nutrients.kcal ?? 0,
             unknownItems: estimate.nutrients.kcal == null ? 1 : 0,
             ...(estimate.range.kcal == null ? {} : { range: estimate.range.kcal }) }, 'kcal')}</p>}
           <p className="hint">For {formatQuantity(estimate.basis)}. {estimate.reason}</p>

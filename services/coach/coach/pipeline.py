@@ -11,7 +11,7 @@ async def estimate_food(name, portion_text, database=database_estimate, llm=llm_
             result = await asyncio.wait_for(provider(name, portion_text), timeout=7)
             if result is not None:
                 return result
-        except (TimeoutError, httpx.HTTPError, ValueError, KeyError, TypeError):
+        except (TimeoutError, httpx.HTTPError, ValueError, KeyError, IndexError, TypeError):
             # Ignore a failed provider because the next provider or manual entry remains available.
             continue
     return None

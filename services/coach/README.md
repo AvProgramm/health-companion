@@ -1,0 +1,40 @@
+# Laptop nutrition estimates
+
+Run from the repository root with Python 3.13. The diary never depends on this service.
+
+```powershell
+python -m venv services/coach/.venv
+services/coach/.venv/Scripts/python.exe -m pip install -r services/coach/requirements.txt
+```
+
+Copy `.env.example` to the root `.env` only if `.env` does not already exist. Add `GROQ_API_KEY` there. `USDA_API_KEY` is optional; without it the database stage uses Open Food Facts only. Never put either key in `apps/web`, a `VITE_*` variable, a screenshot, or Git. Restart the service after changing `.env`.
+
+```powershell
+services/coach/.venv/Scripts/python.exe -m uvicorn coach.app:app --app-dir services/coach --host 127.0.0.1 --port 8000 --no-access-log
+```
+
+In a second terminal:
+
+```powershell
+npm --prefix apps/web run build
+npm --prefix apps/web run preview
+```
+
+Keep USB forwarding `4173 → 127.0.0.1:4173`; only the laptop needs port 8000. Open `http://localhost:4173` on the phone and reload twice. Vite dev and preview both proxy `/api` to loopback. Restart an already-running preview after changing its config.
+
+`npm run check` runs app, hook and coach tests. On Linux/macOS, create the same `.venv` and use `.venv/bin/python` for installation/startup; the check script finds it automatically. CI installs the Python dependencies independently.
+
+## Data flow
+
+`POST /api/estimate` accepts exactly `{ name, portionText }`. Extra fields are rejected and validation errors do not echo submitted data. No diary store or export is read by this service. Access logging is disabled in the startup command; request bodies and provider errors are not logged by app code.
+
+1. Query USDA (if configured) and Open Food Facts concurrently, filtering for all name tokens and deduplicating source IDs.
+2. Scale only compatible physical units, average known values independently per nutrient, and retain their min/max spread and every used record. Missing values stay null. The spread is not a confidence interval, and a single match has identical bounds.
+3. If there is no usable match for the requested basis, ask Groq for JSON. Require every nutrient key, finite non-negative values or null, and matching ranges. Server-owned provenance labels it `ai_estimate`; it is never described as database verified.
+4. A failed database can still fall back to Groq; a failed model becomes an actionable unavailable response. Each stage has a deadline. With no key, no model request is made.
+
+Counts and unclear portions are never converted into grams without evidence. The current database stage handles g/kg and explicitly identified mL/L records; pieces and free-form portions use the model fallback. A blank/unclear portion asks the model to assume one piece and explain its size/recipe. Review that assumption before accepting. MyFCD and database serving-weight mapping are deferred.
+
+Groq uses JSON object mode, followed by our own strict validation. The default model is `llama-3.3-70b-versatile`; change `GROQ_MODEL` in `.env` if needed.
+
+Sources: [USDA API guide](https://fdc.nal.usda.gov/api-guide/), [Open Food Facts API](https://openfoodfacts.github.io/openfoodfacts-server/api/), [Groq JSON output](https://console.groq.com/docs/structured-outputs), [Groq model](https://console.groq.com/docs/model/llama-3.3-70b-versatile).

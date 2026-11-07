@@ -67,7 +67,7 @@ export function TodayView({ db, foods, currentFoods, hideNumbers, durability, on
   const [text, setText] = useState('');
   const [panel, setPanel] = useState<Panel | null>(null);
   const [openMealId, setOpenMealId] = useState<string | null>(null);
-  const [creatingFood, setCreatingFood] = useState<{ name: string; rowKey: string; unit: Unit; initialFood?: FoodVersion } | null>(null);
+  const [creatingFood, setCreatingFood] = useState<{ name: string; rowKey: string; unit: Unit; initialFood?: FoodVersion; previous?: FoodVersion } | null>(null);
   const [busy, setBusy] = useState(false);
   const [notice, setNotice] = useState<Notice | null>(null);
 
@@ -263,7 +263,7 @@ export function TodayView({ db, foods, currentFoods, hideNumbers, durability, on
             setPanel((current) => current?.kind === 'draft' ? { ...current, rows: current.rows.map((row) =>
               row.key === rowKey ? { ...row, foodKey: foodKey(food.id, food.version), amountText: String(food.basis.amount), unit: food.basis.unit, problem: null } : row) } : current);
           }}
-          onEditEstimate={(food, rowKey) => setCreatingFood({ name: food.name, rowKey, unit: food.basis.unit, initialFood: food })}
+          onEditEstimate={(food, rowKey, previous) => setCreatingFood({ name: food.name, rowKey, unit: food.basis.unit, initialFood: food, previous })}
           onCreateFood={(name, rowKey, unit) => setCreatingFood({ name, rowKey, unit })}
         />
       )}
@@ -362,6 +362,7 @@ export function TodayView({ db, foods, currentFoods, hideNumbers, durability, on
 
       {creatingFood !== null && (
         <FoodEditor
+          previous={creatingFood.previous}
           initialFood={creatingFood.initialFood}
           initialName={creatingFood.name}
           initialUnit={creatingFood.unit}

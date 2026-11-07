@@ -4,7 +4,8 @@ import { scaleNutrient } from '../domain/nutrition/scale';
 import type { FoodVersion } from '../domain/nutrition/types';
 import type { MealComponent } from '../domain/meals/types';
 import { areCompatible, type Unit } from '../domain/shared/units';
-import { readAmount } from './format';
+import { readAmount, formatTotal, SOURCE_LABELS } from './format';
+import { totalNutrient } from '../domain/nutrition/aggregate';
 import { EstimateDraft } from './EstimateDraft';
 
 // Every unit, filtered per row to the ones that fit the chosen food
@@ -93,9 +94,11 @@ function checkRow(row: DraftRow, foods: ReadonlyMap<string, FoodVersion>) {
   // Preview with the same function the totals use, so the draft shows exactly what will be saved
   try {
     const served = { amount, unit: row.unit };
-    const kcal = scaleNutrient(food.nutrients.kcal ?? null, food.basis, served, row.eatenFraction);
+    const kcalTotal = totalNutrient({ components: [{ id: row.key, foodId: food.id, foodVersion: food.version,
+      served, eatenFraction: row.eatenFraction, active: true }] }, foods, 'kcal');
+    const kcal = kcalTotal.unknownItems > 0 ? null : kcalTotal.known;
     const protein = scaleNutrient(food.nutrients.protein_g ?? null, food.basis, served, row.eatenFraction);
-    return { food, amount, kcal, protein, error: null };
+    return { food, amount, kcal, kcalTotal, protein, error: null };
   } catch (problem) {
     return { food, amount: null, kcal: null, protein: null, error: problem instanceof Error ? problem.message : String(problem) };
   }
@@ -112,7 +115,7 @@ interface DraftCardProps {
   onSave: (components: MealComponent[]) => void;
   onCancel: () => void;
   onUseEstimate: (food: FoodVersion, rowKey: string) => Promise<void>;
-  onEditEstimate: (food: FoodVersion, rowKey: string) => void;
+  onEditEstimate: (food: FoodVersion, rowKey: string, previous?: FoodVersion) => void;
   onCreateFood: (name: string, rowKey: string, unit: Unit) => void;
 }
 
@@ -166,9 +169,9 @@ export function DraftCard({ rows, onRowsChange, foods, currentFoods, hideNumbers
                 </button>
               </div>
 
-              {food === null && (
-                <EstimateDraft name={nameFromText(row.text)} portionText={row.amountText === '' ? '' : `${row.amountText} ${row.unit}`}
-                  hideNumbers={hideNumbers} onUse={(accepted) => onUseEstimate(accepted, row.key)} onEdit={(proposal) => onEditEstimate(proposal, row.key)} />
+              {(food === null || Object.values(food.nutrients).every((value) => value == null)) && (
+                <EstimateDraft name={food?.name ?? nameFromText(row.text)} portionText={row.amountText === '' ? '' : `${row.amountText} ${row.unit}`}
+                  hideNumbers={hideNumbers} onUse={(accepted) => onUseEstimate(food === null ? accepted : { ...accepted, id: food.id, version: food.version + 1 }, row.key)} onEdit={(proposal) => onEditEstimate(proposal, row.key, food ?? undefined)} />
               )}
               {food === null && (
                 <button type="button" className="button button-secondary" onClick={() => onCreateFood(nameFromText(row.text), row.key, row.unit)}>
@@ -198,13 +201,14 @@ export function DraftCard({ rows, onRowsChange, foods, currentFoods, hideNumbers
                 </div>
               )}
 
+              {food !== null && <span className="badge">{SOURCE_LABELS[food.source.kind]}</span>}
               {check.error !== null ? (
                 <p className="field-error">{check.error}</p>
               ) : (
                 !hideNumbers && (
                   <p className="hint numbers">
-                    {check.kcal === null ? 'kcal unknown' : `${check.kcal.toFixed(1)} kcal`} ·{' '}
-                    {check.protein === null ? 'protein unknown' : `${check.protein.toFixed(1)} g protein`} · {food?.basis.amount} {food?.basis.unit} label
+                    {check.kcal === null ? 'kcal unknown' : formatTotal(check.kcalTotal!, 'kcal')} ·{' '}
+                    {check.protein === null ? 'protein unknown' : `${check.protein.toFixed(1)} g protein`} · {food?.basis.amount} {food?.basis.unit} basis
                   </p>
                 )
               )}
