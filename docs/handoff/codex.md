@@ -62,7 +62,7 @@ Goal: when the composer meets an unknown food ("nasi lemak", "2 weetabix"), the 
   - Frozen `sentence-transformers/all-MiniLM-L6-v2` (pinned revision), mean pooling with the mask, L2 normalised, then `Linear(384, 6)`: 2,310 trainable parameters.
   - **Yash writes the training loop**, reusing his FIT3181 `train_model`/`score`/`seed_all(34871500)` habits. Avoid the template's `BaseTrainer.evaluate` loss bug.
   - It ships only if it beats the baseline on held-out macro-F1. It only preselects a draft type and never saves.
-  - **Status (7 Nov, Claude Code):** data, split, baselines, encoder, metrics and runner are built and tested; validation baselines are recorded. Yash's `train.py` parts and the MiniLM download remain. See `docs/milestones/m4-router-walkthrough.md`.
+  - **Status (7 Nov, Claude Code):** data, split, baselines, encoder, metrics and runner are built and tested; validation baselines are recorded. MiniLM is downloaded and pinned, and the vectors are cached; Yash's `train.py` parts remain. See `docs/milestones/m4-router-walkthrough.md`.
 
 ### M5: coach (RAG + MCP) — the full data flow is in the approved plan
 - **Service:** FastAPI on `127.0.0.1:8000`, proxied as `/api`.

@@ -68,7 +68,7 @@ cd experiments/router
 
 **Environment:** `.venv` was created with `fit3181`'s Python 3.11 using `--system-site-packages`. It reuses torch 2.13 (CUDA 13, RTX 5060 detected), transformers and scikit-learn read-only, and installs nothing into `fit3181`. Exact versions are in `requirements-lock.txt`.
 
-**Model:** `sentence-transformers/all-MiniLM-L6-v2`. `MODEL_REVISION` in `router/encoder.py` is `None` until the download is approved, and the encoder refuses to run unpinned.
+**Model:** `sentence-transformers/all-MiniLM-L6-v2` (Apache-2.0), pinned to commit `1110a243fdf4706b3f48f1d95db1a4f5529b4d41`. Downloaded on 7 Nov with Yash's approval: 6 files, 91.6 MB, into the Hugging Face cache outside Git. `run embed` cached all 360 train and validation vectors on the RTX 5060 in 8.0 s. Sanity check: "ate two fried eggs" scores cosine 0.785 against "had 2 eggs for breakfast", 0.335 against "slept eight hours" and 0.286 against "how much protein today?".
 
 ## Results so far (written by `run baselines` to `results/validation-baselines.json`)
 These are validation numbers on 72 messages. C and the threshold were chosen on this same split, so they're optimistic; the sealed test run is the fair one.
@@ -79,4 +79,4 @@ These are validation numbers on 72 messages. C and the threshold were chosen on 
 | Keyword rules | 0.771 | 0.764 | 0.653 | 0.085 | 0 |
 | TF-IDF + LR (C = 1, threshold 0.65) | 0.750 | 0.764 | 0.111 | 0.000 | 0 |
 
-There are no head results yet. They need the model download and your training loop.
+There are no head results yet. The vectors are cached; the head needs your training loop.

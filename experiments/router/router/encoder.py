@@ -13,8 +13,8 @@ import torch
 
 # The pretrained sentence encoder; its weights are never trained here
 MODEL_ID = 'sentence-transformers/all-MiniLM-L6-v2'
-# The commit of the model files every cached vector comes from; None until the download is approved
-MODEL_REVISION = None
+# The commit of the model files every cached vector comes from (Apache-2.0, downloaded 7 Nov 2026 with Yash's approval)
+MODEL_REVISION = '1110a243fdf4706b3f48f1d95db1a4f5529b4d41'
 # The encoder's output size, which is the head's input size
 EMBEDDING_SIZE = 384
 # Messages are short; this is the model's own limit, never reached by a diary message

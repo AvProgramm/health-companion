@@ -10,7 +10,7 @@
 | Exercise library, review sheet, ready-made days, allocation sweep | Done | `m4-exercise-search-walkthrough.md`, `m4-gym-fixes-walkthrough.md` |
 | Router data: 6 classes × 18 families, family split 12 / 3 / 3, sealed test | Done | `experiments/router/data/` |
 | Router baselines: majority, keyword, TF-IDF + LR | Done; validation results recorded | `experiments/router/results/` |
-| Frozen MiniLM encoder: masked mean pooling, L2 normalisation, revision cache | Code and tests done; the weights still need downloading | `experiments/router/router/encoder.py` |
+| Frozen MiniLM encoder: masked mean pooling, L2 normalisation, revision cache | Done; pinned to `1110a24`, 360 vectors cached on the GPU in 8 s | `experiments/router/router/encoder.py` |
 | Router Dataset, forward, training loop, scoring, confusion matrix | **Yash's task**; stubs with 5 expectedFailure tests | `experiments/router/router/train.py` |
 | Final sealed test run and ship decision | After Yash's loop | `python -m router.run final` |
 | Phone gate for the M4 Gym features | **Yash's task** | `docs/test-log.md` |
@@ -33,7 +33,7 @@
 The keyword rules are currently the bar to beat. TF-IDF is rarely confident enough to accept a message with this little data. That gap is where a pretrained sentence encoder might help, and the sealed test will say whether it does.
 
 ## Verified
-- `npm run check` now ends with the router tests. In the router environment that's 28 tests: 22 pass, 5 are Yash's expected failures, and 1 is skipped until the model is downloaded. In CI only the plain-Python data and keyword tests run.
+- `npm run check` now ends with the router tests. In the router environment that's 28 tests: 23 pass, including the real frozen-encoder test, and 5 are Yash's expected failures. In CI only the plain-Python data and keyword tests run.
 - Yash's five tests were run against a temporary reference implementation, which was then deleted. All five pass with correct code, so they can be passed.
 - One test bug was found and fixed this way: the toy validation clusters had different centres from the training ones.
 
