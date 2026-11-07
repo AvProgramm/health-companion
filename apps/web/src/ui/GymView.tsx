@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { describeSets, lastPerformed, type WorkoutEntry } from '../domain/training/workouts';
 import { listWorkouts } from '../storage/logsRepo';
 import { formatDiaryDate } from './format';
+import { PlanSession } from './PlanSession';
 import { errorText } from './useSave';
 
 // Enough history to see a trend on a phone screen without scrolling forever
@@ -33,6 +34,8 @@ export function GymView({ db }: { db: IDBDatabase }) {
         <h1 className="title">Gym</h1>
         <p className="status">Log training on Today, e.g. "row 3x8 at 5kg each hand" or "ran 5 km in 30 min".</p>
       </header>
+
+      <PlanSession />
 
       {error !== null && <p className="notice notice-error" role="alert">{error}</p>}
 

@@ -171,3 +171,15 @@ Final automated checkpoint for this follow-up: 150 app tests, 15 coach tests, ty
 | Energy consistency (4 × protein + 4 × carbohydrate + 9 × fat) | 995 kcal vs 1015 shown, within 2% | PASS |
 | Plausibility | Energy and macros plausible for one plate with fried chicken; sodium likely low (sambal, anchovies and fried chicken usually give 1,000–2,000 mg); range narrow for a stall dish | NOTE |
 | Phone build | New error wording appeared before the link was restored, then the newest card layout | PASS (self-update reached the phone) |
+
+## M4 planner (7 Nov 2026, Claude, branch feat/planner)
+
+| Check | Observed | Result |
+|---|---|---|
+| Search vs independent brute-force oracle, 12 kit scenarios | Identical session sets | PASS |
+| Hard-rule violations across all scenarios | 0 | PASS |
+| Kit counterexample (12 min; A 10 push pref 3, B 6 push, C 6 pull) | Greedy covers push only; search finds push + pull | PASS |
+| compareCandidates / bestPlan spec tests | it.fails with the stub; all 6 flip with a correct reference implementation (then stub restored) | PASS (awaiting Yash's function) |
+| Gym tab "Find a plan" with the stub | "compareCandidates is not written yet", no crash | PASS (browser pane) |
+| 0 minutes | "There is no time for a session today. Rest is a valid choice." plus every exclusion reason | PASS (browser pane) |
+| A real plan on screen, phone | Needs compareCandidates | NOT TESTED |
