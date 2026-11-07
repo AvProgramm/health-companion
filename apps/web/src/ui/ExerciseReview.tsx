@@ -9,6 +9,7 @@ interface ExerciseReviewProps { entry: ExerciseEntry; onConfirm: (card: Movement
 
 /** Review unknown requirements and a planning block before saving a chosen exercise. */
 export function ExerciseReview({ entry, onConfirm, onClose }: ExerciseReviewProps) {
+  // Keep imported defaults in an unsaved review draft.
   const [category, setCategory] = useState<Category | ''>(entry.category ?? '');
   const [equipment, setEquipment] = useState<Equipment[]>([...(entry.equipment ?? [])]);
   const [requires, setRequires] = useState<Capability[]>([]);
@@ -20,10 +21,12 @@ export function ExerciseReview({ entry, onConfirm, onClose }: ExerciseReviewProp
   /** Save only after the person has checked the source's missing requirements. */
   async function confirm(event: FormEvent) {
     event.preventDefault();
+    // Ignore an unreviewed or repeated confirmation because no new write is authorised.
     if (!reviewed || busy) return;
     setError(null);
     setBusy(true);
     try {
+      // Validate the reviewed requirements before passing the confirmed draft to storage.
       const card = reviewExercise(entry, { category: category || null, equipment: reviewed ? equipment : null, requires: reviewed ? requires : null, minutes: Number(minutes) });
       await onConfirm(card);
       onClose();

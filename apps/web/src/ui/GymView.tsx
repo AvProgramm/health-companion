@@ -14,9 +14,10 @@ import { errorText } from './useSave';
 const HISTORY_LENGTH = 20;
 
 /**
- * The Gym tab: the last session of each movement, then recent history.
+ * Display offline exercise choices, a checked plan and recent training history.
  */
 export function GymView({ db }: { db: IDBDatabase }) {
+  // Keep library loading, saved choices and diary history separate.
   const [entries, setEntries] = useState<WorkoutEntry[] | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [library, setLibrary] = useState<typeof import('../data/exerciseLibrary') | null>(null);
@@ -43,7 +44,9 @@ export function GymView({ db }: { db: IDBDatabase }) {
 
   /** Confirm one choice change through the versioned repository path. */
   async function persistChoice(card: MovementCard, removed: boolean) {
+    // Ignore a confirmation before loading because its source revision is not available yet.
     if (library === null) throw new Error('Wait for the bundled exercise library to load.');
+    // Retain the operation key until a confirmed transaction has been read back.
     const previous = choices.find(choice => choice.id === card.id);
     const expectedVersion = previous?.version ?? 0;
     const action = `${card.id}:${expectedVersion}:${removed}`;
@@ -52,6 +55,7 @@ export function GymView({ db }: { db: IDBDatabase }) {
     setSavingChoice(true);
     setError(null);
     try {
+      // Append a version and refresh the pool, including conflicts from another tab.
       const result = await saveCustomCard(db, { id: card.id, card, source: library.EXERCISE_SOURCE,
         version: expectedVersion + 1, deleted: removed, operationKey, savedAt: new Date().toISOString() }, expectedVersion);
       await reloadChoices();

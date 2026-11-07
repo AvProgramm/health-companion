@@ -66,6 +66,32 @@ describe('upgrading an existing diary', () => {
     expect((await mealsOn(upgraded, '2026-11-09')).map((meal) => meal.header.mealId)).toEqual(['m1']);
   });
 
+  it('keeps version-3 workout and sleep records unchanged when adding exercise choices', async () => {
+    // Store fictional records directly, as the previous build would have left them.
+    const factory = new IDBFactory();
+    const old = await openOldVersion(factory, 3);
+    const workout = { id: 'fictional-workout', localDate: '2026-11-07', movementKey: 'fictional-row', sets: [{ reps: 8, load: null }] };
+    const sleep = { id: 'fictional-sleep', localDate: '2026-11-07', asleepMin: null, timeInBedMin: 450 };
+    await new Promise<void>((resolve, reject) => {
+      const tx = old.transaction(['workouts', 'sleep'], 'readwrite');
+      tx.objectStore('workouts').add(workout);
+      tx.objectStore('sleep').add(sleep);
+      tx.oncomplete = () => resolve();
+      tx.onerror = () => reject(tx.error);
+    });
+    old.close();
+    // Compare the stored snapshots byte-for-byte after the additive upgrade.
+    const upgraded = await openDiary(factory);
+    for (const [store, entry] of [['workouts', workout], ['sleep', sleep]] as const) {
+      const record = await new Promise(resolve => {
+        const request = upgraded.transaction(store).objectStore(store).get(entry.id);
+        request.onsuccess = () => resolve(request.result);
+      });
+      expect(record).toEqual(entry);
+    }
+    upgraded.close();
+  });
+
   it('opens an empty diary at the current version', async () => {
     const db = await openDiary(new IDBFactory());
     expect(db.version).toBe(DB_VERSION);

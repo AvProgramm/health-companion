@@ -27,7 +27,8 @@ Organised by feature, one reason to change per module. Domain never imports stor
   - `meals/`: meal `types`, `revisions` (`startMeal`, `reviseMeal`: every change is a new revision), `corrections` (which item "actually 250 mL" means).
   - `training/workouts`, `sleep/sleep`: build and describe workout and sleep entries.
   - `parsing/`: the composer grammar. `parseEntry` tries an ordered list of small parsers (`question`, `correction`, `sleepEntry`, `workoutEntry`, `meal`); a new kind of entry is a new parser in that list.
-- `apps/web/src/storage/`: `connection` (open, schema upgrades, `runTransaction`), `foodsRepo`, `mealsRepo`, `logsRepo`, `persistence`, and `backup/` (`format`, `validate` with one checker per store, `transfer` for export/restore/erase).
+- `data/exercises/`, `scripts/import-exercises.mjs`, `apps/web/src/data/`: pinned Unlicense exercise source and reproducible offline search index; see `docs/data/exercise-dataset.md`.
+- `apps/web/src/storage/`: `connection` (open, schema upgrades, `runTransaction`), `foodsRepo`, `mealsRepo`, `logsRepo`, `customCardsRepo` (immutable exercise-choice snapshots, schema v4), `persistence`, and `backup/` (`format`, `validate` with one checker per store, `transfer` for export/restore/erase).
 - `apps/web/src/api/`: food-only HTTP boundary and response validation.
 - `apps/web/src/ui/`: responsive React screens, local Geist/Phosphor assets, compact draft/result presentation. They call domain and storage and never compute totals themselves.
 - `apps/web/src/test/`: test-only helpers (`goldenFixture`, `testFoods`). Never imported by app code.

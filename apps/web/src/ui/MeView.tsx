@@ -99,7 +99,7 @@ export function MeView({ db, durability, foodCount, hideNumbers, onHideNumbersCh
       const counts = await restoreDiary(db, pending);
       setPending(null);
       await onDiaryReplaced();
-      setMessage({ kind: 'saved', text: `Restored ${counts.meals} meals and ${counts.foods} food versions.` });
+      setMessage({ kind: 'saved', text: `Restored ${counts.meals} meals, ${counts.foods} food versions and ${counts.customCards} exercise-choice snapshots.` });
     } catch (problem) {
       setMessage({ kind: 'error', text: `Nothing was restored. ${errorText(problem)}` });
     } finally {
@@ -158,7 +158,7 @@ export function MeView({ db, durability, foodCount, hideNumbers, onHideNumbersCh
         {pending !== null && (
           <div className="confirm">
             <p className="body">
-              This backup from {new Date(pending.backup.exportedAt).toLocaleString('en-AU')} has {pending.counts.meals} meals ({pending.counts.revisions} revisions) and {pending.counts.foods} food versions.
+              This backup from {new Date(pending.backup.exportedAt).toLocaleString('en-AU')} has {pending.counts.meals} meals ({pending.counts.revisions} revisions) and {pending.counts.foods} food versions, plus {pending.counts.customCards} exercise-choice snapshots.
               Restoring replaces the {mealCount ?? 'current'} meals on this device.
             </p>
             <div className="row">

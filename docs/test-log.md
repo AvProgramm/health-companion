@@ -183,3 +183,19 @@ Final automated checkpoint for this follow-up: 150 app tests, 15 coach tests, ty
 | Gym tab "Find a plan" with the stub | "compareCandidates is not written yet", no crash | PASS (browser pane) |
 | 0 minutes | "There is no time for a session today. Rest is a valid choice." plus every exclusion reason | PASS (browser pane) |
 | A real plan on screen, phone | Needs compareCandidates | NOT TESTED |
+
+
+## M4 exercise search and Gym UI (7 Nov 2026, Codex)
+
+| Check | Observed | Result |
+|---|---|---|
+| Automated check and production build | App/type/hook/coach/importer checks pass; separate dataset chunk emits and is precached | PASS |
+| Migration from versions 1, 2, 3 | Meals preserved; version-3 workout/sleep snapshots unchanged; customCards store added | PASS (fake IndexedDB) |
+| Backup/wipe/restore | Fictional choice preserved alongside diary; older backups get empty choices | PASS (unit test) |
+| Operation retry, stale version, cap, invalid data | Replay/conflict/rollback and validation paths covered | PASS (unit test) |
+| Confirmed choice -> planner -> reload | Added row appears in plan; choice survives reload | PASS (browser) |
+| Preview server stopped | Cached reload, local Air Bike search/add, reload and plan work; remove returns pool to eight | PASS (browser, server unavailable) |
+| 375 px / 1440 px | Phone one column and bottom dock, no horizontal overflow; laptop sidebar/two columns | PASS (browser widths) |
+| Real phone upgrade and airplane-mode cold reopen | Follow walkthrough; old entries must remain before adding | NOT TESTED |
+
+Preview was restarted after the server-unavailable test. No diary history was sent to any service. See `docs/milestones/m4-exercise-search-walkthrough.md` for limits and explain-back.

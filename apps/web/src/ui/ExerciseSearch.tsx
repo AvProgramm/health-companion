@@ -16,9 +16,11 @@ interface ExerciseSearchProps {
 
 /** Search bundled exercises locally and require review before adding them to the pool. */
 export function ExerciseSearch({ entries, chosen, busy, onAdd, onRemove }: ExerciseSearchProps) {
+  // Search the bundled entries without an HTTP boundary.
   const [query, setQuery] = useState('');
   const [reviewing, setReviewing] = useState<ExerciseEntry | null>(null);
   const matches = useMemo(() => searchExercises(entries, query), [entries, query]);
+  // Exclude removed snapshots from the current pool and its display count.
   const active = chosen.filter(choice => !choice.deleted);
   const selected = new Set(active.map(choice => choice.id));
 

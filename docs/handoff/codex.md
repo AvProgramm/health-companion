@@ -40,7 +40,7 @@ Goal: when the composer meets an unknown food ("nasi lemak", "2 weetabix"), the 
    - New `domain/nutrition/rules.ts`. A rule has a kind (`allergy` | `exclusion` | `dislike`), food tags (meat, poultry, fish, egg, dairy, beef, pork, alcohol, caffeine), and optional inclusive `startDate`/`endDate`.
    - Foods get optional `tags` in `FoodVersion`. Add tag checkboxes to `ui/FoodEditor.tsx`.
    - A draft or meal shows a badge such as "Outside your vegetarian rule (11–19 Oct)". **It never blocks a save.** It never infers a rule from identity or religion, and there are no fasting windows.
-   - Storage: a new `rules` store means schema **v4**. Follow `.claude/skills/schema-migration/SKILL.md` exactly: an upgrade test from v3 with data, plus a backup checker.
+   - Storage: a new `rules` store means schema **v5** (v4 now holds `customCards`). Follow `.claude/skills/schema-migration/SKILL.md` exactly: an upgrade test from v4 with data, plus a backup checker.
 2. **Local photo on a meal (FR08).**
    - Resize the photo and re-encode it to strip metadata (canvas → JPEG blob), then store it in an `attachments` store.
    - Never upload it. Backups exclude images by default and say so.

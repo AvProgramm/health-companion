@@ -10,7 +10,7 @@ const CAPABILITY_CHOICES: readonly [Capability, string][] = [['pull_up', 'Pull-u
 const CATEGORY_CHOICES: readonly [Category, string][] = [['push', 'Push'], ['pull', 'Pull'], ['legs', 'Legs'], ['core', 'Core']];
 
 /**
- * The "Plan a session" card: what you have today in, one checked plan (or an honest "none") out.
+ * Display the available equipment and return one checked session or an honest reason.
  *
  * The plan is only a suggestion; logging what was actually done stays on Today.
  */
@@ -106,7 +106,7 @@ interface ChoicesProps<T extends string> {
 }
 
 /**
- * A labelled group of checkboxes over a fixed list of choices.
+ * Display a labelled group of checkboxes over a fixed list of choices.
  */
 function Choices<T extends string>({ legend, choices, selected, onChange }: ChoicesProps<T>) {
   return (

@@ -81,3 +81,10 @@ Written 7 Nov 2026, after M4 part 1 merged (`main` at e5bf9ac). Read `CLAUDE.md`
 - **Never:** insulin or medication dosing, carb-ratio maths, glucose targets, or anything that reads as medical advice. Point to the care team instead. Any number shown comes from logged food, with its unknowns kept separate.
 - Other conditions can follow the same pattern later (for example hypertension, where sodium is shown first).
 - **Tests:** a diabetes profile reorders what is shown and never hides a nutrient. An unknown carb value stays "Unknown", never 0.
+
+
+## Task A checkpoint (7 Nov 2026, Codex)
+
+Implemented on `codex/exercise-search`: schema-v4 immutable choices, bounded offline search over 876 pinned Unlicense records, explicit requirements review and confirmation, backup compatibility, and chosen-pool planning. Dataset provenance: `docs/data/exercise-dataset.md`. Explain-back, verification evidence and phone gate: `docs/milestones/m4-exercise-search-walkthrough.md`.
+
+Task B's lightweight CSS depth, front/back SVG targets, minutes ring and coverage chips are also present. Physical phone verification remains pending. Unknown source equipment is searchable but unavailable to add; capability metadata always needs review. No injury safety claims. Next schema version is **v5**, including for profile/diet rules. Task D's new `ineligibleReason` rules remain reserved for Yash. Task C and the training loop remain untouched.
