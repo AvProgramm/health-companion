@@ -4,6 +4,7 @@ import { MOVEMENT_CARDS, type MovementCard } from '../domain/training/catalogue'
 import type { CustomCardSelection } from '../domain/training/customCards';
 import { listCustomCards, saveCustomCard } from '../storage/customCardsRepo';
 import { ExerciseSearch } from './ExerciseSearch';
+import { PackPicker } from './PackPicker';
 import { describeSets, lastPerformed, type WorkoutEntry } from '../domain/training/workouts';
 import { listWorkouts } from '../storage/logsRepo';
 import { formatDiaryDate } from './format';
@@ -83,6 +84,8 @@ export function GymView({ db }: { db: IDBDatabase }) {
         <h1 className="page-title">Your movement space.</h1></div></div>
         <p className="status">Choose your exercises. Make room for a session that fits today.</p>
       </header>
+
+      {library !== null && <PackPicker entries={library.EXERCISE_ENTRIES} chosen={choices} busy={!choicesReady || savingChoice} onAdd={card => persistChoice(card, false)} />}
 
       <div className="gym-layout">
         {library === null ? <section className="card" aria-label="Loading offline exercise library"><div className="skeleton skeleton-card" /></section> : <ExerciseSearch entries={library.EXERCISE_ENTRIES} chosen={choices} busy={!choicesReady || savingChoice}
