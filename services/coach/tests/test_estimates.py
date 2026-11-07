@@ -9,8 +9,11 @@ from unittest.mock import AsyncMock, patch
 from fastapi.testclient import TestClient
 from coach.app import app
 from coach.databases import parse_usda, parse_off, average_matches
-from coach.models import Estimate
+from coach.databases import portion_basis
+from coach.model_client import check_model_spread, request_model
+from coach.models import Basis, Estimate
 from coach.pipeline import estimate_food
+from coach.prompts import estimate_prompt
 
 
 class EstimateTests(unittest.TestCase):
@@ -95,6 +98,48 @@ class EstimateTests(unittest.TestCase):
         self.assertEqual(result.sourceKind, 'ai_estimate')
         llm.side_effect = TimeoutError()
         self.assertIsNone(asyncio.run(estimate_food('Fictional oats', '50 g', database, llm, AsyncMock(return_value=[]), AsyncMock(return_value=None))))
+
+    # Seen on 7 Nov: "nasi lemak, 2" came back as 494.0 kcal (494.0–494.0)
+    def test_model_estimate_needs_a_real_range(self):
+        """Reject false certainty from a model, but allow an exact zero."""
+        exact = proposal()
+        exact['range'] = {**exact['range'], 'kcal': {'low': 60, 'high': 60}}
+        with self.assertRaises(ValueError):
+            check_model_spread(Estimate.model_validate(exact))
+        zero = proposal()
+        zero['nutrients'] = {**zero['nutrients'], 'total_sugar_g': 0}
+        zero['range'] = {**zero['range'], 'total_sugar_g': {'low': 0, 'high': 0}}
+        check_model_spread(Estimate.model_validate(zero))
+
+    def test_counted_servings_are_asked_once_and_multiplied_in_code(self):
+        """Ask the model about one serving and scale its values and bounds here."""
+        requests = []
+
+        def respond(request):
+            """Answer the model with one fictional serving: 60 kcal (50-70)."""
+            requests.append(request)
+            model_data = proposal()
+            model_data['basis'] = {'amount': 1, 'unit': 'piece'}
+            del model_data['sources']
+            del model_data['sourceKind']
+            return httpx.Response(200, json={'choices': [{'message': {'content': json.dumps(model_data)}}]})
+
+        original_client = httpx.AsyncClient
+        with patch('coach.model_client.httpx.AsyncClient', side_effect=lambda **kwargs: original_client(**kwargs, transport=httpx.MockTransport(respond))):
+            result = asyncio.run(request_model('https://example.org/v1', 'fictional-key', 'fictional-model', 'Groq AI',
+                'https://groq.com/', 'Fictional dish', '2 plates', portion_basis('2 plates'), (), True))
+        self.assertEqual(result.basis.model_dump(), {'amount': 2.0, 'unit': 'piece'})
+        self.assertEqual(result.nutrients.kcal, 120)
+        self.assertEqual(result.range['kcal'].model_dump(), {'low': 100, 'high': 140})
+        # Only the food name and a fixed serving phrase reach the model
+        self.assertEqual(json.loads(json.loads(requests[0].content)['messages'][1]['content']),
+                         {'name': 'Fictional dish', 'portionText': '1'})
+
+    def test_prompt_reads_a_bare_count_as_servings_not_cups(self):
+        """Keep the portion rule that fixed "2 nasi lemak" becoming 2 cups."""
+        prompt = estimate_prompt(Basis(amount=2, unit='piece'))
+        self.assertIn('Never reinterpret servings as cups', prompt)
+        self.assertIn('strictly below its high', prompt)
 
     def test_http_adapters_fall_back_to_groq_with_only_food_input(self):
         """Exercise the real endpoint and adapters with fictional HTTP responses."""

@@ -70,7 +70,7 @@ describe('estimate draft', () => {
     vi.stubGlobal('fetch', vi.fn().mockRejectedValue(new TypeError('Offline')));
     await act(async () => root.render(createElement(EstimateDraft, { name: 'Fictional oats', portionText: '50 g', hideNumbers: false, onUse, onEdit: vi.fn() })));
     await tap('Estimate nutrition');
-    expect(container.textContent).toContain('Estimates need the laptop');
+    expect(container.textContent).toContain('Could not reach the laptop');
     expect(onUse).not.toHaveBeenCalled();
     await tap('Log with unknown values');
     expect(Object.values(onUse.mock.calls[0]![0].nutrients)).toEqual([null, null, null, null, null, null]);

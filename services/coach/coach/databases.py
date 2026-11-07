@@ -92,12 +92,14 @@ def parse_off(payload, name):
 
 
 def portion_basis(text):
-    """Read an explicit physical portion or retain an explicit piece count."""
-    match = re.fullmatch(r'\s*(\d+(?:[.,]\d+)?)\s*(kg|g|ml|l|pieces?)?\s*', text, re.I)
+    """Read an explicit physical portion or retain an explicit count of pieces or servings."""
+    # A plate, packet, bowl or serving is one whole serving of a dish, counted like a piece
+    match = re.fullmatch(r'\s*(\d+(?:[.,]\d+)?)\s*(kg|g|ml|l|pieces?|plates?|packets?|bowls?|servings?)?\s*', text, re.I)
     if not match:
         return Basis(amount=1, unit='piece')
     unit = (match[2] or 'piece').lower()
-    unit = {'ml': 'mL', 'l': 'L', 'pieces': 'piece'}.get(unit, unit)
+    unit = unit if unit in ('kg', 'g', 'ml', 'l') else 'piece'
+    unit = {'ml': 'mL', 'l': 'L'}.get(unit, unit)
     return Basis(amount=float(match[1].replace(',', '.')), unit=unit)
 
 

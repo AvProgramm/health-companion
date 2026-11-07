@@ -1,15 +1,33 @@
 """Validate hosted-model proposals and attach only real supplied citations."""
 import json
 import httpx
-from .models import Estimate
+from .models import Basis, Estimate
 from .prompts import estimate_prompt, estimate_schema
 
 # Leave room within the pipeline deadline for validation and response transfer.
 MODEL_TIMEOUT = 6.0
 
+# What the model is asked for when the user gave a count of servings
+ONE_SERVING = Basis(amount=1, unit='piece')
+
 
 async def request_model(endpoint, token, model, provider, provider_url, name, portion_text, basis, evidence, strict_schema):
-    """Request one bounded proposal while keeping user input to two fields."""
+    """Request one bounded proposal while keeping user input to two fields.
+
+    For a count of servings ("2 nasi lemak") the model is asked about one serving
+    and the result is multiplied here, because language models are unreliable at
+    arithmetic: on 7 Nov "2" came back as 350 kcal a plate while "1 plate" was 421.
+    """
+    per_serving = basis.unit == 'piece' and basis.amount != 1
+    asked = ONE_SERVING if per_serving else basis
+    # "1" matches the one-piece basis exactly: one item of a counted food, one plate of a dish
+    asked_text = '1' if per_serving else portion_text
+    proposal = await ask_model(endpoint, token, model, provider, provider_url, name, asked_text, asked, evidence, strict_schema)
+    return scale_estimate(proposal, basis) if per_serving else proposal
+
+
+async def ask_model(endpoint, token, model, provider, provider_url, name, portion_text, basis, evidence, strict_schema):
+    """Return one validated proposal for exactly the given basis."""
     payload = {
         'model': model, 'temperature': 0, 'max_tokens': 2048,
         'messages': [{'role': 'system', 'content': estimate_prompt(basis, evidence)},
@@ -36,4 +54,30 @@ async def request_model(endpoint, token, model, provider, provider_url, name, po
     result = Estimate.model_validate(data)
     if result.basis != basis:
         raise ValueError('Keep the requested portion basis unchanged.')
+    check_model_spread(result)
     return result
+
+
+def scale_estimate(estimate, basis):
+    """Return a proposal multiplied out to the requested number of servings."""
+    factor = basis.amount / estimate.basis.amount
+    data = estimate.model_dump()
+    data['basis'] = basis.model_dump()
+    # Scale values and bounds alike; an unknown nutrient stays unknown
+    data['nutrients'] = {key: None if value is None else value * factor for key, value in data['nutrients'].items()}
+    data['range'] = {key: None if spread is None else {'low': spread['low'] * factor, 'high': spread['high'] * factor}
+                     for key, spread in data['range'].items()}
+    data['reason'] = f'Per serving, multiplied by {basis.amount:g}. {data["reason"]}'[:500]
+    return Estimate.model_validate(data)
+
+
+def check_model_spread(estimate):
+    """Reject a model estimate that claims an exact value it cannot know.
+
+    A dish varies with portion and recipe, so "494–494 kcal" would show false
+    certainty. A true zero may still be exact (no sugar in plain rice).
+    """
+    for key, value in estimate.nutrients.model_dump().items():
+        spread = estimate.range[key]
+        if value is not None and value > 0 and spread is not None and spread.low == spread.high:
+            raise ValueError('Give a real low-high range for every estimated value.')
