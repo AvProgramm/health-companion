@@ -1,6 +1,6 @@
 import { useEffect, useState, type FormEvent } from 'react';
 import { type MovementCard, type Category, type Equipment } from '../domain/training/catalogue';
-import { bestPlan, MAX_CARDS, MAX_SESSION_MINUTES, type PlanResult } from '../domain/training/planner';
+import { bestPlan, MAX_CARDS, type PlanResult } from '../domain/training/planner';
 import { MinutesRing } from './MinutesRing';
 import { MuscleMap } from './MuscleMap';
 
@@ -19,6 +19,8 @@ export function PlanSession({ cards }: { cards: readonly MovementCard[] }) {
   // Start with a bodyweight session; choosing an exercise does not establish equipment ownership.
   const [equipmentMode, setEquipmentMode] = useState<'without' | 'with'>('without');
   const [selectedEquipment, setSelectedEquipment] = useState<Equipment[] | null>(null);
+  // Repeat reviewed blocks only while this explicit session option is enabled.
+  const [repeatRounds, setRepeatRounds] = useState(true);
   const [categories, setCategories] = useState<Category[]>(['push', 'pull']);
   const [result, setResult] = useState<PlanResult | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -27,6 +29,11 @@ export function PlanSession({ cards }: { cards: readonly MovementCard[] }) {
   const equipmentChoices = EQUIPMENT_CHOICES.filter(([value]) => cards.some(card => card.equipment.includes(value)));
   const suggestedEquipment = [...new Set(cards.filter(card => card.id.startsWith('free-exercise-db:')).flatMap(card => card.equipment))];
   const equipment = (selectedEquipment ?? suggestedEquipment).filter(value => equipmentChoices.some(([option]) => option === value));
+
+  // Display compact repetition counts without expanding hundreds of repeated rows.
+  const session = result?.status === 'plan' ? result : null;
+  const plannedMinutes = session?.schedule?.minutes ?? session?.plan.minutes ?? 0;
+  const plannedBlocks = session?.schedule?.blocks ?? session?.plan.cards.map(card => ({ card, repeatCount: 1, minutes: card.minutes })) ?? [];
 
   // Ignore a stale result because the set of chosen exercises has changed.
   useEffect(() => setResult(null), [cards]);
@@ -40,8 +47,8 @@ export function PlanSession({ cards }: { cards: readonly MovementCard[] }) {
     const minutes = Number(minutesText);
 
     // Check the time before planning, since every rule depends on it
-    if (minutesText.trim() === '' || !Number.isFinite(minutes) || !Number.isInteger(minutes) || minutes < 0 || minutes > MAX_SESSION_MINUTES) {
-      setError(`Enter a target from 0 to ${MAX_SESSION_MINUTES} whole minutes.`);
+    if (minutesText.trim() === '' || !Number.isSafeInteger(minutes) || minutes < 0) {
+      setError('Enter a valid non-negative whole-minute target.');
       return;
     }
 
@@ -52,7 +59,7 @@ export function PlanSession({ cards }: { cards: readonly MovementCard[] }) {
     }
 
     // Pass the chosen kit through the existing hard filters; no capability profile is inferred here.
-    setResult(bestPlan({ minutes, equipment: equipmentMode === 'without' ? [] : equipment, unableTo: [], neverSuggest: [], categories, preferences: {} }, cards));
+    setResult(bestPlan({ minutes, equipment: equipmentMode === 'without' ? [] : equipment, unableTo: [], neverSuggest: [], categories, preferences: {} }, cards, repeatRounds));
   }
 
   return (
@@ -76,6 +83,7 @@ export function PlanSession({ cards }: { cards: readonly MovementCard[] }) {
           <p className="hint">{suggestedEquipment.length > 0 ? 'Suggested from your added exercises. Keep only the gear you have today.' : 'Choose the gear you have today.'} Bodyweight movements can still be included.</p>
         </div>}
         <Choices legend="What to train" choices={CATEGORY_CHOICES} selected={categories} onChange={setCategories} />
+        <label className="choice"><input type="checkbox" name="repeatRounds" checked={repeatRounds} onChange={event => setRepeatRounds(event.target.checked)} />Repeat rounds to fill the target</label>
         <button type="submit" className="button">Find a plan</button>
       </form>
 
@@ -83,14 +91,14 @@ export function PlanSession({ cards }: { cards: readonly MovementCard[] }) {
 
       {result?.status === 'plan' && (
         <div className="stack gym-plan-result" aria-live="polite">
-          <div className="plan-overview"><MinutesRing used={result.plan.minutes} available={Number(minutesText)} /><div><p className="eyebrow">YOUR SESSION</p><h3 className="heading">{result.unfilledMinutes === 0 ? 'Your target is covered.' : 'A partial session.'}</h3><div className="coverage-chips">{CATEGORY_CHOICES.map(([value, label]) => <span className={`category-chip ${result.plan.cards.some(card => card.category === value) ? `category-${value}` : 'category-uncovered'}`} key={value}>{label}</span>)}</div></div></div>
+          <div className="plan-overview"><MinutesRing used={plannedMinutes} available={Number(minutesText)} /><div><p className="eyebrow">YOUR SESSION</p><h3 className="heading">{result.unfilledMinutes === 0 ? 'Your target is covered.' : 'A partial session.'}</h3><div className="coverage-chips">{CATEGORY_CHOICES.map(([value, label]) => <span className={`category-chip ${result.plan.cards.some(card => card.category === value) ? `category-${value}` : 'category-uncovered'}`} key={value}>{label}</span>)}</div></div></div>
           <ol className="items">
-            {result.plan.cards.map((card) => (
+            {plannedBlocks.map(({ card, repeatCount, minutes }) => (
               <li key={card.id} className="item planned-exercise">
                 <MuscleMap category={card.category} muscles={card.primaryMuscles} /><div>
                 <div className="item-main">
                   <span>{card.name}</span>
-                  <span className="numbers">{card.minutes} min · {card.category}</span>
+                  <span className="numbers">{minutes} min · {card.category}{repeatCount > 1 && ` · ${repeatCount} × ${card.minutes}-min blocks`}</span>
                 </div>
                 <details className="exercise-instructions"><summary>Instructions</summary><p className="hint">{card.cue}</p></details>
                 </div>
@@ -98,11 +106,12 @@ export function PlanSession({ cards }: { cards: readonly MovementCard[] }) {
             ))}
           </ol>
           <p className="body numbers">
-            {result.plan.minutes} of {minutesText} min · covers {result.plan.covered} of {categories.length} chosen areas
+            {plannedMinutes} of {minutesText} min · covers {result.plan.covered} of {categories.length} chosen areas
           </p>
-          {result.unfilledMinutes > 0 && <p className="notice">{result.unfilledMinutes} min unfilled. The best plan for your chosen areas does not fill this target. Add more exercises or choose a shorter session.</p>}
-          <p className="hint">Up to {MAX_CARDS} distinct exercises; planning blocks keep their reviewed durations. No exercise is repeated to fill time.</p>
-          <details><summary className="hint">How this plan was chosen</summary><p className="hint">Coverage first, then closest to your target without going over, then preference. Compared {result.considered} planning options.</p></details>
+          {result.unfilledMinutes > 0 && <p className="notice">{result.unfilledMinutes} min unfilled. These reviewed blocks do not fill the last part of this target. Adjust the target or choose additional blocks.</p>}
+          {result.schedule && <p className="body">{result.schedule.fullRounds} full rounds{result.schedule.extraBlocks > 0 && ` + ${result.schedule.extraBlocks} extra blocks`}. Review these repeated blocks before training.</p>}
+          <p className="hint">Up to {MAX_CARDS} distinct exercises; planning blocks keep their reviewed durations.{!result.schedule && ' Each exercise is used once.'}</p>
+          <details><summary className="hint">How this plan was chosen</summary><p className="hint">Coverage first, then closest to your target without going over, then preference. Compared {result.considered} planning options.{result.schedule && ' The selected round is repeated, with extra blocks where their lengths fit.'}</p></details>
           <p className="hint">A suggestion only: log what you actually did on Today.</p>
         </div>
       )}

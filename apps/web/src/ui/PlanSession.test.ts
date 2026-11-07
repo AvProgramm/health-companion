@@ -88,6 +88,7 @@ it('asks for actual gear when the pool has no added equipment choices', async ()
 
 it('labels an underfilled sixty-minute request as a partial session', async () => {
   await render([body]);
+  await click('input[name="repeatRounds"]');
   const input = container.querySelector('input[inputmode="numeric"]')!;
   await act(async () => {
     Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value')!.set!.call(input, '60');
@@ -96,4 +97,14 @@ it('labels an underfilled sixty-minute request as a partial session', async () =
   await click('button[type="submit"]');
   expect(container.querySelector('.gym-plan-result')?.textContent).toContain('55 min unfilled');
   expect(container.querySelector('.gym-plan-result')?.textContent).toContain('A partial session');
+});
+
+
+it('repeats reviewed blocks by default and clears the plan when repetition is turned off', async () => {
+  await render([body]);
+  await click('button[type="submit"]');
+  expect(container.querySelector('.gym-plan-result')?.textContent).toContain('20 of 20 min');
+  expect(container.querySelector('.gym-plan-result')?.textContent).toContain('4 full rounds');
+  await click('input[name="repeatRounds"]');
+  expect(container.querySelector('.gym-plan-result')).toBeNull();
 });

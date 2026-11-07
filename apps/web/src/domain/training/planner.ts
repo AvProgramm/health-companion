@@ -6,11 +6,10 @@
  */
 import type { Category, MovementCard } from './catalogue';
 import { splitCards, type PlanRequest } from './eligibility';
+import { fillRepeatedRound, type RoundSchedule } from './rounds';
 
 // Twelve distinct five-minute blocks can fill an hour without repeating an exercise.
 export const MAX_CARDS = 12;
-// Bound the integer-minute state table on the phone; this is a product limit, not exercise advice.
-export const MAX_SESSION_MINUTES = 240;
 // Four category bits encode all sixteen possible coverage combinations.
 const CATEGORY_BITS: Record<Category, number> = { push: 1, pull: 2, legs: 4, core: 8 };
 // Reserve sixteen mask values and thirteen counts, including the empty session.
@@ -29,7 +28,7 @@ export interface Candidate {
 }
 
 export type PlanResult =
-  | { status: 'plan'; plan: Candidate; unfilledMinutes: number; considered: number; excluded: { card: MovementCard; reason: string }[] }
+  | { status: 'plan'; plan: Candidate; schedule?: RoundSchedule; unfilledMinutes: number; considered: number; excluded: { card: MovementCard; reason: string }[] }
   | { status: 'none'; reason: string; excluded: { card: MovementCard; reason: string }[] };
 
 /**
@@ -40,7 +39,7 @@ export type PlanResult =
  * states; different coverage masks and counts may lead to different future plans.
  */
 export function feasibleCandidates(request: PlanRequest, catalogue: readonly MovementCard[]): Candidate[] {
-  // Ignore an invalid target because the state table requires bounded whole minutes.
+  // Ignore an invalid target because exact planning requires a safe whole-minute number.
   if (!validTarget(request.minutes)) return [];
 
   // Filter before searching; equipment and capability rules are never loosened.
@@ -73,9 +72,9 @@ export function feasibleCandidates(request: PlanRequest, catalogue: readonly Mov
   return [...states.values()].filter(state => state.candidate.cards.length > 0).map(state => state.candidate);
 }
 
-/** Return whether a target fits the bounded integer-minute search. */
+/** Return whether a target can be represented exactly in whole minutes. */
 function validTarget(minutes: number): boolean {
-  return Number.isFinite(minutes) && Number.isInteger(minutes) && minutes >= 0 && minutes <= MAX_SESSION_MINUTES;
+  return Number.isSafeInteger(minutes) && minutes >= 0;
 }
 
 /**
@@ -126,10 +125,10 @@ export function compareCandidates(a: Candidate, b: Candidate): number {
  *
  * "No plan" is a real answer: with no time, or nothing that fits, rest is a valid choice.
  */
-export function bestPlan(request: PlanRequest, catalogue: readonly MovementCard[]): PlanResult {
-  // Ignore an invalid target because an unbounded request cannot enter the phone search.
+export function bestPlan(request: PlanRequest, catalogue: readonly MovementCard[], repeatRounds = false): PlanResult {
+  // Ignore an invalid target because unsafe numbers would make block counts inaccurate.
   if (!validTarget(request.minutes)) {
-    return { status: 'none', reason: 'Enter a target from 0 to 240 whole minutes.', excluded: [] };
+    return { status: 'none', reason: 'Enter a valid non-negative whole-minute target.', excluded: [] };
   }
 
   // Search only eligible choices and retain every hard-filter exclusion for explanation.
@@ -146,5 +145,8 @@ export function bestPlan(request: PlanRequest, catalogue: readonly MovementCard[
 
   // Rank every candidate with the same rule and keep the best
   const plan = [...candidates].sort(compareCandidates)[0]!;
-  return { status: 'plan', plan, unfilledMinutes: request.minutes - plan.minutes, considered: candidates.length, excluded };
+  // Repeat only the selected, filtered round; preserve all reviewed block lengths.
+  const schedule = repeatRounds ? fillRepeatedRound(plan.cards, request.minutes) : undefined;
+  return { status: 'plan', plan, ...(schedule === undefined ? {} : { schedule }),
+    unfilledMinutes: schedule?.unfilledMinutes ?? request.minutes - plan.minutes, considered: candidates.length, excluded };
 }

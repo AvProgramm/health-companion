@@ -230,8 +230,8 @@ describe('target-duration planning', () => {
     expect(bestPlan(request, [...pool].reverse())).toEqual(bestPlan(request, pool));
   });
 
-  it.each([Number.NaN, Number.POSITIVE_INFINITY, -1, 60.5, 241])('refuses an invalid or unbounded target: %s', minutes => {
-    expect(bestPlan({ ...OPEN, minutes }, cards)).toMatchObject({ status: 'none', reason: 'Enter a target from 0 to 240 whole minutes.' });
+  it.each([Number.NaN, Number.POSITIVE_INFINITY, -1, 60.5, Number.MAX_SAFE_INTEGER + 1])('refuses an invalid or unbounded target: %s', minutes => {
+    expect(bestPlan({ ...OPEN, minutes }, cards)).toMatchObject({ status: 'none', reason: 'Enter a valid non-negative whole-minute target.' });
   });
 });
 
@@ -256,4 +256,19 @@ it('keeps the twelve-card bound even when another block would fill a longer targ
   const cards: MovementCard[] = Array.from({ length: 13 }, (_, index) => ({ id: `limit-${index}`, name: 'Fictional block', minutes: 5,
     category: 'core', equipment: [], requires: [], cue: 'Fictional cue.' }));
   expect(bestPlan({ ...OPEN, minutes: 65, categories: ['core'] }, cards)).toMatchObject({ status: 'plan', unfilledMinutes: 5, plan: { minutes: 60 } });
+});
+
+
+it.each([7, 25, 60, 90, 241, 1000, 1_000_000_000])('accepts a whole-minute target without the artificial duration cap: %i', minutes => {
+  expect(bestPlan({ ...OPEN, minutes, equipment: [] }, MOVEMENT_CARDS).status).toBe('plan');
+});
+
+
+it('repeats only selected, eligible blocks while preserving equipment exclusions', () => {
+  const result = bestPlan({ ...OPEN, minutes: 60, equipment: [], unableTo: ['jumping'] }, MOVEMENT_CARDS, true);
+  expect(result.status).toBe('plan');
+  if (result.status !== 'plan') throw new Error('Expected a repeated plan.');
+  expect(result.schedule?.minutes).toBe(60);
+  expect(result.schedule?.blocks.map(block => block.card.id)).toEqual(['plank', 'push_up']);
+  expect(result.excluded.some(entry => entry.card.id === 'jump_squat')).toBe(true);
 });
