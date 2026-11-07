@@ -81,14 +81,14 @@ class EstimateTests(unittest.TestCase):
         """Use the LLM only after no usable database match remains."""
         database = AsyncMock(return_value=Estimate.model_validate(proposal('database')))
         llm = AsyncMock(return_value=Estimate.model_validate(proposal()))
-        result = asyncio.run(estimate_food('Fictional oats', '50 g', database, llm))
+        result = asyncio.run(estimate_food('Fictional oats', '50 g', database, llm, AsyncMock(return_value=[]), AsyncMock(return_value=None)))
         self.assertEqual(result.sourceKind, 'database')
         llm.assert_not_awaited()
         database.side_effect = TimeoutError()
-        result = asyncio.run(estimate_food('Fictional oats', '50 g', database, llm))
+        result = asyncio.run(estimate_food('Fictional oats', '50 g', database, llm, AsyncMock(return_value=[]), AsyncMock(return_value=None)))
         self.assertEqual(result.sourceKind, 'ai_estimate')
         llm.side_effect = TimeoutError()
-        self.assertIsNone(asyncio.run(estimate_food('Fictional oats', '50 g', database, llm)))
+        self.assertIsNone(asyncio.run(estimate_food('Fictional oats', '50 g', database, llm, AsyncMock(return_value=[]), AsyncMock(return_value=None))))
 
     def test_http_adapters_fall_back_to_groq_with_only_food_input(self):
         """Exercise the real endpoint and adapters with fictional HTTP responses."""
@@ -107,7 +107,7 @@ class EstimateTests(unittest.TestCase):
             return httpx.Response(200, json={'choices': [{'message': {'content': json.dumps(model_data)}}]})
 
         original_client = httpx.AsyncClient
-        with patch.dict('os.environ', {'GROQ_API_KEY': 'fictional-test-key', 'USDA_API_KEY': 'fictional-test-key'}):
+        with patch.dict('os.environ', {'GROQ_API_KEY': 'fictional-test-key', 'USDA_API_KEY': 'fictional-test-key', 'TAVILY_API_KEY': '', 'HF_TOKEN': ''}):
             os.environ.pop('GROQ_MODEL', None)
             with patch('coach.providers.httpx.AsyncClient', side_effect=lambda **kwargs: original_client(**kwargs, transport=httpx.MockTransport(respond))):
                 response = TestClient(app).post('/api/estimate', json={'name': 'Fictional oats', 'portionText': '50 g'})
@@ -117,7 +117,8 @@ class EstimateTests(unittest.TestCase):
         model_request = next(request for request in requests if request.url.host == 'api.groq.com')
         body = json.loads(model_request.content)
         self.assertEqual(json.loads(body['messages'][1]['content']), {'name': 'Fictional oats', 'portionText': '50 g'})
-        self.assertEqual(body['response_format'], {'type': 'json_object'})
+        self.assertEqual(body['response_format']['type'], 'json_schema')
+        self.assertTrue(body['response_format']['json_schema']['strict'])
         self.assertEqual(body['model'], 'openai/gpt-oss-20b')
         self.assertEqual(body['reasoning_effort'], 'low')
         self.assertEqual(len(requests), 3)

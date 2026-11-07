@@ -1,16 +1,12 @@
 """Contact public composition databases before the optional Groq fallback."""
 import asyncio
-import json
 import os
 import httpx
 from .databases import average_matches, parse_off, parse_usda, portion_basis
-from .models import Estimate
-from .prompts import estimate_prompt
+from .model_client import request_model
 
 # A short provider deadline leaves the manual diary responsive on a phone.
 DATABASE_TIMEOUT = 3.0
-# The model gets a bounded wait after database lookup has finished.
-LLM_TIMEOUT = 6.0
 
 
 async def database_estimate(name, portion_text):
@@ -43,29 +39,11 @@ async def off_matches(client, name):
     return parse_off(response.json(), name)
 
 
-async def llm_estimate(name, portion_text):
-    """Ask Groq for a bounded JSON estimate only after database lookup fails."""
+async def llm_estimate(name, portion_text, evidence=()):
+    """Ask Groq for an evidence-assisted proposal after composition lookup misses."""
     key = os.getenv('GROQ_API_KEY', '')
     if not key:
         return None
-    basis = portion_basis(portion_text)
-    prompt = estimate_prompt(basis)
-    async with httpx.AsyncClient(timeout=LLM_TIMEOUT) as client:
-        response = await client.post('https://api.groq.com/openai/v1/chat/completions',
-            headers={'Authorization': f'Bearer {key}'}, json={
-                'model': os.getenv('GROQ_MODEL', 'openai/gpt-oss-20b'),
-                'response_format': {'type': 'json_object'}, 'temperature': 0,
-                'max_completion_tokens': 2048, 'reasoning_effort': 'low',
-                'messages': [{'role': 'system', 'content': prompt},
-                    {'role': 'user', 'content': json.dumps({'name': name, 'portionText': portion_text})}],
-            })
-    response.raise_for_status()
-    data = json.loads(response.json()['choices'][0]['message']['content'])
-    # Set provenance ourselves because a model cannot verify its own citations.
-    data['sourceKind'] = 'ai_estimate'
-    data['sources'] = [{'provider': 'Groq AI', 'description': 'Model estimate, not a database measurement.',
-                       'url': 'https://groq.com/'}]
-    result = Estimate.model_validate(data)
-    if result.basis != basis:
-        raise ValueError('Keep the requested portion basis unchanged.')
-    return result
+    return await request_model('https://api.groq.com/openai/v1/chat/completions', key,
+        os.getenv('GROQ_MODEL', 'openai/gpt-oss-20b'), 'Groq AI', 'https://groq.com/',
+        name, portion_text, portion_basis(portion_text), evidence, True)

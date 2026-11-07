@@ -1,7 +1,7 @@
 import { readEstimate } from '../domain/nutrition/estimates';
 
-// Leave time for both database lookup and the optional model fallback.
-const ESTIMATE_TIMEOUT_MS = 15000;
+// Leave time for bounded database, web lookup and model fallback stages.
+const ESTIMATE_TIMEOUT_MS = 27000;
 
 /** Request a proposal using only food name and portion text. */
 export async function requestEstimate(input: { name: string; portionText: string }) {
