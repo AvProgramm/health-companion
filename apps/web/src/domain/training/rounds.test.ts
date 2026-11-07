@@ -57,7 +57,7 @@ it('rejects malformed or oversized source rounds before creating a residue table
   }
 });
 
-// Seen on 8 Nov: 90 minutes with all eight starter blocks gave one block five times and the rest once
+// Seen on 7 Nov: 90 minutes with all eight starter blocks gave one block five times and the rest once
 it('spreads the extra blocks over different exercises before repeating one', () => {
   const result = fillRepeatedRound(blocks([5, 8, 8, 8, 5, 4, 8, 6]), 90);
   expect(result.minutes).toBe(90);

@@ -24,7 +24,7 @@ test('does not classify an unmapped muscle from force alone', () => {
   assert.equal(convertExercise({ id: 'Unknown_Push', name: 'Unknown push', force: 'push', equipment: 'body only', primaryMuscles: ['unknown'], instructions: [] }).category, null);
 });
 
-// Seen on 8 Nov: "Pullups" is listed as "body only", so it was planned without a bar
+// Seen on 7 Nov: "Pullups" is listed as "body only", so it was planned without a bar
 test('reads a pull-up bar from the instructions of a body-only exercise', () => {
   const card = convertExercise({ id: 'Pullups', name: 'Pullups', force: 'pull', equipment: 'body only', level: 'beginner', primaryMuscles: ['lats'],
     instructions: ['Grab the pull-up bar with the palms facing forward using the prescribed grip.'] });

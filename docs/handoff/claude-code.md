@@ -25,3 +25,7 @@ Read CLAUDE.md, AGENTS.md and .claude/rules first, then docs/handoff/codex-gym.m
 ## Next work and boundaries
 
 Yash asked to stop and hand over now. Do not launch another milestone automatically. Later: free-first agentic gym trainer and nutritionist, evaluated BERT/transformer and DL/ML pieces. These are roadmap intentions, not implemented or live-verified models. Keep assistants draft-only and keep diary/health data local. Provider keys remain in laptop .env; existing coach integrations are documented separately. The PyTorch training loop and injury/seated additions inside ineligibleReason remain reserved for Yash and unchanged. Review the two-stage repetition limitation before considering broader schedule optimisation. Model selection/licences/free-tier availability must be verified when that later work starts.
+
+## Update (7 Nov 2026, Claude Code)
+
+Planner behaviour changed after a full allocation sweep. "What to train" is now a hard rule in `ineligibleReason`, because duration ranking padded sessions with unchosen areas. `rounds.ts` keeps the remainder search for the total, and spreads extra blocks with a bounded subset-sum. Library facts are fixed (`whyNotAddable`, `reviewExercise(entry, minutes)`), gym equipment types are planned, and `training/packs` adds ready-made days. USDA liquids are read per 100 mL. See `docs/milestones/m4-gym-fixes-walkthrough.md`.

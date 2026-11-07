@@ -92,7 +92,7 @@ describe('ineligibleReason', () => {
     expect(ineligibleReason(row, OPEN)).toBeNull();
   });
 
-  // Seen on 8 Nov: asking for push and pull returned jump squats and a plank
+  // Seen on 7 Nov: asking for push and pull returned jump squats and a plank
   it('leaves out an area the person did not choose today, after equipment and before time', () => {
     const plank = MOVEMENT_CARDS.find((card) => card.id === 'plank')!;
     const row = MOVEMENT_CARDS.find((card) => card.id === 'db_row')!;
@@ -283,7 +283,7 @@ it('repeats only selected, eligible blocks while preserving equipment exclusions
   expect(result.excluded.some(entry => entry.card.id === 'jump_squat')).toBe(true);
 });
 
-describe('allocation across every whole-minute target (checked 8 Nov)', () => {
+describe('allocation across every whole-minute target (checked 7 Nov)', () => {
   // The app's real setups: the default form (no kit, push and pull), every area, dumbbells, and all kit
   const SETUPS: [string, PlanRequest][] = [
     ['no kit, push and pull', { ...OPEN, equipment: [], categories: ['push', 'pull'] }],

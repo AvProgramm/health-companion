@@ -70,7 +70,7 @@ describe('buildPack', () => {
   it('covers every area once in a full-body day before repeating one', () => {
     const session = buildPack('full_body', 'easy', 'home', EXERCISE_ENTRIES);
     expect(session.exercises.map(item => item.entry.category)).toEqual(['legs', 'push', 'pull', 'core']);
-    // Seen on 8 Nov: Hard at home gave three leg exercises; each area should differ by at most one
+    // Seen on 7 Nov: Hard at home gave three leg exercises; each area should differ by at most one
     for (const setting of ['home', 'gym'] as const) {
       const counts = new Map<string, number>();
       for (const { entry } of buildPack('full_body', 'hard', setting, EXERCISE_ENTRIES).exercises) counts.set(entry.category!, (counts.get(entry.category!) ?? 0) + 1);

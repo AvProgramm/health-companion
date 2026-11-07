@@ -221,3 +221,10 @@ Preview was restarted after the server-unavailable test. No diary history was se
 
 ## Repeated rounds (7 Nov, Codex)
 Check and build pass. Browser: 31/31, 60/60 (four rounds), 90/90 and 241/241 from starter bodyweight choices; repetition off restores 15/60. Billion-minute input stays compact; ring display overlap reproduced and fixed with an exact-accessibility regression. Cached cold reload and 60/60 planning pass with preview stopped; preview restarted. Physical phone repeat-toggle and airplane-mode check: NOT TESTED. See docs/handoff/claude-code.md.
+
+
+## Gym fixes and USDA liquids (7 Nov 2026, Claude Code)
+- Red first for each fix: USDA per-100 mL and Foundation sugar, importer evidence (bar, pull-up, jumping, untracked kit, gym gear), fixed review facts, packs, area rule, even repeats. `npm run check` and the build pass.
+- Live service code: "milk, 250 ml" now returns a USDA database estimate (146 kcal, all nutrients) instead of falling through to the model. Restart the coach service to load it; not checked through the app yet.
+- Browser (laptop and 375 px): fixed facts on the review sheet (dumbbell row: Pull, Dumbbells; Pullups: Pull-up bar, A pull-up); decline crunches blocked with a reason; ready-made days update on every choice; plan form: no kit push+pull 5 min no plan, 15 min push-up ×2, 60 min push-up ×10; dumbbells push+pull 60 min floor press ×3, row ×3, push-up ×2; no area chosen asks for one. No horizontal overflow at 375 px. No diary entry added.
+- Physical phone check of packs and the new review sheet: NOT TESTED. Reload twice, open Gym, try Leg day at each difficulty, and confirm the diary is still there.

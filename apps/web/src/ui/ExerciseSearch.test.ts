@@ -38,7 +38,7 @@ describe('offline exercise selection', () => {
     expect(onAdd).not.toHaveBeenCalled();
     const review = [...container.querySelectorAll('button')].find(button => button.textContent === 'Review and add')!;
     await act(async () => review.click());
-    // Asked for on 8 Nov: the source's equipment is shown as a fact, with nothing to tick or untick
+    // Asked for on 7 Nov: the source's equipment is shown as a fact, with nothing to tick or untick
     const sheet = container.querySelector('[role="dialog"]') ?? container;
     expect(sheet.textContent).toContain('Dumbbells');
     expect(sheet.querySelectorAll('input[type="checkbox"]')).toHaveLength(0);

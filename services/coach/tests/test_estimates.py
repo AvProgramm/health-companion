@@ -54,7 +54,7 @@ class EstimateTests(unittest.TestCase):
         payload['foods'][0]['foodNutrients'] = payload['foods'][0]['foodNutrients'][:4]
         self.assertIsNone(parse_usda(payload, 'oats')[0].nutrients.unsatfat_g)
 
-    # Reported on 8 Nov: "milk" with "250 ml" lost USDA's calories and fell through to the model
+    # Reported on 7 Nov: "milk" with "250 ml" lost USDA's calories and fell through to the model
     def test_usda_liquid_records_are_per_100_ml(self):
         """Read a branded record served in millilitres as per 100 mL, so a volume portion can use it."""
         payload = {'foods': [{'fdcId': 1, 'description': 'MILK', 'dataType': 'Branded', 'servingSize': 240.0,

@@ -14,7 +14,7 @@ describe('offline exercise search and review', () => {
     expect(searchExercises([entry], '')).toEqual([]);
   });
 
-  // Asked for on 8 Nov: the source says this row needs dumbbells, so the person cannot change that
+  // Asked for on 7 Nov: the source says this row needs dumbbells, so the person cannot change that
   it('keeps the source equipment and needs, and takes only the planning block from the person', () => {
     expect(reviewExercise(entry, 6)).toMatchObject({ id: entry.id, category: 'pull', equipment: ['dumbbells'], requires: [], minutes: 6 });
     expect(() => reviewExercise(entry, Number.NaN)).toThrow();
