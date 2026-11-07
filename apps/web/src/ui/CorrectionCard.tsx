@@ -1,11 +1,12 @@
 import { useState } from 'react';
-import { totalNutrient } from '../domain/aggregate';
-import { correctedQuantity, findCorrectionTargets, type CorrectionTarget } from '../domain/corrections';
-import { summariseDay } from '../domain/day';
-import type { ParsedAmount } from '../domain/parse';
-import { reviseMeal } from '../domain/revisions';
-import type { FoodVersion, MealRevision } from '../domain/types';
-import type { SavedMeal } from '../storage/db';
+import { totalNutrient } from '../domain/nutrition/aggregate';
+import { correctedQuantity, findCorrectionTargets, type CorrectionTarget } from '../domain/meals/corrections';
+import { summariseDay } from '../domain/nutrition/day';
+import type { ParsedAmount } from '../domain/parsing/types';
+import { reviseMeal } from '../domain/meals/revisions';
+import type { FoodVersion } from '../domain/nutrition/types';
+import type { MealRevision } from '../domain/meals/types';
+import type { SavedMeal } from '../storage/mealsRepo';
 import { formatQuantity, mealTitle } from './format';
 
 interface CorrectionCardProps {
@@ -126,7 +127,7 @@ function previewChange(target: CorrectionTarget, quantity: ReturnType<typeof cor
       expectedRevision: target.meal.revision,
       operationKey: 'preview',
       savedAt: new Date().toISOString(),
-      edit: { kind: 'change_amount', componentId: target.component.id, amount: quantity },
+      edit: { kind: 'update_component', componentId: target.component.id, served: quantity, eatenFraction: target.component.eatenFraction },
     });
     if (result.status !== 'revised') {
       return { error: 'This meal changed; reopen the correction.', itemBefore: empty(), itemAfter: empty(), dayBefore: 0, dayAfter: 0 };

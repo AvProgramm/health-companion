@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import type { FoodVersion } from '../domain/types';
+import type { FoodVersion } from '../domain/nutrition/types';
 import { FoodEditor } from './FoodEditor';
 import { SOURCE_LABELS, formatQuantity, formatValue } from './format';
 

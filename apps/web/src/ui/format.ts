@@ -1,6 +1,6 @@
-import type { NutrientTotal } from '../domain/aggregate';
-import type { NutrientKey, NutrientValue, SourceKind } from '../domain/types';
-import type { Quantity } from '../domain/units';
+import type { NutrientTotal } from '../domain/nutrition/aggregate';
+import type { NutrientKey, NutrientValue, SourceKind } from '../domain/nutrition/types';
+import type { Quantity } from '../domain/shared/units';
 
 // How each nutrient is named and measured on screen
 export const NUTRIENT_LABELS: Record<NutrientKey, { label: string; unit: string }> = {

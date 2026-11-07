@@ -1,8 +1,9 @@
-import { foodKey } from '../domain/aggregate';
-import type { DraftItem } from '../domain/parse';
-import { scaleNutrient } from '../domain/scale';
-import type { FoodVersion, MealComponent } from '../domain/types';
-import { areCompatible, type Unit } from '../domain/units';
+import { foodKey } from '../domain/nutrition/aggregate';
+import type { DraftItem } from '../domain/parsing/types';
+import { scaleNutrient } from '../domain/nutrition/scale';
+import type { FoodVersion } from '../domain/nutrition/types';
+import type { MealComponent } from '../domain/meals/types';
+import { areCompatible, type Unit } from '../domain/shared/units';
 import { readAmount } from './format';
 
 // Every unit, filtered per row to the ones that fit the chosen food

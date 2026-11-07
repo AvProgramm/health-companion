@@ -1,5 +1,6 @@
-import { foodKey } from '../domain/aggregate';
-import type { FoodVersion, MealComponent, MealRevision } from '../domain/types';
+import { foodKey } from '../domain/nutrition/aggregate';
+import type { FoodVersion } from '../domain/nutrition/types';
+import type { MealComponent, MealRevision } from '../domain/meals/types';
 import { formatQuantity } from './format';
 
 /**

@@ -19,15 +19,22 @@ npm --prefix apps/web run preview                 # serves the build at 127.0.0.
 Phone setup and the offline gate are in `docs/test-log.md`.
 
 ## Where things live
-- `apps/web/src/domain/`: pure logic, no storage or UI imports. This is where the numbers come from.
-  - `scale.ts`, `aggregate.ts`, `day.ts`: nutrient arithmetic and day totals.
-  - `revisions.ts`: `startMeal`, `reviseMeal`, `reviseAmount`. Every change is a new revision.
-  - `parse.ts`, `corrections.ts`: the composer grammar and correction targeting.
-  - `foods.ts`, `units.ts`, `validate.ts`, `dates.ts`.
-- `apps/web/src/storage/`: `db.ts` (IndexedDB schema and transactions) and `backup.ts` (export, validate, restore).
+Organised by feature, one reason to change per module. Domain never imports storage or UI.
+- `apps/web/src/domain/`: pure logic. This is where the numbers come from.
+  - `shared/`: `units` (conversion, no mass↔volume), `validate` (finite-then-range checks), `dates`.
+  - `nutrition/`: food `types`, `scale` (nutrient per portion), `aggregate` (per meal), `day` (per date), `foods` (label versions, name matching).
+  - `meals/`: meal `types`, `revisions` (`startMeal`, `reviseMeal`: every change is a new revision), `corrections` (which item "actually 250 mL" means).
+  - `training/workouts`, `sleep/sleep`: build and describe workout and sleep entries.
+  - `parsing/`: the composer grammar. `parseEntry` tries an ordered list of small parsers (`question`, `correction`, `sleepEntry`, `workoutEntry`, `meal`); a new kind of entry is a new parser in that list.
+- `apps/web/src/storage/`: `connection` (open, schema upgrades, `runTransaction`), `foodsRepo`, `mealsRepo`, `logsRepo`, `persistence`, and `backup/` (`format`, `validate` with one checker per store, `transfer` for export/restore/erase).
 - `apps/web/src/ui/`: React screens. They call domain and storage and never compute totals themselves.
+- `apps/web/src/test/`: test-only helpers (`goldenFixture`, `testFoods`). Never imported by app code.
 - `eval/fixtures/`: fictional golden cases. `ledger_golden.json` is the source of truth for totals.
 - `docs/`: ADRs, milestone walkthroughs, the device test log and the AI contribution log.
+
+## Design rules
+- **SOLID where it pays:** single-purpose modules, extension by adding to a list (parsers, backup checkers, `MealEdit` cases), and dependencies pointing inward (UI → storage → domain).
+- **YAGNI:** no interface with one implementation, no wrapper or export without a caller in app code, no speculative options. Delete code the app stopped using.
 
 ## Invariants (never break these)
 1. **Unknown is not zero.** A blank label value is `null` and shows as "+ N unknown". An empty day is "nothing logged".
@@ -44,3 +51,4 @@ Phone setup and the offline gate are in `docs/test-log.md`.
 - Stage reviewed paths only (`git add <paths>`, never `-A` or `.`). End commit messages with the Co-Authored-By line. Never force-push.
 - Each milestone ends with `docs/milestones/mN-walkthrough.md`, so Yash can explain it back in his own words.
 - Do not write the functions Yash reserves for himself without asking: `compareCandidates` (planner objective) and the PyTorch training loop.
+- Push to GitHub at every green checkpoint, roughly every 5–6 minutes of work.

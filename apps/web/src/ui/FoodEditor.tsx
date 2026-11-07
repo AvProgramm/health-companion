@@ -1,7 +1,7 @@
 import { useState, type FormEvent } from 'react';
-import { buildFoodVersion } from '../domain/foods';
-import type { FoodVersion, NutrientKey, NutrientValue, SourceKind } from '../domain/types';
-import type { Unit } from '../domain/units';
+import { buildFoodVersion } from '../domain/nutrition/foods';
+import type { FoodVersion, NutrientKey, NutrientValue, SourceKind } from '../domain/nutrition/types';
+import type { Unit } from '../domain/shared/units';
 import { NUTRIENT_LABELS } from './format';
 import { Sheet } from './Sheet';
 

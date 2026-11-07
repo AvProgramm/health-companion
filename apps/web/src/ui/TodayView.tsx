@@ -1,13 +1,15 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type FormEvent } from 'react';
-import { foodKey } from '../domain/aggregate';
-import { correctedQuantity, type CorrectionTarget } from '../domain/corrections';
-import { addDays, deviceZone, localDateIn } from '../domain/dates';
-import { summariseDay } from '../domain/day';
-import { parseEntry, type ParsedAmount } from '../domain/parse';
-import { startMeal } from '../domain/revisions';
-import type { FoodVersion, MealComponent, NutrientKey } from '../domain/types';
-import { areCompatible, type Unit } from '../domain/units';
-import { commitEdit, confirmMeal, mealsOn, type CommitResult, type SavedMeal } from '../storage/db';
+import { foodKey } from '../domain/nutrition/aggregate';
+import { correctedQuantity, type CorrectionTarget } from '../domain/meals/corrections';
+import { addDays, deviceZone, localDateIn } from '../domain/shared/dates';
+import { summariseDay } from '../domain/nutrition/day';
+import { parseEntry } from '../domain/parsing/parseEntry';
+import type { ParsedAmount } from '../domain/parsing/types';
+import { startMeal } from '../domain/meals/revisions';
+import type { FoodVersion, NutrientKey } from '../domain/nutrition/types';
+import type { MealComponent } from '../domain/meals/types';
+import { areCompatible, type Unit } from '../domain/shared/units';
+import { commitEdit, confirmMeal, mealsOn, type CommitResult, type SavedMeal } from '../storage/mealsRepo';
 import type { Durability } from '../storage/persistence';
 import { CorrectionCard } from './CorrectionCard';
 import { DaySummaryCard } from './DaySummaryCard';
@@ -145,7 +147,7 @@ export function TodayView({ db, foods, currentFoods, hideNumbers, durability, on
             expectedRevision: target.meal.revision,
             operationKey: operationKey.current,
             savedAt: new Date().toISOString(),
-            edit: { kind: 'change_amount', componentId: target.component.id, amount: correctedQuantity(amount) },
+            edit: { kind: 'update_component', componentId: target.component.id, served: correctedQuantity(amount), eatenFraction: target.component.eatenFraction },
           },
           foods,
         ),

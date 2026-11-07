@@ -1,8 +1,9 @@
 import { useEffect, useRef, useState } from 'react';
-import { foodKey } from '../domain/aggregate';
-import type { FoodVersion, MealComponent, MealEdit, MealRevision } from '../domain/types';
-import { areCompatible, type Unit } from '../domain/units';
-import { commitEdit, listRevisions, type SavedMeal } from '../storage/db';
+import { foodKey } from '../domain/nutrition/aggregate';
+import type { FoodVersion } from '../domain/nutrition/types';
+import type { MealComponent, MealEdit, MealRevision } from '../domain/meals/types';
+import { areCompatible, type Unit } from '../domain/shared/units';
+import { commitEdit, listRevisions, type SavedMeal } from '../storage/mealsRepo';
 import { describeChange, nameOf } from './describe';
 import { formatEaten, formatQuantity, formatTime, mealTitle, readAmount } from './format';
 import { Sheet } from './Sheet';

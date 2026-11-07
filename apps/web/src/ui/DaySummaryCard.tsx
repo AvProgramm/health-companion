@@ -1,5 +1,5 @@
-import type { DaySummary } from '../domain/day';
-import type { NutrientKey } from '../domain/types';
+import type { DaySummary } from '../domain/nutrition/day';
+import type { NutrientKey } from '../domain/nutrition/types';
 import { NUTRIENT_LABELS, formatTotal } from './format';
 
 // The totals shown on Today; saturated fat stays in the meal sheet to keep this short

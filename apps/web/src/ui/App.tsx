@@ -1,8 +1,9 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { foodKey } from '../domain/aggregate';
-import { latestVersions } from '../domain/foods';
-import type { FoodVersion } from '../domain/types';
-import { listFoods, openDiary, saveFoodVersion } from '../storage/db';
+import { foodKey } from '../domain/nutrition/aggregate';
+import { latestVersions } from '../domain/nutrition/foods';
+import type { FoodVersion } from '../domain/nutrition/types';
+import { listFoods, saveFoodVersion } from '../storage/foodsRepo';
+import { openDiary } from '../storage/connection';
 import { readDurability, requestDurability, type Durability } from '../storage/persistence';
 import { FoodsView } from './FoodsView';
 import { MeView } from './MeView';

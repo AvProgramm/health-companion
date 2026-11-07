@@ -1,6 +1,9 @@
 import { useEffect, useState, type ChangeEvent } from 'react';
-import { exportDiary, restoreDiary, validateBackup, type BackupCheck } from '../storage/backup';
-import { countMeals, wipeDiary } from '../storage/db';
+import { exportDiary, restoreDiary } from '../storage/backup/transfer';
+import { validateBackup } from '../storage/backup/validate';
+import { type BackupCheck } from '../storage/backup/format';
+import { countMeals } from '../storage/mealsRepo';
+import { wipeDiary } from '../storage/backup/transfer';
 import type { Durability } from '../storage/persistence';
 import { DURABILITY_TEXT } from './TodayView';
 
