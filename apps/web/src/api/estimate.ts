@@ -15,6 +15,9 @@ export async function requestEstimate(input: { name: string; portionText: string
   } catch {
     throw new Error('Estimates need the laptop. Add it manually or log it now and estimate later.');
   }
+  if (response.status === 503) {
+    throw new Error('No usable estimate was returned. Try a clearer food name and portion, or add it manually.');
+  }
   if (!response.ok) throw new Error('Estimates need the laptop and an available food source. Add it manually or log it now and estimate later.');
   return readEstimate(await response.json());
 }

@@ -37,3 +37,14 @@ describe('estimate boundary and totals', () => {
     ]) expect(() => readEstimate(invalid)).toThrow();
   });
 });
+
+describe('empty nutrition proposals', () => {
+  it('rejects all unknown values while allowing a real zero value', () => {
+    // Reported from the phone on 7 Nov: nasi lemak, with no portion typed.
+    expect(() => readEstimate({ ...proposal,
+      nutrients: Object.fromEntries(Object.keys(proposal.nutrients).map((key) => [key, null])),
+      range: Object.fromEntries(Object.keys(proposal.range).map((key) => [key, null])),
+    })).toThrow('No nutrition values');
+    expect(readEstimate({ ...proposal, nutrients: { ...proposal.nutrients, kcal: 0 }, range: { ...proposal.range, kcal: { low: 0, high: 0 } } }).nutrients.kcal).toBe(0);
+  });
+});

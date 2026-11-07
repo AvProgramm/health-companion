@@ -49,6 +49,10 @@ export function readEstimate(value: unknown): NutritionEstimate {
     if (nutrient !== null && !nonNegative(nutrient)) throw new Error('Return each nutrient as a number or null.');
     if (!(key in value.range)) throw new Error('Return a range for every nutrient.');
   }
+  const nutrients = value.nutrients;
+  if (SUMMARY_NUTRIENTS.every((key) => nutrients[key] === null)) {
+    throw new Error('No nutrition values were returned. Try a clearer portion or add the food manually.');
+  }
   for (const source of value.sources) {
     if (!record(source) || typeof source.provider !== 'string' || source.provider.length === 0 ||
         typeof source.description !== 'string' || typeof source.url !== 'string' || !source.url.startsWith('https://')) {

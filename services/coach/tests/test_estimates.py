@@ -64,6 +64,19 @@ class EstimateTests(unittest.TestCase):
             with self.assertRaises(ValueError):
                 Estimate.model_validate(changed)
 
+    def test_all_unknown_response_is_not_a_usable_estimate(self):
+        """Reject a proposal with no nutrition while retaining genuine zero values."""
+        # Reported from the phone on 7 Nov: nasi lemak with an empty portion.
+        empty = proposal()
+        empty['nutrients'] = dict.fromkeys(empty['nutrients'])
+        empty['range'] = dict.fromkeys(empty['range'])
+        with self.assertRaises(ValueError):
+            Estimate.model_validate(empty)
+        zero = proposal()
+        zero['nutrients']['kcal'] = 0
+        zero['range']['kcal'] = {'low': 0, 'high': 0}
+        self.assertEqual(Estimate.model_validate(zero).nutrients.kcal, 0)
+
     def test_database_prevents_llm_call_and_timeout_falls_back(self):
         """Use the LLM only after no usable database match remains."""
         database = AsyncMock(return_value=Estimate.model_validate(proposal('database')))

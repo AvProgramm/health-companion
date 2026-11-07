@@ -124,3 +124,19 @@ describe('manual estimate editing', () => {
     expect(onSave.mock.calls[0]![0].range).toBeUndefined();
   });
 });
+
+describe('phone estimate regression', () => {
+  it('never offers Use estimate when the provider returned no nutrition', async () => {
+    // Reported from the phone on 7 Nov: nasi lemak with empty portion text.
+    const onUse = vi.fn();
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue({ ok: true, json: async () => ({ ...proposal,
+      nutrients: Object.fromEntries(Object.keys(proposal.nutrients).map((key) => [key, null])),
+      range: Object.fromEntries(Object.keys(proposal.range).map((key) => [key, null])),
+    }) }));
+    await act(async () => root.render(createElement(EstimateDraft, { name: 'nasi lemak', portionText: '', hideNumbers: false, onUse, onEdit: vi.fn() })));
+    await tap('Estimate nutrition');
+    expect(container.textContent).toContain('No nutrition values');
+    expect([...container.querySelectorAll('button')].some((button) => button.textContent === 'Use estimate')).toBe(false);
+    expect(onUse).not.toHaveBeenCalled();
+  });
+});

@@ -56,6 +56,9 @@ class Estimate(StrictModel):
     def check_ranges(self):
         """Reject missing bounds or bounds that contradict the centre value."""
         values = self.nutrients.model_dump()
+        # Ignore an empty proposal because it cannot help the user estimate nutrition.
+        if all(value is None for value in values.values()):
+            raise ValueError('No nutrition values were returned. Try a clearer food name and portion.')
         if self.range.keys() != values.keys():
             raise ValueError('Return a range key for every nutrient.')
         for key, value in values.items():
