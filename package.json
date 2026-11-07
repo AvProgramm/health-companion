@@ -3,6 +3,6 @@
   "private": true,
   "description": "Repository-level commands; the app itself lives in apps/web.",
   "scripts": {
-    "check": "node .claude/hooks/check-changed.mjs --all && node scripts/check-coach.mjs"
+    "check": "node .claude/hooks/check-changed.mjs --all && node scripts/check-coach.mjs && node --test scripts/import-exercises.test.mjs"
   }
 }

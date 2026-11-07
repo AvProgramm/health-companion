@@ -1,6 +1,8 @@
-import { useState, type FormEvent } from 'react';
-import { MOVEMENT_CARDS, type Capability, type Category, type Equipment } from '../domain/training/catalogue';
+import { useEffect, useState, type FormEvent } from 'react';
+import { type MovementCard, type Capability, type Category, type Equipment } from '../domain/training/catalogue';
 import { bestPlan, type PlanResult } from '../domain/training/planner';
+import { MinutesRing } from './MinutesRing';
+import { MuscleMap } from './MuscleMap';
 
 // The choices on the form, as they read on screen
 const EQUIPMENT_CHOICES: readonly [Equipment, string][] = [['dumbbells', 'Dumbbells'], ['band', 'Resistance band'], ['pull_up_bar', 'Pull-up bar']];
@@ -12,13 +14,16 @@ const CATEGORY_CHOICES: readonly [Category, string][] = [['push', 'Push'], ['pul
  *
  * The plan is only a suggestion; logging what was actually done stays on Today.
  */
-export function PlanSession() {
+export function PlanSession({ cards }: { cards: readonly MovementCard[] }) {
   const [minutesText, setMinutesText] = useState('20');
   const [equipment, setEquipment] = useState<Equipment[]>(['dumbbells']);
   const [unableTo, setUnableTo] = useState<Capability[]>([]);
   const [categories, setCategories] = useState<Category[]>(['push', 'pull']);
   const [result, setResult] = useState<PlanResult | null>(null);
   const [error, setError] = useState<string | null>(null);
+
+  // Ignore a stale result because the set of chosen exercises has changed.
+  useEffect(() => setResult(null), [cards]);
 
   /**
    * Run the planner on the form's values.
@@ -34,13 +39,14 @@ export function PlanSession() {
       return;
     }
 
-    setResult(bestPlan({ minutes, equipment, unableTo, neverSuggest: [], categories, preferences: {} }, MOVEMENT_CARDS));
+    setResult(bestPlan({ minutes, equipment, unableTo, neverSuggest: [], categories, preferences: {} }, cards));
   }
 
   return (
-    <section className="card" aria-labelledby="plan-heading">
-      <h2 id="plan-heading" className="heading">Plan a session</h2>
-      <form className="form" onSubmit={handleSubmit}>
+    <section className="card plan-session-card" aria-labelledby="plan-heading">
+      <div><p className="eyebrow">YOUR TIME, YOUR MOVEMENTS</p><h2 id="plan-heading" className="heading">Plan a session</h2></div>
+      <p className="hint">Planning over {cards.length} reviewed or explicitly chosen exercises.</p>
+      <form className="form" onSubmit={handleSubmit} onChange={() => setResult(null)}>
         <label className="field">
           <span className="label">Minutes you have</span>
           <input className="input input-short" inputMode="numeric" value={minutesText} onChange={(event) => setMinutesText(event.target.value)} />
@@ -54,15 +60,18 @@ export function PlanSession() {
       {error !== null && <p className="notice notice-error" role="alert">{error}</p>}
 
       {result?.status === 'plan' && (
-        <div className="stack" aria-live="polite">
+        <div className="stack gym-plan-result" aria-live="polite">
+          <div className="plan-overview"><MinutesRing used={result.plan.minutes} available={Number(minutesText)} /><div><p className="eyebrow">YOUR SESSION</p><h3 className="heading">A plan that fits.</h3><div className="coverage-chips">{CATEGORY_CHOICES.map(([value, label]) => <span className={`category-chip ${result.plan.cards.some(card => card.category === value) ? `category-${value}` : 'category-uncovered'}`} key={value}>{label}</span>)}</div></div></div>
           <ol className="items">
             {result.plan.cards.map((card) => (
-              <li key={card.id} className="item">
+              <li key={card.id} className="item planned-exercise">
+                <MuscleMap category={card.category} muscles={card.primaryMuscles} /><div>
                 <div className="item-main">
                   <span>{card.name}</span>
                   <span className="numbers">{card.minutes} min · {card.category}</span>
                 </div>
-                <span className="hint">{card.cue}</span>
+                <details className="exercise-instructions"><summary>Instructions</summary><p className="hint">{card.cue}</p></details>
+                </div>
               </li>
             ))}
           </ol>
