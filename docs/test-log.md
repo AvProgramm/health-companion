@@ -183,3 +183,48 @@ Final automated checkpoint for this follow-up: 150 app tests, 15 coach tests, ty
 | Gym tab "Find a plan" with the stub | "compareCandidates is not written yet", no crash | PASS (browser pane) |
 | 0 minutes | "There is no time for a session today. Rest is a valid choice." plus every exclusion reason | PASS (browser pane) |
 | A real plan on screen, phone | Needs compareCandidates | NOT TESTED |
+
+
+## M4 exercise search and Gym UI (7 Nov 2026, Codex)
+
+| Check | Observed | Result |
+|---|---|---|
+| Automated check and production build | App/type/hook/coach/importer checks pass; separate dataset chunk emits and is precached | PASS |
+| Migration from versions 1, 2, 3 | Meals preserved; version-3 workout/sleep snapshots unchanged; customCards store added | PASS (fake IndexedDB) |
+| Backup/wipe/restore | Fictional choice preserved alongside diary; older backups get empty choices | PASS (unit test) |
+| Operation retry, stale version, cap, invalid data | Replay/conflict/rollback and validation paths covered | PASS (unit test) |
+| Confirmed choice -> planner -> reload | Added row appears in plan; choice survives reload | PASS (browser) |
+| Preview server stopped | Cached reload, local Air Bike search/add, reload and plan work; remove returns pool to eight | PASS (browser, server unavailable) |
+| 375 px / 1440 px | Phone one column and bottom dock, no horizontal overflow; laptop sidebar/two columns | PASS (browser widths) |
+| Real phone upgrade and airplane-mode cold reopen | Follow walkthrough; old entries must remain before adding | NOT TESTED |
+
+Preview was restarted after the server-unavailable test. No diary history was sent to any service. See `docs/milestones/m4-exercise-search-walkthrough.md` for limits and explain-back.
+
+
+## Compact Gym session setup (7 Nov 2026, Codex)
+
+- Yash reported the previous exercise feature works on his phone; screenshot shows the Gym planner. This does not establish the full migration/airplane-mode gate.
+- Red first: the new compact-control and equipment-mode tests failed against the previous form. Five planner UI tests now pass with the full check and build.
+- Browser at 375 px: shorter form, Without / With equipment, What to train retained, no horizontal overflow, bottom dock visible. Laptop layout retained at 1440 px.
+- Browser: Without equipment produces a bodyweight plan; With equipment with no gear prompts for selection. Selecting resistance band yields band pull-apart + push-up, 11 of 20 min. Switching mode clears the previous plan.
+- Physical phone check of the new controls: NOT TESTED. Reload twice and test both modes after confirming the existing diary is still present.
+
+
+## Target-duration Gym sessions (7 Nov 2026, Codex)
+
+- Red first: target-duration, cap, ranking, invalid-target and partial-session UI regressions fail against the old planner. Check and build pass after implementation.
+- Independent exhaustive oracle: original twelve scenarios plus twelve ten-card scenarios with mixed preferences and hard filters. Exact 60/60, near 59/60, thirteen-card cap, 32-card state bound and stable input ordering are covered.
+- Browser: starter-only bodyweight pool shows A partial session, 15/60, 45 min unfilled. With nine temporary five-minute choices confirmed through the normal UI, planner shows Your target is covered, 60/60, twelve unique exercises. Test choices removed; no workout logged.
+- Browser widths 375/1440 px: full-target ring and cards render; phone-width content has no horizontal overflow. These temporary choices test arithmetic and UI, not a recommended training programme.
+- Physical phone target-duration check: NOT TESTED. Reload twice, use 60 minutes with enough reviewed choices and available equipment; verify the target or a clearly labelled shortfall. Existing diary must remain intact.
+
+
+## Repeated rounds (7 Nov, Codex)
+Check and build pass. Browser: 31/31, 60/60 (four rounds), 90/90 and 241/241 from starter bodyweight choices; repetition off restores 15/60. Billion-minute input stays compact; ring display overlap reproduced and fixed with an exact-accessibility regression. Cached cold reload and 60/60 planning pass with preview stopped; preview restarted. Physical phone repeat-toggle and airplane-mode check: NOT TESTED. See docs/handoff/claude-code.md.
+
+
+## Gym fixes and USDA liquids (7 Nov 2026, Claude Code)
+- Red first for each fix: USDA per-100 mL and Foundation sugar, importer evidence (bar, pull-up, jumping, untracked kit, gym gear), fixed review facts, packs, area rule, even repeats. `npm run check` and the build pass.
+- Live service code: "milk, 250 ml" now returns a USDA database estimate (146 kcal, all nutrients) instead of falling through to the model. Restart the coach service to load it; not checked through the app yet.
+- Browser (laptop and 375 px): fixed facts on the review sheet (dumbbell row: Pull, Dumbbells; Pullups: Pull-up bar, A pull-up); decline crunches blocked with a reason; ready-made days update on every choice; plan form: no kit push+pull 5 min no plan, 15 min push-up ×2, 60 min push-up ×10; dumbbells push+pull 60 min floor press ×3, row ×3, push-up ×2; no area chosen asks for one. No horizontal overflow at 375 px. No diary entry added.
+- Physical phone check of packs and the new review sheet: NOT TESTED. Reload twice, open Gym, try Leg day at each difficulty, and confirm the diary is still there.

@@ -1,5 +1,7 @@
 # Milestone 4 (part 1): the workout planner (FIT3080)
 
+Historical walkthrough of the original DFS planner. The current target-duration ranking, twelve-card limit and bounded dynamic programming search supersede sections 3–4 below: see [target-duration walkthrough](m4-target-duration-walkthrough.md). Yash explicitly authorised that update on 7 Nov; the training loop and injury rules remain reserved.
+
 "I have 12 minutes, dumbbells, and I can't do pull-ups. What should I do?" The planner answers with one checked session, or an honest "no plan".
 
 ## 1. A small, reviewed catalogue

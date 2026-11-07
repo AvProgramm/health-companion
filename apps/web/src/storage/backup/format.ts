@@ -1,6 +1,7 @@
 /**
  * The backup file format: what it contains and how its contents are counted.
  */
+import type { CustomCardSelection } from '../../domain/training/customCards';
 import type { MealRevision } from '../../domain/meals/types';
 import type { FoodVersion } from '../../domain/nutrition/types';
 import type { SleepEntry } from '../../domain/sleep/sleep';
@@ -12,7 +13,7 @@ export const BACKUP_FORMAT = 'health-companion-backup';
 export const BACKUP_FORMAT_VERSION = 1;
 
 // Lists added after the first backups were made; an older file without them restores them as empty
-export const OPTIONAL_LISTS = ['workouts', 'sleep'] as const;
+export const OPTIONAL_LISTS = ['workouts', 'sleep', 'customCards'] as const;
 
 export interface DiaryBackup {
   format: typeof BACKUP_FORMAT;
@@ -25,6 +26,7 @@ export interface DiaryBackup {
   operations: OperationRecord[];
   workouts: WorkoutEntry[];
   sleep: SleepEntry[];
+  customCards: CustomCardSelection[];
 }
 
 export interface BackupCounts {
@@ -33,6 +35,7 @@ export interface BackupCounts {
   revisions: number;
   workouts: number;
   sleep: number;
+  customCards: number;
 }
 
 export type BackupCheck =
@@ -49,5 +52,6 @@ export function countBackup(backup: DiaryBackup): BackupCounts {
     revisions: backup.revisions.length,
     workouts: backup.workouts.length,
     sleep: backup.sleep.length,
+    customCards: backup.customCards.length,
   };
 }

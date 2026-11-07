@@ -8,6 +8,7 @@ import { buildSleep, resolveSleep, type SleepEntry } from '../../domain/sleep/sl
 import { buildWorkout, type WorkoutEntry } from '../../domain/training/workouts';
 import { MILK, RICE, TEST_FOOD_MAP, WEETABIX } from '../../test/testFoods';
 import { openDiary } from '../connection';
+import { listCustomCards, saveCustomCard } from '../customCardsRepo';
 import { saveFoodVersion } from '../foodsRepo';
 import { logsOn, saveLogEntry } from '../logsRepo';
 import { commitEdit, confirmMeal, countMeals, listRevisions, mealsOn } from '../mealsRepo';
@@ -50,6 +51,10 @@ beforeEach(async () => {
     { movement: 'Row', status: 'done', sets: [{ reps: 8, load: 5, loadUnit: 'kg', perHand: true, minutes: null, distanceKm: null }] },
     { id: 'row-1', operationKey: 'w1', localDate: '2026-11-09', zone: 'Asia/Kuala_Lumpur', savedAt: '2026-11-09T18:00:00+08:00' },
   ));
+  // Save a fictional exercise choice alongside the diary records.
+  await saveCustomCard(db, { id: 'free-exercise-db:fictional', version: 1, operationKey: 'choice-1', savedAt: '2026-11-09T18:00:00Z', deleted: false,
+    source: { dataset: 'free-exercise-db', revision: 'a'.repeat(40) },
+    card: { id: 'free-exercise-db:fictional', name: 'Fictional row', category: 'pull', equipment: [], requires: [], minutes: 5, cue: 'Fictional instructions.' } }, 0);
   const night = resolveSleep('2026-11-09', { hour: 23, minute: 30, meridiem: null }, { hour: 7, minute: 0, meridiem: null });
   await saveLogEntry(db, 'sleep', buildSleep(night, null, { id: 's1', operationKey: 's1', zone: 'Asia/Kuala_Lumpur', savedAt: '2026-11-09T07:30:00+08:00' }));
 });
@@ -73,13 +78,14 @@ describe('export and restore', () => {
   it('restores identical totals, history, workouts and sleep after a wipe', async () => {
     const before = await dayTotals(db);
     const checked = await checkedExport();
-    expect(checked.counts).toEqual({ foods: 3, meals: 2, revisions: 3, workouts: 1, sleep: 1 });
+    expect(checked.counts).toEqual({ foods: 3, meals: 2, revisions: 3, workouts: 1, sleep: 1, customCards: 1 });
 
     await wipeDiary(db);
     expect(await countMeals(db)).toBe(0);
     await restoreDiary(db, checked);
 
     expect(await dayTotals(db)).toEqual(before);
+    expect((await listCustomCards(db)).map(choice => choice.card.name)).toEqual(['Fictional row']);
     expect(await listRevisions(db, 'breakfast')).toHaveLength(2);
     expect((await logsOn<WorkoutEntry>(db, 'workouts', '2026-11-09')).map((entry) => entry.movement)).toEqual(['Row']);
     expect((await logsOn<SleepEntry>(db, 'sleep', '2026-11-09')).map((entry) => entry.timeInBedMin)).toEqual([450]);
@@ -89,10 +95,11 @@ describe('export and restore', () => {
     const file = JSON.parse(JSON.stringify(await exportDiary(db)));
     delete file.workouts;
     delete file.sleep;
+    delete file.customCards;
     file.schemaVersion = 2;
 
     const checked = validateBackup(file);
-    expect(checked.ok ? checked.counts : checked.errors).toEqual({ foods: 3, meals: 2, revisions: 3, workouts: 0, sleep: 0 });
+    expect(checked.ok ? checked.counts : checked.errors).toEqual({ foods: 3, meals: 2, revisions: 3, workouts: 0, sleep: 0, customCards: 0 });
   });
 
   it('still rejects a stale correction after a restore', async () => {

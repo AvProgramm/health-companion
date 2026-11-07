@@ -6,8 +6,10 @@ from .models import Basis, Estimate, Nutrients, Source
 
 # USDA nutrient identifiers avoid matching translated display names.
 USDA_KEYS = {1008: ('kcal', 'KCAL'), 1003: ('protein_g', 'G'), 1005: ('carbs_g', 'G'), 1079: ('fibre_g', 'G'),
-             2000: ('total_sugar_g', 'G'), 1235: ('added_sugar_g', 'G'), 1004: ('fat_g', 'G'),
-             1258: ('satfat_g', 'G'), 1093: ('sodium_mg', 'MG')}
+             2000: ('total_sugar_g', 'G'), 1063: ('total_sugar_g', 'G'), 1235: ('added_sugar_g', 'G'),
+             1004: ('fat_g', 'G'), 1258: ('satfat_g', 'G'), 1093: ('sodium_mg', 'MG')}
+# Branded records served in millilitres publish their values per 100 mL, not per 100 g
+USDA_VOLUME_UNITS = {'ML', 'MLT'}
 # Unsaturated fat is published in two parts that must both be known to add up
 USDA_UNSATURATED = {1292: 'mono', 1293: 'poly'}
 # Open Food Facts stores energy separately from grams of each nutrient.
@@ -69,7 +71,8 @@ def parse_usda(payload, name):
                 continue
             identity_number = nutrient.get('nutrientId')
             field = USDA_KEYS.get(identity_number)
-            if field and str(nutrient.get('unitName', '')).upper() == field[1]:
+            # Keep the first value published for a nutrient, so a second identifier cannot overwrite it
+            if field and str(nutrient.get('unitName', '')).upper() == field[1] and values[field[0]] is None:
                 values[field[0]] = number(nutrient.get('value'))
             elif identity_number in USDA_UNSATURATED and str(nutrient.get('unitName', '')).upper() == 'G':
                 parts[USDA_UNSATURATED[identity_number]] = number(nutrient.get('value'))
@@ -77,8 +80,9 @@ def parse_usda(payload, name):
         if all(value is None for value in values.values()):
             continue
         seen.add(identity)
+        unit = 'mL' if str(food.get('servingSizeUnit', '')).upper() in USDA_VOLUME_UNITS else 'g'
         matches.append(Match(Nutrients(**values), Source(provider='USDA', description=description[:240],
-            url=f'https://fdc.nal.usda.gov/food-details/{identity}/nutrients')))
+            url=f'https://fdc.nal.usda.gov/food-details/{identity}/nutrients'), unit))
     return matches
 
 

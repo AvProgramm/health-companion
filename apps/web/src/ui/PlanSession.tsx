@@ -1,24 +1,43 @@
-import { useState, type FormEvent } from 'react';
-import { MOVEMENT_CARDS, type Capability, type Category, type Equipment } from '../domain/training/catalogue';
-import { bestPlan, type PlanResult } from '../domain/training/planner';
+import { useEffect, useState, type FormEvent } from 'react';
+import { type MovementCard, type Category, type Equipment } from '../domain/training/catalogue';
+import { bestPlan, MAX_CARDS, type PlanResult } from '../domain/training/planner';
+import { EQUIPMENT_LABELS } from './format';
+import { MinutesRing } from './MinutesRing';
+import { MuscleMap } from './MuscleMap';
 
-// The choices on the form, as they read on screen
-const EQUIPMENT_CHOICES: readonly [Equipment, string][] = [['dumbbells', 'Dumbbells'], ['band', 'Resistance band'], ['pull_up_bar', 'Pull-up bar']];
-const CAPABILITY_CHOICES: readonly [Capability, string][] = [['pull_up', 'Pull-ups'], ['jumping', 'Jumping']];
+// Every equipment type the planner understands, as it reads on a chip
+const EQUIPMENT_CHOICES = Object.entries(EQUIPMENT_LABELS) as [Equipment, string][];
+// Keep the four training areas available in both equipment modes.
 const CATEGORY_CHOICES: readonly [Category, string][] = [['push', 'Push'], ['pull', 'Pull'], ['legs', 'Legs'], ['core', 'Core']];
 
 /**
- * The "Plan a session" card: what you have today in, one checked plan (or an honest "none") out.
+ * Display the available equipment and return one checked session or an honest reason.
  *
  * The plan is only a suggestion; logging what was actually done stays on Today.
  */
-export function PlanSession() {
+export function PlanSession({ cards }: { cards: readonly MovementCard[] }) {
   const [minutesText, setMinutesText] = useState('20');
-  const [equipment, setEquipment] = useState<Equipment[]>(['dumbbells']);
-  const [unableTo, setUnableTo] = useState<Capability[]>([]);
+  // Start with a bodyweight session; choosing an exercise does not establish equipment ownership.
+  const [equipmentMode, setEquipmentMode] = useState<'without' | 'with'>('without');
+  const [selectedEquipment, setSelectedEquipment] = useState<Equipment[] | null>(null);
+  // Repeat reviewed blocks only while this explicit session option is enabled.
+  const [repeatRounds, setRepeatRounds] = useState(true);
   const [categories, setCategories] = useState<Category[]>(['push', 'pull']);
   const [result, setResult] = useState<PlanResult | null>(null);
   const [error, setError] = useState<string | null>(null);
+
+  // Suggest gear from explicitly added exercises, while offering only gear used by the pool.
+  const equipmentChoices = EQUIPMENT_CHOICES.filter(([value]) => cards.some(card => card.equipment.includes(value)));
+  const suggestedEquipment = [...new Set(cards.filter(card => card.id.startsWith('free-exercise-db:')).flatMap(card => card.equipment))];
+  const equipment = (selectedEquipment ?? suggestedEquipment).filter(value => equipmentChoices.some(([option]) => option === value));
+
+  // Display compact repetition counts without expanding hundreds of repeated rows.
+  const session = result?.status === 'plan' ? result : null;
+  const plannedMinutes = session?.schedule?.minutes ?? session?.plan.minutes ?? 0;
+  const plannedBlocks = session?.schedule?.blocks ?? session?.plan.cards.map(card => ({ card, repeatCount: 1, minutes: card.minutes })) ?? [];
+
+  // Ignore a stale result because the set of chosen exercises has changed.
+  useEffect(() => setResult(null), [cards]);
 
   /**
    * Run the planner on the form's values.
@@ -29,47 +48,79 @@ export function PlanSession() {
     const minutes = Number(minutesText);
 
     // Check the time before planning, since every rule depends on it
-    if (minutesText.trim() === '' || !Number.isFinite(minutes) || minutes < 0) {
-      setError('Enter the minutes you have, for example 20.');
+    if (minutesText.trim() === '' || !Number.isSafeInteger(minutes) || minutes < 0) {
+      setError('Enter a valid non-negative whole-minute target.');
       return;
     }
 
-    setResult(bestPlan({ minutes, equipment, unableTo, neverSuggest: [], categories, preferences: {} }, MOVEMENT_CARDS));
+    // Ignore a session with no area chosen, because every exercise would be left out
+    if (categories.length === 0) {
+      setError('Choose at least one area to train.');
+      return;
+    }
+
+    // Ignore an equipment session without selected gear because ownership must not be guessed.
+    if (equipmentMode === 'with' && equipment.length === 0) {
+      setError('Choose the equipment available today, or switch to Without equipment.');
+      return;
+    }
+
+    // Pass the chosen kit through the existing hard filters; no capability profile is inferred here.
+    setResult(bestPlan({ minutes, equipment: equipmentMode === 'without' ? [] : equipment, unableTo: [], neverSuggest: [], categories, preferences: {} }, cards, repeatRounds));
   }
 
   return (
-    <section className="card" aria-labelledby="plan-heading">
-      <h2 id="plan-heading" className="heading">Plan a session</h2>
-      <form className="form" onSubmit={handleSubmit}>
+    <section className="card plan-session-card" aria-labelledby="plan-heading">
+      <div><p className="eyebrow">YOUR TIME, YOUR MOVEMENTS</p><h2 id="plan-heading" className="heading">Plan a session</h2></div>
+      <p className="hint">Planning over {cards.length} reviewed or explicitly chosen exercises.</p>
+      <form className="form" onSubmit={handleSubmit} onChange={() => setResult(null)}>
         <label className="field">
-          <span className="label">Minutes you have</span>
+          <span className="label">Target duration (minutes)</span>
           <input className="input input-short" inputMode="numeric" value={minutesText} onChange={(event) => setMinutesText(event.target.value)} />
         </label>
-        <Choices legend="Equipment you have" choices={EQUIPMENT_CHOICES} selected={equipment} onChange={setEquipment} />
-        <Choices legend="You cannot do" choices={CAPABILITY_CHOICES} selected={unableTo} onChange={setUnableTo} />
+        <fieldset className="fieldset">
+          <legend className="label">Session setup</legend>
+          <div className="equipment-modes">
+            <label className="equipment-mode"><input type="radio" name="session-equipment" value="without" checked={equipmentMode === 'without'} onChange={() => { setEquipmentMode('without'); setError(null); }} /><span>Without equipment</span></label>
+            <label className="equipment-mode"><input type="radio" name="session-equipment" value="with" checked={equipmentMode === 'with'} onChange={() => { setEquipmentMode('with'); setError(null); }} /><span>With equipment</span></label>
+          </div>
+        </fieldset>
+        {equipmentMode === 'with' && <div className="session-equipment">
+          <Choices legend="Available for this session" choices={equipmentChoices} selected={equipment} onChange={setSelectedEquipment} />
+          <p className="hint">{suggestedEquipment.length > 0 ? 'Suggested from your added exercises. Keep only the gear you have today.' : 'Choose the gear you have today.'} Bodyweight movements can still be included.</p>
+        </div>}
         <Choices legend="What to train" choices={CATEGORY_CHOICES} selected={categories} onChange={setCategories} />
+        <label className="choice"><input type="checkbox" name="repeatRounds" checked={repeatRounds} onChange={event => setRepeatRounds(event.target.checked)} />Repeat rounds to fill the target</label>
         <button type="submit" className="button">Find a plan</button>
       </form>
 
       {error !== null && <p className="notice notice-error" role="alert">{error}</p>}
 
       {result?.status === 'plan' && (
-        <div className="stack" aria-live="polite">
+        <div className="stack gym-plan-result" aria-live="polite">
+          <div className="plan-overview"><MinutesRing used={plannedMinutes} available={Number(minutesText)} /><div><p className="eyebrow">YOUR SESSION</p><h3 className="heading">{result.unfilledMinutes === 0 ? 'Your target is covered.' : 'A partial session.'}</h3><div className="coverage-chips">{CATEGORY_CHOICES.map(([value, label]) => <span className={`category-chip ${result.plan.cards.some(card => card.category === value) ? `category-${value}` : 'category-uncovered'}`} key={value}>{label}</span>)}</div></div></div>
           <ol className="items">
-            {result.plan.cards.map((card) => (
-              <li key={card.id} className="item">
+            {plannedBlocks.map(({ card, repeatCount, minutes }) => (
+              <li key={card.id} className="item planned-exercise">
+                <MuscleMap category={card.category} muscles={card.primaryMuscles} /><div>
                 <div className="item-main">
                   <span>{card.name}</span>
-                  <span className="numbers">{card.minutes} min · {card.category}</span>
+                  <span className="numbers">{minutes} min · {card.category}{repeatCount > 1 && ` · ${repeatCount} × ${card.minutes}-min blocks`}</span>
                 </div>
-                <span className="hint">{card.cue}</span>
+                <details className="exercise-instructions"><summary>Instructions</summary><p className="hint">{card.cue}</p></details>
+                </div>
               </li>
             ))}
           </ol>
           <p className="body numbers">
-            {result.plan.minutes} of {minutesText} min · covers {result.plan.covered} of {categories.length} chosen areas
+            {plannedMinutes} of {minutesText} min · covers {result.plan.covered} of {categories.length} chosen areas
           </p>
-          <p className="hint">Best of {result.considered} possible sessions. A suggestion only: log what you actually did on Today.</p>
+          {result.plan.cards.length === 1 && <p className="hint">Only {result.plan.cards[0]!.name} fits these choices. Add exercises from the library, or try a ready-made day, for more variety.</p>}
+          {result.unfilledMinutes > 0 && <p className="notice">{result.unfilledMinutes} min unfilled. These reviewed blocks do not fill the last part of this target. Adjust the target or choose additional blocks.</p>}
+          {result.schedule && <p className="body">{result.schedule.fullRounds} full {result.schedule.fullRounds === 1 ? 'round' : 'rounds'}{result.schedule.extraBlocks > 0 && ` + ${result.schedule.extraBlocks} extra blocks`}. Review these repeated blocks before training.</p>}
+          <p className="hint">Up to {MAX_CARDS} distinct exercises; planning blocks keep their reviewed durations.{!result.schedule && ' Each exercise is used once.'}</p>
+          <details><summary className="hint">How this plan was chosen</summary><p className="hint">Coverage first, then closest to your target without going over, then preference. Compared {result.considered} planning options.{result.schedule && ' The selected round is repeated, with extra blocks where their lengths fit.'}</p></details>
+          <p className="hint">A suggestion only: log what you actually did on Today.</p>
         </div>
       )}
 
@@ -97,7 +148,7 @@ interface ChoicesProps<T extends string> {
 }
 
 /**
- * A labelled group of checkboxes over a fixed list of choices.
+ * Display a labelled group of checkboxes over a fixed list of choices.
  */
 function Choices<T extends string>({ legend, choices, selected, onChange }: ChoicesProps<T>) {
   return (
@@ -108,6 +159,7 @@ function Choices<T extends string>({ legend, choices, selected, onChange }: Choi
           <label key={value} className="choice">
             <input
               type="checkbox"
+              value={value}
               checked={selected.includes(value)}
               onChange={(event) => onChange(event.target.checked ? [...selected, value] : selected.filter((item) => item !== value))}
             />

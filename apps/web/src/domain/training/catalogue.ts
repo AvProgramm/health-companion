@@ -7,7 +7,9 @@
  */
 
 export type Category = 'push' | 'pull' | 'legs' | 'core';
-export type Equipment = 'dumbbells' | 'band' | 'pull_up_bar';
+// Home kit first, then the gym equipment the exercise library names
+export type Equipment = 'dumbbells' | 'band' | 'pull_up_bar' | 'kettlebells' | 'barbell' | 'ez_curl_bar' | 'cable' | 'machine'
+  | 'medicine_ball' | 'exercise_ball' | 'foam_roll';
 export type Capability = 'pull_up' | 'jumping';
 
 /**
@@ -23,6 +25,8 @@ export interface MovementCard {
   // Abilities the exercise needs; someone who cannot do one never gets the card
   requires: readonly Capability[];
   cue: string;
+  primaryMuscles?: readonly string[];
+  imagePath?: string | null;
 }
 
 export const MOVEMENT_CARDS: readonly MovementCard[] = [

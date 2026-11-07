@@ -40,7 +40,7 @@ Goal: when the composer meets an unknown food ("nasi lemak", "2 weetabix"), the 
    - New `domain/nutrition/rules.ts`. A rule has a kind (`allergy` | `exclusion` | `dislike`), food tags (meat, poultry, fish, egg, dairy, beef, pork, alcohol, caffeine), and optional inclusive `startDate`/`endDate`.
    - Foods get optional `tags` in `FoodVersion`. Add tag checkboxes to `ui/FoodEditor.tsx`.
    - A draft or meal shows a badge such as "Outside your vegetarian rule (11–19 Oct)". **It never blocks a save.** It never infers a rule from identity or religion, and there are no fasting windows.
-   - Storage: a new `rules` store means schema **v4**. Follow `.claude/skills/schema-migration/SKILL.md` exactly: an upgrade test from v3 with data, plus a backup checker.
+   - Storage: a new `rules` store means schema **v5** (v4 now holds `customCards`). Follow `.claude/skills/schema-migration/SKILL.md` exactly: an upgrade test from v4 with data, plus a backup checker.
 2. **Local photo on a meal (FR08).**
    - Resize the photo and re-encode it to strip metadata (canvas → JPEG blob), then store it in an `attachments` store.
    - Never upload it. Backups exclude images by default and say so.
@@ -52,6 +52,7 @@ Goal: when the composer meets an unknown food ("nasi lemak", "2 weetabix"), the 
 
 ### M4: workout planner (FIT3080) + intent router (FIT3181)
 - **Planner** (`domain/training/planner.ts`):
+  - Current implementation supersedes the original DFS/stub checklist below: bounded target-duration DP, twelve-card cap, coverage then duration then preference ranking. Explicitly authorised by Yash on 7 Nov. Read `docs/milestones/m4-target-duration-walkthrough.md`; the older bullets describe the original milestone.
   - Depth-first search over at most 8 reviewed movement cards (equipment, capability tags, duration, category).
   - Hard filters come first and are never relaxed. "No plan" is a valid answer.
   - Tests compare against a brute-force oracle, plus the greedy counterexample in kit doc 04 (12 min; A=10 push, B=6 push, C=6 pull).
