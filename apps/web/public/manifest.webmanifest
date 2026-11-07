@@ -1,0 +1,13 @@
+{
+  "name": "Health Companion",
+  "short_name": "Health",
+  "description": "A private, on-device diary for food, exercise and sleep.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#FCFAF5",
+  "theme_color": "#185344",
+  "icons": [
+    { "src": "/icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" }
+  ]
+}

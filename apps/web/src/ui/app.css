@@ -1,0 +1,257 @@
+/* Design tokens from the build kit (07): a warm paper notebook. Light theme only in M1. */
+:root {
+  --paper: #fcfaf5;
+  --surface: #ffffff;
+  --ink: #162a25;
+  --ink-muted: #4a5a55;
+  --line: #e4ded1;
+  --action: #185344;
+  --action-pressed: #113d32;
+  --secondary: #6b4230;
+  --danger: #8a2a1f;
+  --danger-bg: #fbeceb;
+  --notice-bg: #eef4f1;
+  --warn-bg: #f7efe2;
+
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 24px;
+  --space-6: 32px;
+
+  --radius-card: 16px;
+  --radius-control: 8px;
+  --ease: cubic-bezier(0.22, 1, 0.36, 1);
+
+  color-scheme: light;
+  font-family: system-ui, -apple-system, 'Segoe UI', sans-serif;
+  font-size: 16px;
+  line-height: 1.5;
+  color: var(--ink);
+  background: var(--paper);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  background: var(--paper);
+}
+
+.page {
+  max-width: 480px;
+  margin: 0 auto;
+  padding: var(--space-5) var(--space-4) var(--space-6);
+  display: grid;
+  gap: var(--space-4);
+}
+
+.masthead {
+  display: grid;
+  gap: var(--space-1);
+}
+
+.eyebrow {
+  margin: 0;
+  font-size: 14px;
+  color: var(--secondary);
+}
+
+.title {
+  margin: 0;
+  font-size: 24px;
+  line-height: 32px;
+  font-weight: 600;
+}
+
+.status {
+  margin: 0;
+  font-size: 14px;
+  color: var(--ink-muted);
+}
+
+.card {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-card);
+  padding: var(--space-4);
+  display: grid;
+  gap: var(--space-3);
+}
+
+.heading {
+  margin: 0;
+  font-size: 18px;
+  line-height: 28px;
+  font-weight: 600;
+}
+
+.source {
+  margin: 0;
+  font-size: 14px;
+  color: var(--ink-muted);
+}
+
+.badge {
+  display: inline-block;
+  margin-left: var(--space-1);
+  padding: 0 var(--space-2);
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  font-size: 12px;
+  color: var(--secondary);
+}
+
+.empty {
+  margin: 0;
+  color: var(--ink-muted);
+}
+
+.readout {
+  margin: 0;
+  display: grid;
+  gap: var(--space-2);
+}
+
+.readout div {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--space-4);
+}
+
+.readout dt {
+  color: var(--ink-muted);
+}
+
+.readout dd {
+  margin: 0;
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
+  text-align: right;
+}
+
+.entry {
+  display: grid;
+  gap: var(--space-2);
+}
+
+.label {
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.entry-row {
+  display: flex;
+  gap: var(--space-2);
+}
+
+.input {
+  flex: 1;
+  min-width: 0;
+  min-height: 48px;
+  padding: var(--space-2) var(--space-3);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-control);
+  font: inherit;
+  font-variant-numeric: tabular-nums;
+  color: var(--ink);
+  background: var(--paper);
+}
+
+.input:focus-visible,
+.button:focus-visible {
+  outline: 3px solid var(--action);
+  outline-offset: 2px;
+}
+
+.button {
+  min-height: 48px;
+  padding: var(--space-2) var(--space-4);
+  border: 0;
+  border-radius: var(--radius-control);
+  font: inherit;
+  font-weight: 600;
+  color: var(--paper);
+  background: var(--action);
+  cursor: pointer;
+  transition: background-color 300ms var(--ease), transform 300ms var(--ease);
+}
+
+.button:hover {
+  background: var(--action-pressed);
+}
+
+.button:active {
+  transform: translateY(1px);
+}
+
+.button:disabled {
+  opacity: 0.6;
+  cursor: progress;
+}
+
+.notice {
+  margin: 0;
+  padding: var(--space-2) var(--space-3);
+  border-radius: var(--radius-control);
+  font-size: 14px;
+}
+
+.notice-saved {
+  background: var(--notice-bg);
+}
+
+.notice-conflict {
+  background: var(--warn-bg);
+}
+
+.notice-error {
+  background: var(--danger-bg);
+  color: var(--danger);
+}
+
+.history {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  gap: var(--space-2);
+}
+
+.history li {
+  display: grid;
+  padding-bottom: var(--space-2);
+  border-bottom: 1px solid var(--line);
+}
+
+.history li:last-child {
+  border-bottom: 0;
+  padding-bottom: 0;
+}
+
+.history-main {
+  font-variant-numeric: tabular-nums;
+}
+
+.history-meta {
+  font-size: 14px;
+  color: var(--ink-muted);
+}
+
+.footnote {
+  font-size: 12px;
+  color: var(--ink-muted);
+  text-align: center;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .button {
+    transition: background-color 300ms var(--ease);
+  }
+  .button:active {
+    transform: none;
+  }
+}
