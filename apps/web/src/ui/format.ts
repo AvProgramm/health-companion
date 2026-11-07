@@ -17,6 +17,8 @@ export const SOURCE_LABELS: Record<SourceKind, string> = {
   label: 'From label',
   user_estimate: 'My estimate',
   fixture: 'Sample',
+  database: 'Database estimate',
+  ai_estimate: 'AI estimate',
 };
 
 /**
@@ -25,7 +27,8 @@ export const SOURCE_LABELS: Record<SourceKind, string> = {
  * Rounding happens only here, so stored values keep full precision.
  */
 export function formatTotal(total: NutrientTotal, unit: string, digits = 1): string {
-  const known = `${total.known.toFixed(digits)} ${unit}`;
+  const bounds = total.range === undefined ? '' : ` (${total.range.low.toFixed(digits)}–${total.range.high.toFixed(digits)})`;
+  const known = `${total.range === undefined ? '' : '≈ '}${total.known.toFixed(digits)} ${unit}${bounds}`;
   // An unknown item is shown in words, never folded into the number
   if (total.unknownItems === 0) {
     return known;

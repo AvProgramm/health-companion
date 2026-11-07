@@ -1,0 +1,68 @@
+"""Validate the narrow food estimate boundary."""
+from typing import Literal
+from pydantic import BaseModel, ConfigDict, Field, model_validator
+
+
+class StrictModel(BaseModel):
+    """Reject extra fields and non-finite numbers at every boundary."""
+    model_config = ConfigDict(extra='forbid', strict=True, allow_inf_nan=False)
+
+
+class EstimateRequest(StrictModel):
+    """Accept only the food name and portion text."""
+    name: str = Field(min_length=1, max_length=80)
+    portionText: str = Field(max_length=80)
+
+
+class Basis(StrictModel):
+    """Describe the exact portion covered by the returned values."""
+    amount: float = Field(gt=0)
+    unit: Literal['g', 'kg', 'mL', 'L', 'piece']
+
+
+class Nutrients(StrictModel):
+    """Require every nutrient key while allowing unknown values."""
+    kcal: float | None = Field(ge=0)
+    protein_g: float | None = Field(ge=0)
+    fat_g: float | None = Field(ge=0)
+    satfat_g: float | None = Field(ge=0)
+    total_sugar_g: float | None = Field(ge=0)
+    added_sugar_g: float | None = Field(ge=0)
+
+
+class Spread(StrictModel):
+    """Keep a non-negative lower and upper bound."""
+    low: float = Field(ge=0)
+    high: float = Field(ge=0)
+
+
+class Source(StrictModel):
+    """Identify each record used without inventing a citation."""
+    provider: str = Field(min_length=1, max_length=80)
+    description: str = Field(min_length=1, max_length=240)
+    url: str = Field(pattern=r'^https://', max_length=500)
+
+
+class Estimate(StrictModel):
+    """Check a database or model proposal before it reaches the browser."""
+    basis: Basis
+    nutrients: Nutrients
+    range: dict[str, Spread | None]
+    sourceKind: Literal['database', 'ai_estimate']
+    reason: str = Field(min_length=1, max_length=500)
+    sources: list[Source] = Field(min_length=1, max_length=10)
+
+    @model_validator(mode='after')
+    def check_ranges(self):
+        """Reject missing bounds or bounds that contradict the centre value."""
+        values = self.nutrients.model_dump()
+        if self.range.keys() != values.keys():
+            raise ValueError('Return a range key for every nutrient.')
+        for key, value in values.items():
+            spread = self.range[key]
+            if value is None:
+                if spread is not None:
+                    raise ValueError('Keep an unknown nutrient range null.')
+            elif spread is None or not spread.low <= value <= spread.high:
+                raise ValueError('Keep each value inside its range.')
+        return self

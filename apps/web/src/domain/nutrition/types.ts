@@ -9,7 +9,10 @@ export type NutrientValue = number | null;
 export type NutrientKey = 'kcal' | 'protein_g' | 'fat_g' | 'satfat_g' | 'total_sugar_g' | 'added_sugar_g';
 
 // Where a food's numbers came from, shown as a badge beside every row
-export type SourceKind = 'label' | 'user_estimate' | 'fixture';
+export type SourceKind = 'label' | 'user_estimate' | 'fixture' | 'database' | 'ai_estimate';
+
+/** Describe the spread of known estimates on the same basis. */
+export interface NutrientRange { low: number; high: number }
 
 /**
  * One version of a food's label.
@@ -25,5 +28,6 @@ export interface FoodVersion {
   aliases?: string[];
   basis: Quantity;
   nutrients: Partial<Record<NutrientKey, NutrientValue>>;
+  range?: Partial<Record<NutrientKey, NutrientRange | null>>;
   source: { kind: SourceKind; reference?: string };
 }

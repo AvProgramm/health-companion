@@ -5,6 +5,8 @@
  * refer to earlier ones (a revision points at food versions, a meal at a revision),
  * so a new kind of record means adding one checker, not editing the others.
  */
+import { validateRanges } from '../../domain/nutrition/estimates';
+import type { FoodVersion } from '../../domain/nutrition/types';
 import { isUnit } from '../../domain/shared/units';
 import { DB_VERSION, STORE_NAMES, type StoreName } from '../connection';
 import { BACKUP_FORMAT, BACKUP_FORMAT_VERSION, OPTIONAL_LISTS, countBackup, type BackupCheck, type DiaryBackup } from './format';
@@ -89,6 +91,13 @@ function checkFoods(records: readonly unknown[], references: References, report:
     }
     if (!isRecord(food.nutrients) || Object.values(food.nutrients).some((value) => value !== null && !isFiniteAbove(value, 0, true))) {
       report(`${label} has a nutrient that is not a number of 0 or more.`);
+    }
+    if (food.range !== undefined) {
+      try {
+        validateRanges(food.nutrients as FoodVersion['nutrients'], food.range);
+      } catch {
+        report(`${label} has invalid nutrient ranges.`);
+      }
     }
     references.foodKeys.add(`${food.id}@${food.version}`);
   }

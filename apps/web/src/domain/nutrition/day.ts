@@ -38,6 +38,13 @@ export function summariseDay(
     const total: NutrientTotal = { known: 0, unknownItems: 0 };
     for (const meal of meals) {
       const mealTotal = totalNutrient(meal, foods, nutrient);
+      if (mealTotal.range !== undefined || total.range !== undefined) {
+        // Add exact meals to both bounds when a different meal has a range.
+        total.range = {
+          low: (total.range?.low ?? total.known) + (mealTotal.range?.low ?? mealTotal.known),
+          high: (total.range?.high ?? total.known) + (mealTotal.range?.high ?? mealTotal.known),
+        };
+      }
       total.known += mealTotal.known;
       total.unknownItems += mealTotal.unknownItems;
     }
