@@ -27,7 +27,7 @@ Targets are bounded whole minutes from 0 to 240, a product/performance limit rat
 
 Tests failed before implementation. They cover exact 60 minutes from twelve unique choices, the screenshot's 15/60 partial plan, a 59/60 near fit, duration ahead of preference, deterministic prefix IDs, invalid/non-finite/fractional/over-limit targets, and a bounded 32-card pool. The independent brute-force oracle still enumerates every subset of the small catalogue and checks the optimal result across the twelve original scenarios. Existing hard-rule and greedy counterexample tests remain.
 
-npm run check and the production build pass. Browser and physical phone verification of this update are pending at this checkpoint. No schema or storage change. No exercise query or health data leaves the device. The injury/seated rules and training loop are unchanged.
+npm run check and the production build pass. Browser verification passes at 375 px and 1440 px. The starter-only bodyweight case shows 15/60 and 45 minutes unfilled. Adding nine temporary, reviewed five-minute choices through the normal confirmation UI produces 60/60 across twelve distinct blocks. Those browser test choices were then removed; no workout was logged. Physical phone verification of this update is pending. No schema or storage change. No exercise query or health data leaves the device. The injury/seated rules and training loop are unchanged.
 
 ## Explain-back questions
 
@@ -40,3 +40,5 @@ npm run check and the production build pass. Browser and physical phone verifica
 ## Later AI scope
 
 Yash wants free-first agentic gym/nutrition assistants and DL/ML or BERT/transformer experiments later. No chatbot, model download, API call or training loop is added here. Later model choices need licence/access/cost checks, a baseline, held-out evaluation and measured latency. Suggestions must remain drafts, and deterministic planner constraints must still govern the final plan. Yash's training loop remains reserved.
+
+Further oracle coverage checks twelve ten-card pools with mixed durations, category goals, positive/negative preferences, missing gear, blocked capabilities and excluded IDs, comparing full optimal candidates against exhaustive enumeration. A thirteen-block case confirms the twelve-card limit still applies.

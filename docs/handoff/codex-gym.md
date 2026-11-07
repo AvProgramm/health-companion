@@ -1,5 +1,7 @@
 # Handoff to Codex: Gym redesign, exercise search, coach chatbots
 
+Current planner update: target-duration DP, up to twelve distinct cards; see `docs/milestones/m4-target-duration-walkthrough.md`. The original DFS description below is historical.
+
 Written 7 Nov 2026, after M4 part 1 merged (`main` at e5bf9ac). Read `CLAUDE.md`, `AGENTS.md` and `.claude/rules/` first. Yash reviews every diff and must be able to explain it, so keep the FIT3080 comment style.
 
 ## Where things stand
@@ -92,3 +94,9 @@ Task B's lightweight CSS depth, front/back SVG targets, minutes ring and coverag
 
 ### Planner form follow-up (7 Nov)
 Yash reported the exercise feature works on his phone and approved the Gym visual direction. At his request the planner now uses Without equipment / With equipment, keeps What to train, and removes You cannot do from this form. Equipment details appear only in With equipment; suggestions come from added exercises and remain editable for today. Nothing is inferred about health or saved as an ownership profile. See the updated Task A walkthrough for request semantics and tests. Task D's limitation profile/rules are still outstanding and reserved for Yash; do not treat the simplified form as implementing them.
+
+
+### Target-duration follow-up (7 Nov, explicitly authorised)
+Yash authorised Codex to update compareCandidates and the session cap after the 15/60 screenshot. Current ranking: coverage -> closer to the target without exceeding it -> preference -> ordered IDs. Up to 12 distinct blocks; bounded DP replaces full subset enumeration. Whole-minute targets 0–240. Shortfalls are shown explicitly; do not duplicate exercises or inflate durations to hide them. The screenshot's starter-only bodyweight pool genuinely contains only 15 minutes. Full 60/60 verified in the browser with nine temporary chosen blocks plus the three bodyweight starters; test choices removed afterwards. Read the new walkthrough for interview questions, state dominance proof and verification. Future ranking edits still need Yash's authorisation.
+
+Later scope reaffirmed: free-first agentic trainer/nutritionist, evaluated BERT/transformer and DL/ML experiments. These are roadmap items, not implemented features. Keep the existing local-first/privacy/draft rules; the training loop and injury/seated rules remain reserved.

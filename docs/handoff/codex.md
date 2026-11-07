@@ -52,6 +52,7 @@ Goal: when the composer meets an unknown food ("nasi lemak", "2 weetabix"), the 
 
 ### M4: workout planner (FIT3080) + intent router (FIT3181)
 - **Planner** (`domain/training/planner.ts`):
+  - Current implementation supersedes the original DFS/stub checklist below: bounded target-duration DP, twelve-card cap, coverage then duration then preference ranking. Explicitly authorised by Yash on 7 Nov. Read `docs/milestones/m4-target-duration-walkthrough.md`; the older bullets describe the original milestone.
   - Depth-first search over at most 8 reviewed movement cards (equipment, capability tags, duration, category).
   - Hard filters come first and are never relaxed. "No plan" is a valid answer.
   - Tests compare against a brute-force oracle, plus the greedy counterexample in kit doc 04 (12 min; A=10 push, B=6 push, C=6 pull).

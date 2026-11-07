@@ -208,3 +208,12 @@ Preview was restarted after the server-unavailable test. No diary history was se
 - Browser at 375 px: shorter form, Without / With equipment, What to train retained, no horizontal overflow, bottom dock visible. Laptop layout retained at 1440 px.
 - Browser: Without equipment produces a bodyweight plan; With equipment with no gear prompts for selection. Selecting resistance band yields band pull-apart + push-up, 11 of 20 min. Switching mode clears the previous plan.
 - Physical phone check of the new controls: NOT TESTED. Reload twice and test both modes after confirming the existing diary is still present.
+
+
+## Target-duration Gym sessions (7 Nov 2026, Codex)
+
+- Red first: target-duration, cap, ranking, invalid-target and partial-session UI regressions fail against the old planner. Check and build pass after implementation.
+- Independent exhaustive oracle: original twelve scenarios plus twelve ten-card scenarios with mixed preferences and hard filters. Exact 60/60, near 59/60, thirteen-card cap, 32-card state bound and stable input ordering are covered.
+- Browser: starter-only bodyweight pool shows A partial session, 15/60, 45 min unfilled. With nine temporary five-minute choices confirmed through the normal UI, planner shows Your target is covered, 60/60, twelve unique exercises. Test choices removed; no workout logged.
+- Browser widths 375/1440 px: full-target ring and cards render; phone-width content has no horizontal overflow. These temporary choices test arithmetic and UI, not a recommended training programme.
+- Physical phone target-duration check: NOT TESTED. Reload twice, use 60 minutes with enough reviewed choices and available equipment; verify the target or a clearly labelled shortfall. Existing diary must remain intact.

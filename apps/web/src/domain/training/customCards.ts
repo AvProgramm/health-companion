@@ -1,6 +1,6 @@
 import type { Capability, Category, Equipment, MovementCard } from './catalogue';
 
-// Twenty-four choices plus the eight reviewed cards keep the three-card DFS small.
+// Twenty-four choices plus eight starter cards bound the pool searched on the phone.
 export const MAX_CUSTOM_CARDS = 24;
 // These are the existing planner categories, not new exercise safety rules.
 export const EXERCISE_CATEGORIES: readonly Category[] = ['push', 'pull', 'legs', 'core'];

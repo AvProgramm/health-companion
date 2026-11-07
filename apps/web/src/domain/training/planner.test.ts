@@ -234,3 +234,26 @@ describe('target-duration planning', () => {
     expect(bestPlan({ ...OPEN, minutes }, cards)).toMatchObject({ status: 'none', reason: 'Enter a target from 0 to 240 whole minutes.' });
   });
 });
+
+
+it.each([0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11])('matches exhaustive search with mixed durations, preferences and hard filters: case %i', seed => {
+  // Enumerate all 1,023 nonempty subsets independently of the production state table.
+  const cards: MovementCard[] = Array.from({ length: 10 }, (_, index) => ({
+    id: `oracle-${String(index).padStart(2, '0')}`, name: 'Fictional oracle movement', minutes: [3, 5, 7, 11, 13][index % 5]!,
+    category: (['push', 'pull', 'legs', 'core'] as const)[(index + seed) % 4]!,
+    equipment: index % 3 === 0 ? ['band'] : [], requires: index % 4 === 0 ? ['jumping'] : [], cue: 'Fictional cue.',
+  }));
+  const request: PlanRequest = { ...OPEN, minutes: 12 + seed * 4, equipment: seed % 2 === 0 ? ['band'] : [],
+    unableTo: seed % 3 === 0 ? ['jumping'] : [], neverSuggest: seed % 4 === 0 ? ['oracle-01'] : [],
+    categories: seed % 2 === 0 ? ['push', 'pull', 'legs', 'core'] : ['core', 'pull'],
+    preferences: Object.fromEntries(cards.map((card, index) => [card.id, ((index + seed) % 7) - 3])),
+  };
+  const result = bestPlan(request, cards);
+  expect(result.status === 'plan' ? result.plan : undefined).toEqual(oracle(request, cards)[0]);
+});
+
+it('keeps the twelve-card bound even when another block would fill a longer target', () => {
+  const cards: MovementCard[] = Array.from({ length: 13 }, (_, index) => ({ id: `limit-${index}`, name: 'Fictional block', minutes: 5,
+    category: 'core', equipment: [], requires: [], cue: 'Fictional cue.' }));
+  expect(bestPlan({ ...OPEN, minutes: 65, categories: ['core'] }, cards)).toMatchObject({ status: 'plan', unfilledMinutes: 5, plan: { minutes: 60 } });
+});
