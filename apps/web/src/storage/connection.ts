@@ -7,10 +7,11 @@
 
 // Bump only together with a new step in upgradeSchema
 const DB_NAME = 'health-companion';
-export const DB_VERSION = 3;
+// Version 4 adds versioned, explicitly chosen exercises.
+export const DB_VERSION = 4;
 
 // Every store, in the order a backup lists them
-export const STORE_NAMES = ['foods', 'meals', 'revisions', 'operations', 'workouts', 'sleep'] as const;
+export const STORE_NAMES = ['foods', 'meals', 'revisions', 'operations', 'workouts', 'sleep', 'customCards'] as const;
 export type StoreName = (typeof STORE_NAMES)[number];
 
 /**
@@ -63,6 +64,12 @@ function upgradeSchema(db: IDBDatabase, tx: IDBTransaction, oldVersion: number):
     workouts.createIndex('byDate', 'localDate');
     workouts.createIndex('byMovement', 'movementKey');
     db.createObjectStore('sleep', { keyPath: 'id' }).createIndex('byDate', 'localDate');
+  }
+
+  // Version 4: choices are append-only snapshots; retries have unique operation keys.
+  if (oldVersion < 4) {
+    const cards = db.createObjectStore('customCards', { keyPath: ['id', 'version'] });
+    cards.createIndex('byOperationKey', 'operationKey', { unique: true });
   }
 }
 

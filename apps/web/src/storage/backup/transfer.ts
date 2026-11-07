@@ -24,6 +24,7 @@ export function exportDiary(db: IDBDatabase, now: Date = new Date()): Promise<Di
       operations: [],
       workouts: [],
       sleep: [],
+      customCards: [],
     };
 
     // Read every store; finish once the last one arrives

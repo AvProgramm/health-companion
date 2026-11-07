@@ -73,7 +73,7 @@ describe('export and restore', () => {
   it('restores identical totals, history, workouts and sleep after a wipe', async () => {
     const before = await dayTotals(db);
     const checked = await checkedExport();
-    expect(checked.counts).toEqual({ foods: 3, meals: 2, revisions: 3, workouts: 1, sleep: 1 });
+    expect(checked.counts).toEqual({ foods: 3, meals: 2, revisions: 3, workouts: 1, sleep: 1, customCards: 0 });
 
     await wipeDiary(db);
     expect(await countMeals(db)).toBe(0);
@@ -92,7 +92,7 @@ describe('export and restore', () => {
     file.schemaVersion = 2;
 
     const checked = validateBackup(file);
-    expect(checked.ok ? checked.counts : checked.errors).toEqual({ foods: 3, meals: 2, revisions: 3, workouts: 0, sleep: 0 });
+    expect(checked.ok ? checked.counts : checked.errors).toEqual({ foods: 3, meals: 2, revisions: 3, workouts: 0, sleep: 0, customCards: 0 });
   });
 
   it('still rejects a stale correction after a restore', async () => {

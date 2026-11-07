@@ -5,6 +5,7 @@
  * refer to earlier ones (a revision points at food versions, a meal at a revision),
  * so a new kind of record means adding one checker, not editing the others.
  */
+import { assertCustomCard, latestCustomCards, MAX_CUSTOM_CARDS, type CustomCardSelection } from '../../domain/training/customCards';
 import { validateRanges } from '../../domain/nutrition/estimates';
 import type { FoodVersion } from '../../domain/nutrition/types';
 import { isUnit } from '../../domain/shared/units';
@@ -32,6 +33,7 @@ const STORE_CHECKS: readonly { store: StoreName; check: StoreCheck }[] = [
   { store: 'operations', check: checkOperations },
   { store: 'workouts', check: checkWorkouts },
   { store: 'sleep', check: checkSleep },
+  { store: 'customCards', check: checkCustomCards },
 ];
 
 /**
@@ -58,7 +60,7 @@ export function validateBackup(data: unknown): BackupCheck {
   }
 
   // Fill in lists an older backup did not have, without changing the parsed file
-  const backup = { ...data, workouts: data.workouts ?? [], sleep: data.sleep ?? [] } as unknown as DiaryBackup;
+  const backup = { ...data, workouts: data.workouts ?? [], sleep: data.sleep ?? [], customCards: data.customCards ?? [] } as unknown as DiaryBackup;
 
   // Run each store's checker, collecting at most MAX_ERRORS problems
   const errors: string[] = [];
@@ -223,4 +225,30 @@ function isPositiveInteger(value: unknown): boolean {
  */
 function isFiniteAbove(value: unknown, minimum: number, allowEqual: boolean): boolean {
   return typeof value === 'number' && Number.isFinite(value) && (allowEqual ? value >= minimum : value > minimum);
+}
+
+
+/** Check chosen exercise snapshots, complete version histories and operation uniqueness. */
+function checkCustomCards(records: readonly unknown[], _references: References, report: Report): void {
+  const valid: CustomCardSelection[] = [];
+  const keys = new Set<string>();
+  const operations = new Set<string>();
+  for (const record of records) {
+    try {
+      assertCustomCard(record);
+      const key = `${record.id}@${record.version}`;
+      if (keys.has(key) || operations.has(record.operationKey)) throw new Error('An exercise snapshot or operation is duplicated.');
+      keys.add(key);
+      operations.add(record.operationKey);
+      valid.push(record);
+    } catch (problem) {
+      report(problem instanceof Error ? problem.message : 'An exercise choice is invalid.');
+    }
+  }
+  // Refuse incomplete histories before restore can create an uneditable selection.
+  for (const latest of latestCustomCards(valid)) {
+    const versions = valid.filter(record => record.id === latest.id).map(record => record.version).sort((left, right) => left - right);
+    if (versions.some((version, index) => version !== index + 1)) report('An exercise choice has an incomplete version history.');
+  }
+  if (latestCustomCards(valid).filter(record => !record.deleted).length > MAX_CUSTOM_CARDS) report(`A backup can hold at most ${MAX_CUSTOM_CARDS} active added exercises.`);
 }

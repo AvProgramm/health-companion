@@ -9,7 +9,7 @@ import { confirmMeal, mealsOn } from './mealsRepo';
 /**
  * Open a database at an older version, with the stores Milestone 1 (v1) or 2 (v2) left on the phone.
  */
-function openOldVersion(factory: IDBFactory, version: 1 | 2): Promise<IDBDatabase> {
+function openOldVersion(factory: IDBFactory, version: 1 | 2 | 3): Promise<IDBDatabase> {
   return new Promise((resolve, reject) => {
     const request = factory.open('health-companion', version);
     request.onupgradeneeded = () => {
@@ -19,8 +19,14 @@ function openOldVersion(factory: IDBFactory, version: 1 | 2): Promise<IDBDatabas
       old.createObjectStore('revisions', { keyPath: ['mealId', 'revision'] });
       old.createObjectStore('operations', { keyPath: 'operationKey' });
       // Version 2 added the date index on meals
-      if (version === 2) {
+      if (version >= 2) {
         meals.createIndex('byDate', 'localDate');
+      }
+      if (version >= 3) {
+        const workouts = old.createObjectStore('workouts', { keyPath: 'id' });
+        workouts.createIndex('byDate', 'localDate');
+        workouts.createIndex('byMovement', 'movementKey');
+        old.createObjectStore('sleep', { keyPath: 'id' }).createIndex('byDate', 'localDate');
       }
     };
     request.onsuccess = () => resolve(request.result);
@@ -39,7 +45,7 @@ const OLD_MEAL = startMeal({
 });
 
 describe('upgrading an existing diary', () => {
-  it.each([1, 2] as const)('keeps meals saved under schema version %i and adds the later stores', async (version) => {
+  it.each([1, 2, 3] as const)('keeps meals saved under schema version %i and adds the later stores', async (version) => {
     const factory = new IDBFactory();
 
     // Save a meal with the older schema (version 1 had no date index, so write it directly)
@@ -56,7 +62,7 @@ describe('upgrading an existing diary', () => {
     // Opening with the current app runs every later step
     const upgraded = await openDiary(factory);
     expect(upgraded.version).toBe(DB_VERSION);
-    expect([...upgraded.objectStoreNames].sort()).toEqual(['foods', 'meals', 'operations', 'revisions', 'sleep', 'workouts']);
+    expect([...upgraded.objectStoreNames].sort()).toEqual(['customCards', 'foods', 'meals', 'operations', 'revisions', 'sleep', 'workouts']);
     expect((await mealsOn(upgraded, '2026-11-09')).map((meal) => meal.header.mealId)).toEqual(['m1']);
   });
 

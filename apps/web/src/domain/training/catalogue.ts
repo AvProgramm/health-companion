@@ -23,6 +23,8 @@ export interface MovementCard {
   // Abilities the exercise needs; someone who cannot do one never gets the card
   requires: readonly Capability[];
   cue: string;
+  primaryMuscles?: readonly string[];
+  imagePath?: string | null;
 }
 
 export const MOVEMENT_CARDS: readonly MovementCard[] = [
