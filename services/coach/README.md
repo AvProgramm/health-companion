@@ -30,13 +30,15 @@ Keep USB forwarding `4173 → 127.0.0.1:4173`; only the laptop needs port 8000. 
 
 1. Query USDA (if configured) and Open Food Facts concurrently, filtering for all name tokens and deduplicating source IDs.
 2. Scale only compatible physical units, average known values independently per nutrient, and retain their min/max spread and every used record. Missing values stay null. The spread is not a confidence interval, and a single match has identical bounds.
-3. If there is no usable match for the requested basis, ask Groq for JSON. Require every nutrient key, finite non-negative values or null, and matching ranges. Server-owned provenance labels it `ai_estimate`; it is never described as database verified.
-4. A failed database can still fall back to Groq; a failed model becomes an actionable unavailable response. Each stage has a deadline. With no key, no model request is made.
+3. If there is no usable match for the requested basis, Tavily retrieves up to three relevant public nutrition snippets (at most 1,800 characters each). Web content is untrusted evidence, never instructions. Groq then proposes nutrition from the food/portion and public evidence. Require every nutrient key, finite non-negative values or null, and matching ranges. Server-owned provenance labels it `ai_estimate`; it is never described as database verified.
+4. A failed database can still fall back to retrieval and Groq. If Groq fails, try the optional Hugging Face hosted adapter. Exhausting both models becomes an actionable unavailable response. Each stage has a deadline. With no key, no model request is made.
 
 Counts and unclear portions are never converted into grams without evidence. The current database stage handles g/kg and explicitly identified mL/L records; pieces and free-form portions use the model fallback. A blank/unclear portion asks the model to assume one piece and explain its size/recipe. Review that assumption before accepting. MyFCD and database serving-weight mapping are deferred.
 
-Groq uses JSON object mode, followed by our own strict validation. The default model is `openai/gpt-oss-20b`; change `GROQ_MODEL` in `.env` if needed.
+Groq uses a strict JSON schema, followed by our own independent validation. Hugging Face uses JSON object output plus the same validation. All-null proposals are rejected on the service and browser boundaries. Individual unknowns remain null; genuine zero values remain valid. The default model is `openai/gpt-oss-20b`; change `GROQ_MODEL` in `.env` if needed.
 
 Sources: [USDA API guide](https://fdc.nal.usda.gov/api-guide/), [Open Food Facts API](https://openfoodfacts.github.io/openfoodfacts-server/api/), [Groq JSON output](https://console.groq.com/docs/structured-outputs), [Groq model](https://console.groq.com/docs/models).
 
-Later Tavily/Hugging Face configuration is documented in `docs/handoff/integrations.md`. Those tokens are not used by M3a.
+Tavily/Hugging Face configuration is documented in `docs/handoff/integrations.md`. Both stages are optional: blank tokens skip their requests. Hugging Face currently returns HTTP 402 on this laptop; the adapter is covered by synthetic tests, but live hosted inference is unavailable. No model weights are downloaded.
+
+Each lookup stage has a 4-second total deadline, followed by up to 8 seconds per model; the browser allows 27 seconds overall. The model sees only the selected name/portion and bounded public source excerpts. Source IDs are checked against those excerpts before real URLs are attached. A cited web page does not make an AI proposal database-verified. Never log provider exception URLs because USDA keys are query parameters.

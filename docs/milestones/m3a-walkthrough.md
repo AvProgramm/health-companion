@@ -1,5 +1,7 @@
 # Milestone M3a: nutrition proposals with confirmation
 
+For the latest screenshot fixes, responsive UI, Tavily retrieval and hosted-model fallback, read `m3a-ui-and-retrieval.md` next.
+
 ## Explain the flow
 
 The composer still uses the deterministic parser. An unknown food row offers an optional lookup with editable food name and portion text. `api/estimate.ts` explicitly constructs a two-field request; neither a diary object nor browser credentials are sent.

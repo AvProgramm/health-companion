@@ -7,7 +7,7 @@ Read `CLAUDE.md` first; its invariants and rules apply to you too, along with `.
   - **M1:** offline save, correct and reopen on the phone.
   - **M2:** a usable diary (parser, drafts, corrections, meal sheet, foods, backup and restore, hide numbers, hook and CI).
   - **M3:** training, sleep, the Gym tab, schema v3, and the feature-folder restructure.
-  - **M3a implementation:** database-first nutrition estimates, Groq fallback, ranges/provenance, confirmation, manual/unknown fallback, tests and CI. Live USDA and Groq calls through the preview pass (7 Nov). Physical-phone acceptance is still pending; see `docs/test-log.md`.
+  - **M3a implementation:** database-first nutrition estimates, Groq fallback, ranges/provenance, confirmation, manual/unknown fallback, tests and CI. Live USDA and Tavily-assisted Groq calls through the preview pass (7 Nov). The responsive UI follow-up is implemented and checked at 320/390/1440 px. The Hugging Face fallback adapter is tested, but its live endpoint returns HTTP 402. Physical-phone acceptance is still pending; see `docs/test-log.md`.
 - **Last commit:** see `git log -1`. Walkthroughs are in `docs/milestones/`.
 - **Phone setup and gates:** `docs/test-log.md` (USB forwarding `4173 → 127.0.0.1:4173`, then reload twice).
 
@@ -16,12 +16,13 @@ Work on one branch per milestone, with small commits.
 
 ### M3a (implemented; finish the phone gate): AI nutrition estimates instead of typing label numbers
 
-Current walkthrough: `docs/milestones/m3a-walkthrough.md`. Local startup: `docs/run-locally.md`. Groq uses `openai/gpt-oss-20b`: the earlier Llama default returned 404 for this account. Keep the requirements below as the acceptance checklist, not a request to reimplement completed code. Test the existing flow on the phone before moving to M3b.
+Current walkthrough: `docs/milestones/m3a-walkthrough.md`. Local startup: `docs/run-locally.md`. Groq uses `openai/gpt-oss-20b`: the earlier Llama default returned 404 for this account. Keep the requirements below as the acceptance checklist, not a request to reimplement completed code. Test the existing flow on the phone before moving to M3b. See `docs/milestones/m3a-ui-and-retrieval.md` for the screenshot-reported all-null fix, responsive design and expanded provider pipeline.
 Goal: when the composer meets an unknown food ("nasi lemak", "2 weetabix"), the app proposes the nutrition itself. The user should not have to type label values. Manual editing stays as the fallback.
 
 1. **Laptop service** `services/coach` (FastAPI on 127.0.0.1:8000, proxied as `/api`), with a new endpoint `POST /api/estimate { name, portionText }`.
    - **Database first:** look the food up in public composition data, using USDA FoodData Central (free API key, laptop `.env` only) and Open Food Facts. The Malaysian Food Composition Database (MyFCD) can come later. Return each nutrient as the **average across matches, with low/high** from their spread, plus every source used.
-   - **LLM second:** use Claude, Groq or a local model, with structured JSON output. Use it only to map the dish to database entries, or to estimate when nothing matches. Its numbers are labelled `ai_estimate` with a range and a short reason. The prompt must say to return null for anything unknown, never 0.
+   - **Public retrieval on a database miss:** Tavily retrieves up to three bounded, relevant nutrition excerpts. Only actual cited URLs are attached; this is evidence for an AI draft, not a verified composition database.
+   - **Models after retrieval:** Groq first, Hugging Face hosted inference on failure, with structured JSON output. Use it only to map the dish to database entries, or to estimate when nothing matches. Its numbers are labelled `ai_estimate` with a range and a short reason. The prompt must say to return null for anything unknown, never 0.
    - **Privacy:** send only the food name and portion text. Never send diary history or other entries.
 2. **Domain:**
    - Add `SourceKind` `'ai_estimate' | 'database'`.
@@ -47,7 +48,7 @@ Goal: when the composer meets an unknown food ("nasi lemak", "2 weetabix"), the 
    - Off by default and foreground only.
    - "Busy today, remind me tomorrow" from the composer creates a due card with snooze.
    - The UI must say there is no background notification.
-4. **Visual pass:** bundle the Geist and Geist Mono fonts (works offline), Phosphor icons and a dark theme. Use the design rules from `docs/spec/07` and the elayadesign skill: no gradients, spacing 4/8/12/16/24/32, and skeletons instead of spinners.
+4. **Visual pass:** Geist and Phosphor are now bundled offline, with a responsive layout and compact estimate cards pulled forward at Yash's request. Dark theme and any further visual refinements remain later work; no new diary stores were introduced by this pass. Use the design rules from `docs/spec/07` and the elayadesign skill: no gradients, spacing 4/8/12/16/24/32, and skeletons instead of spinners.
 
 ### M4: workout planner (FIT3080) + intent router (FIT3181)
 - **Planner** (`domain/training/planner.ts`):
@@ -73,7 +74,7 @@ Goal: when the composer meets an unknown food ("nasi lemak", "2 weetabix"), the 
 
 ### Later (Yash's direction)
 
-Read `docs/handoff/integrations.md`: Tavily and Hugging Face credentials are available in the ignored laptop `.env` for later retrieval/DL work. Neither is used in M3a. Do not copy secrets into notes, fixtures, Vite variables or tool output. Visual redesign and signup/security remain explicit later milestones; available credentials alone do not change the current data-sharing or confirmation rules.
+Read `docs/handoff/integrations.md`: Tavily and Hugging Face credentials are available in the ignored laptop `.env` for later retrieval/DL work. Tavily is now used after a database miss. Hugging Face is the final hosted-model fallback; live availability still requires resolving its HTTP 402 response. Do not copy secrets into notes, fixtures, Vite variables or tool output. Visual redesign and signup/security remain explicit later milestones; available credentials alone do not change the current data-sharing or confirmation rules.
 - Photo → ViT/LoRA food suggestions and nutrition lookup by retrieval or web search. These fill a **draft with a source badge and a range**; the user still confirms. Manual edit stays.
 - An LLM or BERT parser for free text. Same rule: it only fills drafts.
 - An RL experiment (Q-learning/SARSA from FIT3080), for example adaptive reminder timing in a simulator. It needs an honest baseline, and real diary data must never be used as reward.

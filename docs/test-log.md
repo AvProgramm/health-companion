@@ -94,3 +94,23 @@ These observations supersede the earlier missing-key status; earlier records are
 | Direct live Groq validation | Model proposal passed the strict nutrient/range/basis validator | PASS |
 | Tavily / Hugging Face API | Tokens reserved for later work; no calls made | NOT TESTED |
 | Physical phone | Startup and acceptance instructions provided to Yash | NOT TESTED |
+
+
+## M3a UI and retrieval follow-up (7 Nov 2026, Codex browser/terminal)
+
+| Check | Observed | Result |
+|---|---|---|
+| User screenshot: nasi lemak, blank portion | Empty nutrition was presented with Use estimate | REPRODUCED; fixed with service/browser regressions |
+| Empty proposals and real zero | Empty proposals rejected; real zero remains valid | PASS (automated) |
+| Tavily retrieval | Three public nutrition snippets returned for the reported dish | PASS (live) |
+| Retrieval-assisted Groq | Five known nutrients plus cited sources; added sugar null | PASS (live) |
+| Browser confirmation | Proposal unsaved until Use estimate; meal saved only after Save meal | PASS |
+| Hugging Face hosted fallback | HTTP 402 | UNAVAILABLE (successful path tested with fictional transport) |
+| 390 px estimate card | Use estimate ended at y=772 in an 844 px viewport, above the dock | PASS (viewport only) |
+| 320 px Foods, Me, Gym | No horizontal overflow | PASS (viewport only) |
+| 1440 px Today | Sidebar, wide diary and separate daily overview | PASS (viewport only) |
+| Phone after this build | Yash must reload twice/close and reopen, preserving site data | NOT TESTED |
+
+Retest on phone: confirm the new sidebar/dock style, compose an unknown dish → Review entry → Estimate nutrition, open Sources and assumptions, then Use estimate → Save meal. Check Edit/manual/unknown alternatives and offline reopen. A saved food is reused without a new lookup, so use an unsaved food or review its saved source details when testing retrieval.
+
+Final automated checkpoint for this follow-up: 150 app tests, 15 coach tests, typecheck, hook tests and production build pass.

@@ -7,7 +7,7 @@ A free, local-first diary for balancing food, exercise and sleep. It remembers w
   - Diary in IndexedDB.
   - Hand-written service worker (`src/sw/service-worker.js`, filled in by the build).
   - No backend for the diary.
-- `services/coach`: optional FastAPI nutrition estimates on 127.0.0.1:8000, proxied as `/api`. USDA/Open Food Facts first, Groq second. BM25 retrieval and MCP stdio tools remain planned; the diary never depends on this service.
+- `services/coach`: optional FastAPI nutrition estimates on 127.0.0.1:8000, proxied as `/api`. USDA/Open Food Facts first, Tavily public nutrition retrieval on a miss, then Groq with Hugging Face hosted inference as a final optional fallback. BM25 retrieval and MCP stdio tools remain planned; the diary never depends on this service.
 - `experiments/router` (planned, Codex harness, Yash's training loop): frozen MiniLM + `Linear(384, 6)` intent head.
 
 ## Commands
@@ -27,7 +27,8 @@ Organised by feature, one reason to change per module. Domain never imports stor
   - `training/workouts`, `sleep/sleep`: build and describe workout and sleep entries.
   - `parsing/`: the composer grammar. `parseEntry` tries an ordered list of small parsers (`question`, `correction`, `sleepEntry`, `workoutEntry`, `meal`); a new kind of entry is a new parser in that list.
 - `apps/web/src/storage/`: `connection` (open, schema upgrades, `runTransaction`), `foodsRepo`, `mealsRepo`, `logsRepo`, `persistence`, and `backup/` (`format`, `validate` with one checker per store, `transfer` for export/restore/erase).
-- `apps/web/src/ui/`: React screens. They call domain and storage and never compute totals themselves.
+- `apps/web/src/api/`: food-only HTTP boundary and response validation.
+- `apps/web/src/ui/`: responsive React screens, local Geist/Phosphor assets, compact draft/result presentation. They call domain and storage and never compute totals themselves.
 - `apps/web/src/test/`: test-only helpers (`goldenFixture`, `testFoods`). Never imported by app code.
 - `eval/fixtures/`: fictional golden cases. `ledger_golden.json` is the source of truth for totals.
 - `docs/`: ADRs, milestone walkthroughs, the device test log and the AI contribution log.
@@ -35,6 +36,7 @@ Organised by feature, one reason to change per module. Domain never imports stor
 ## Design rules
 - **SOLID where it pays:** single-purpose modules, extension by adding to a list (parsers, backup checkers, `MealEdit` cases), and dependencies pointing inward (UI → storage → domain).
 - **YAGNI:** no interface with one implementation, no wrapper or export without a caller in app code, no speculative options. Delete code the app stopped using.
+- **Responsive UI:** `ui/app.css` owns the spacing/type/surface tokens. The app uses a sidebar and two columns on laptops, and an edge-to-edge single column with a bottom dock on phones. Do not restore a narrow fixed-width wrapper around the whole app. Sources and secondary explanations stay expandable; confirmation remains explicit.
 
 ## Invariants (never break these)
 1. **Unknown is not zero.** A blank label value is `null` and shows as "+ N unknown". An empty day is "nothing logged".
