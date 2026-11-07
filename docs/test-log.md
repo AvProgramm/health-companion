@@ -114,3 +114,13 @@ These observations supersede the earlier missing-key status; earlier records are
 Retest on phone: confirm the new sidebar/dock style, compose an unknown dish → Review entry → Estimate nutrition, open Sources and assumptions, then Use estimate → Save meal. Check Edit/manual/unknown alternatives and offline reopen. A saved food is reused without a new lookup, so use an unsaved food or review its saved source details when testing retrieval.
 
 Final automated checkpoint for this follow-up: 150 app tests, 15 coach tests, typecheck, hook tests and production build pass.
+
+## Date follows the device clock (7 Nov 2026, Claude browser pane)
+
+| Check | Observed | Result |
+|---|---|---|
+| Page open on today, clock moved past midnight, app regains focus | Header changed Sat 7 Nov → Sun 8 Nov without a reload; no stray "Today" button | PASS |
+| Clock restored, focus again | Header returned to Sat 7 Nov | PASS |
+| Older day picked on purpose | Stays on that day (unit test `followToday`) | PASS (automated) |
+| First attempt | Date did not follow: the state updater read the ref after it had moved on. Fixed by reading it first | FOUND AND FIXED |
+| Phone left open overnight | Should show the new day on return | NOT TESTED |
