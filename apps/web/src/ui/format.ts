@@ -1,6 +1,21 @@
 import type { NutrientTotal } from '../domain/nutrition/aggregate';
 import type { NutrientKey, NutrientValue, SourceKind } from '../domain/nutrition/types';
 import type { Quantity } from '../domain/shared/units';
+import type { Capability, Equipment } from '../domain/training/catalogue';
+import type { ExerciseLevel } from '../domain/training/exerciseSearch';
+
+// How each ability an exercise needs reads in a list of facts
+export const CAPABILITY_LABELS: Record<Capability, string> = { pull_up: 'A pull-up', jumping: 'Jumping' };
+
+// How the source's difficulty levels read on screen
+export const LEVEL_LABELS: Record<ExerciseLevel, string> = { beginner: 'Beginner', intermediate: 'Intermediate', expert: 'Expert' };
+
+// How each piece of equipment is named on a chip or in a list
+export const EQUIPMENT_LABELS: Record<Equipment, string> = {
+  dumbbells: 'Dumbbells', band: 'Resistance band', pull_up_bar: 'Pull-up bar', kettlebells: 'Kettlebells', barbell: 'Barbell',
+  ez_curl_bar: 'EZ curl bar', cable: 'Cable station', machine: 'Gym machine', medicine_ball: 'Medicine ball',
+  exercise_ball: 'Exercise ball', foam_roll: 'Foam roller',
+};
 
 // How each nutrient is named and measured on screen
 export const NUTRIENT_LABELS: Record<NutrientKey, { label: string; unit: string }> = {

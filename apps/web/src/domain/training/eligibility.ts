@@ -24,7 +24,9 @@ export interface PlanRequest {
 const CAPABILITY_TEXT: Record<Capability, string> = { pull_up: 'a pull-up', jumping: 'jumping' };
 
 // How each missing piece of equipment reads in a sentence
-const EQUIPMENT_TEXT: Record<Equipment, string> = { dumbbells: 'dumbbells', band: 'a resistance band', pull_up_bar: 'a pull-up bar' };
+const EQUIPMENT_TEXT: Record<Equipment, string> = { dumbbells: 'dumbbells', band: 'a resistance band', pull_up_bar: 'a pull-up bar',
+  kettlebells: 'kettlebells', barbell: 'a barbell', ez_curl_bar: 'an EZ curl bar', cable: 'a cable station', machine: 'a gym machine',
+  medicine_ball: 'a medicine ball', exercise_ball: 'an exercise ball', foam_roll: 'a foam roller' };
 
 /**
  * Return why a card cannot be in today's plan, or null if it can.

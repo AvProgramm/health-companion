@@ -2,7 +2,7 @@ import { useMemo, useState } from 'react';
 import { MagnifyingGlass, CheckCircle, WifiSlash, Books } from '@phosphor-icons/react';
 import type { MovementCard } from '../domain/training/catalogue';
 import { MAX_CUSTOM_CARDS, type CustomCardSelection } from '../domain/training/customCards';
-import { searchExercises, type ExerciseEntry } from '../domain/training/exerciseSearch';
+import { searchExercises, whyNotAddable, type ExerciseEntry } from '../domain/training/exerciseSearch';
 import { ExerciseReview } from './ExerciseReview';
 import { MuscleMap } from './MuscleMap';
 
@@ -34,14 +34,14 @@ export function ExerciseSearch({ entries, chosen, busy, onAdd, onRemove }: Exerc
         <MuscleMap category={entry.category} muscles={entry.primaryMuscles} />
         <div className="exercise-result-content"><div className="row"><span className={`category-chip category-${entry.category ?? 'unknown'}`}>{entry.category ?? 'Review category'}</span>{selected.has(entry.id) && <span className="hint selected-label"><CheckCircle size={16} weight="fill" />Added</span>}</div>
           <h3 className="heading-small">{entry.name}</h3><p className="hint">{entry.primaryMuscles.join(', ') || 'Muscles unknown'}</p><p className="hint">{entry.sourceEquipment ?? 'Equipment unknown'}</p>
-          <button className="button button-secondary" type="button" disabled={busy || selected.has(entry.id) || active.length >= MAX_CUSTOM_CARDS || entry.equipment === null} onClick={() => setReviewing(entry)}>Review and add</button>
-          {entry.equipment === null && <p className="hint">This equipment is not mapped to the planner yet.</p>}</div>
+          <button className="button button-secondary" type="button" disabled={busy || selected.has(entry.id) || active.length >= MAX_CUSTOM_CARDS || whyNotAddable(entry) !== null} onClick={() => setReviewing(entry)}>Review and add</button>
+          {whyNotAddable(entry) !== null && <p className="hint">{whyNotAddable(entry)}</p>}</div>
       </li>)}</ul>
     </>}
     <details className="my-exercises" open={active.length > 0 && active.length <= 4}><summary><span>My added exercises</span><span className="badge">{active.length}/{MAX_CUSTOM_CARDS}</span></summary>
       {active.length === 0 ? <p className="hint">Nothing added yet. The eight reviewed starter cards remain available.</p> : <ul className="items">{active.map(choice => <li className="chosen-exercise" key={choice.id}><div><strong>{choice.card.name}</strong><p className="hint">{choice.card.minutes} min · {choice.card.category}</p></div><button type="button" className="button button-quiet" disabled={busy} aria-label={`Remove ${choice.card.name}`} onClick={() => onRemove(choice)}>Remove</button></li>)}</ul>}
     </details>
-    <p className="source-caption">Exercise text: free-exercise-db · Unlicense. Illustrations are bundled SVGs. Capability requirements always need review.</p>
+    <p className="source-caption">Exercise text: free-exercise-db · Unlicense. Illustrations are bundled SVGs. Equipment and needs come from the source; read the instructions before you train.</p>
     {reviewing && <ExerciseReview key={reviewing.id} entry={reviewing} onClose={() => setReviewing(null)} onConfirm={onAdd} />}
   </section>;
 }

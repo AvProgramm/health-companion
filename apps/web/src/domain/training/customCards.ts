@@ -4,8 +4,9 @@ import type { Capability, Category, Equipment, MovementCard } from './catalogue'
 export const MAX_CUSTOM_CARDS = 24;
 // These are the existing planner categories, not new exercise safety rules.
 export const EXERCISE_CATEGORIES: readonly Category[] = ['push', 'pull', 'legs', 'core'];
-// Unsupported imported equipment must be reviewed instead of silently becoming bodyweight.
-export const EXERCISE_EQUIPMENT: readonly Equipment[] = ['dumbbells', 'band', 'pull_up_bar'];
+// Every equipment type the planner can check; anything else stays unknown and cannot be added.
+export const EXERCISE_EQUIPMENT: readonly Equipment[] = ['dumbbells', 'band', 'pull_up_bar', 'kettlebells', 'barbell', 'ez_curl_bar',
+  'cable', 'machine', 'medicine_ball', 'exercise_ball', 'foam_roll'];
 // The dataset does not describe these requirements; the person explicitly reviews them.
 export const EXERCISE_CAPABILITIES: readonly Capability[] = ['pull_up', 'jumping'];
 

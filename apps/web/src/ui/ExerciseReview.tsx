@@ -1,52 +1,59 @@
 import { useState, type FormEvent } from 'react';
-import type { Capability, Category, Equipment, MovementCard } from '../domain/training/catalogue';
-import { EXERCISE_CAPABILITIES, EXERCISE_CATEGORIES, EXERCISE_EQUIPMENT } from '../domain/training/customCards';
-import { reviewExercise, type ExerciseEntry } from '../domain/training/exerciseSearch';
+import type { MovementCard } from '../domain/training/catalogue';
+import { reviewExercise, whyNotAddable, type ExerciseEntry } from '../domain/training/exerciseSearch';
+import { CAPABILITY_LABELS, EQUIPMENT_LABELS, LEVEL_LABELS } from './format';
 import { MuscleMap } from './MuscleMap';
 import { Sheet } from './Sheet';
 
 interface ExerciseReviewProps { entry: ExerciseEntry; onConfirm: (card: MovementCard) => Promise<void>; onClose: () => void }
 
-/** Review unknown requirements and a planning block before saving a chosen exercise. */
+/**
+ * Show what the source says about an exercise, and add it after an explicit confirmation.
+ *
+ * Area, equipment and needs are the source's facts and cannot be edited here; the
+ * planning block is the only choice, because the source gives no duration.
+ */
 export function ExerciseReview({ entry, onConfirm, onClose }: ExerciseReviewProps) {
-  // Keep imported defaults in an unsaved review draft.
-  const [category, setCategory] = useState<Category | ''>(entry.category ?? '');
-  const [equipment, setEquipment] = useState<Equipment[]>([...(entry.equipment ?? [])]);
-  const [requires, setRequires] = useState<Capability[]>([]);
+  // Keep the planning block in an unsaved draft until the person confirms
   const [minutes, setMinutes] = useState(String(entry.minutes));
-  const [reviewed, setReviewed] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const blocked = whyNotAddable(entry);
 
-  /** Save only after the person has checked the source's missing requirements. */
+  /** Save the exercise with the source's facts and the chosen planning block. */
   async function confirm(event: FormEvent) {
     event.preventDefault();
-    // Ignore an unreviewed or repeated confirmation because no new write is authorised.
-    if (!reviewed || busy) return;
+    // Ignore a repeated confirmation because one write is already in flight
+    if (busy || blocked !== null) return;
     setError(null);
     setBusy(true);
     try {
-      // Validate the reviewed requirements before passing the confirmed draft to storage.
-      const card = reviewExercise(entry, { category: category || null, equipment: reviewed ? equipment : null, requires: reviewed ? requires : null, minutes: Number(minutes) });
-      await onConfirm(card);
+      await onConfirm(reviewExercise(entry, Number(minutes)));
       onClose();
     } catch (problem) {
       setError(problem instanceof Error ? problem.message : String(problem));
     } finally { setBusy(false); }
   }
 
+  // Describe each fact as it reads on screen; bodyweight and "no special ability" are facts too
+  const equipmentText = entry.equipment === null ? 'Unknown' : entry.equipment.length === 0 ? 'None, bodyweight' : entry.equipment.map(item => EQUIPMENT_LABELS[item]).join(', ');
+  const needsText = entry.requires.length === 0 ? 'Nothing beyond the equipment' : entry.requires.map(item => CAPABILITY_LABELS[item]).join(', ');
+
   return <Sheet title="Review exercise" onClose={onClose}>
-    <div className="exercise-review-head"><MuscleMap category={entry.category} muscles={entry.primaryMuscles} /><div><span className="eyebrow">YOUR CHOICE, NOT SAVED</span><h3 className="title">{entry.name}</h3><p className="hint">Source equipment: {entry.sourceEquipment ?? 'unknown'}. Imported exercise data is not a medical assessment.</p></div></div>
-    <form className="form" onSubmit={confirm}>
-      <div className="grid-2"><label className="field"><span className="label">Category</span><select className="input" value={category} onChange={event => setCategory(event.target.value as Category | '')}><option value="">Review category</option>{EXERCISE_CATEGORIES.map(value => <option key={value} value={value}>{value}</option>)}</select></label>
-        <label className="field"><span className="label">Planning block (minutes)</span><input className="input" type="number" min="1" max="60" step="1" value={minutes} onChange={event => setMinutes(event.target.value)} /></label></div>
-      <p className="hint">The five minute default is an editable planning block, not a measured exercise duration or a prescription.</p>
-      <fieldset className="fieldset"><legend className="label">Equipment actually needed</legend><div className="row">{EXERCISE_EQUIPMENT.map(value => <label className="choice" key={value}><input type="checkbox" checked={equipment.includes(value)} onChange={event => setEquipment(event.target.checked ? [...equipment, value] : equipment.filter(item => item !== value))} />{value.replaceAll('_', ' ')}</label>)}</div><p className="hint">Leave these unchecked only when no listed equipment is needed.</p></fieldset>
-      <fieldset className="fieldset"><legend className="label">Capabilities required</legend><div className="row">{EXERCISE_CAPABILITIES.map(value => <label className="choice" key={value}><input type="checkbox" checked={requires.includes(value)} onChange={event => setRequires(event.target.checked ? [...requires, value] : requires.filter(item => item !== value))} />{value.replaceAll('_', ' ')}</label>)}</div><p className="hint">The source does not encode these requirements. Check any that apply before confirming.</p></fieldset>
-      <details className="exercise-instructions"><summary>Read the source instructions</summary><p className="body">{entry.cue || 'The source supplied no instructions.'}</p></details>
-      <label className="choice review-ack"><input name="requirementsReviewed" type="checkbox" checked={reviewed} onChange={event => setReviewed(event.target.checked)} />I checked the equipment and capability requirements.</label>
+    <div className="exercise-review-head"><MuscleMap category={entry.category} muscles={entry.primaryMuscles} /><div><span className="eyebrow">FROM THE EXERCISE LIBRARY</span><h3 className="title">{entry.name}</h3><p className="hint">Imported exercise data is not a medical assessment.</p></div></div>
+    <dl className="exercise-facts">
+      <div><dt>Area</dt><dd className="exercise-fact-area">{entry.category ?? 'Not mapped'}</dd></div>
+      <div><dt>Equipment</dt><dd>{equipmentText}</dd></div>
+      <div><dt>Needs</dt><dd>{needsText}</dd></div>
+      <div><dt>Level</dt><dd>{entry.level === null ? 'Not given' : LEVEL_LABELS[entry.level]}</dd></div>
+    </dl>
+    <p className="hint">These come from the source{entry.sourceEquipment === null ? '' : ` (listed equipment: ${entry.sourceEquipment})`} and its instructions, so they cannot be changed here.</p>
+    {blocked !== null ? <p className="notice" role="status">{blocked}</p> : <form className="form" onSubmit={confirm}>
+      <label className="field"><span className="label">Planning block (minutes)</span><input className="input input-short" type="number" min="1" max="60" step="1" value={minutes} onChange={event => setMinutes(event.target.value)} /></label>
+      <p className="hint">The source gives no duration. Five minutes is a planning default you can change, not a prescription.</p>
+      <details className="exercise-instructions"><summary>Read the instructions</summary><p className="body">{entry.cue || 'The source supplied no instructions.'}</p></details>
       {error && <p role="alert" className="field-error">{error}</p>}
-      <button className="button" type="submit" disabled={!reviewed || busy || category === '' || entry.equipment === null}>{busy ? 'Adding…' : 'Add to my exercises'}</button>
-    </form>
+      <button className="button" type="submit" disabled={busy}>{busy ? 'Adding…' : 'Add to my exercises'}</button>
+    </form>}
   </Sheet>;
 }

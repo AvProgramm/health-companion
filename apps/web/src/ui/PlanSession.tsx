@@ -1,11 +1,12 @@
 import { useEffect, useState, type FormEvent } from 'react';
 import { type MovementCard, type Category, type Equipment } from '../domain/training/catalogue';
 import { bestPlan, MAX_CARDS, type PlanResult } from '../domain/training/planner';
+import { EQUIPMENT_LABELS } from './format';
 import { MinutesRing } from './MinutesRing';
 import { MuscleMap } from './MuscleMap';
 
-// Label only the equipment types the existing planner understands.
-const EQUIPMENT_CHOICES: readonly [Equipment, string][] = [['dumbbells', 'Dumbbells'], ['band', 'Resistance band'], ['pull_up_bar', 'Pull-up bar']];
+// Every equipment type the planner understands, as it reads on a chip
+const EQUIPMENT_CHOICES = Object.entries(EQUIPMENT_LABELS) as [Equipment, string][];
 // Keep the four training areas available in both equipment modes.
 const CATEGORY_CHOICES: readonly [Category, string][] = [['push', 'Push'], ['pull', 'Pull'], ['legs', 'Legs'], ['core', 'Core']];
 

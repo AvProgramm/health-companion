@@ -6,8 +6,8 @@ import { ExerciseSearch } from './ExerciseSearch';
 import type { ExerciseEntry } from '../domain/training/exerciseSearch';
 
 // These fictional rows test the confirmation flow without a real exercise history.
-const entries: ExerciseEntry[] = [{ id: 'free-exercise-db:fictional', name: 'Fictional row', category: 'pull', equipment: ['dumbbells'], requires: null,
-  cue: 'Fictional cue.', minutes: 5, primaryMuscles: ['middle back'], sourceEquipment: 'dumbbell', imagePath: null }];
+const entries: ExerciseEntry[] = [{ id: 'free-exercise-db:fictional', name: 'Fictional row', category: 'pull', equipment: ['dumbbells'], untracked: null,
+  requires: [], cue: 'Fictional cue.', minutes: 5, primaryMuscles: ['middle back'], sourceEquipment: 'dumbbell', imagePath: null, level: 'beginner' }];
 let root: Root;
 let container: HTMLDivElement;
 beforeEach(() => {
@@ -38,19 +38,23 @@ describe('offline exercise selection', () => {
     expect(onAdd).not.toHaveBeenCalled();
     const review = [...container.querySelectorAll('button')].find(button => button.textContent === 'Review and add')!;
     await act(async () => review.click());
+    // Asked for on 8 Nov: the source's equipment is shown as a fact, with nothing to tick or untick
+    const sheet = container.querySelector('[role="dialog"]') ?? container;
+    expect(sheet.textContent).toContain('Dumbbells');
+    expect(sheet.querySelectorAll('input[type="checkbox"]')).toHaveLength(0);
+    expect(onAdd).not.toHaveBeenCalled();
     const confirm = [...container.querySelectorAll('button')].find(button => button.textContent === 'Add to my exercises')!;
-    expect(confirm.disabled).toBe(true);
-    await act(async () => (container.querySelector('input[name="requirementsReviewed"]') as HTMLInputElement).click());
     await act(async () => confirm.click());
     expect(onAdd).toHaveBeenCalledTimes(1);
-    expect(onAdd.mock.calls[0]![0].requires).toEqual([]);
+    expect(onAdd.mock.calls[0]![0]).toMatchObject({ equipment: ['dumbbells'], requires: [], category: 'pull' });
     expect(fetchMock).not.toHaveBeenCalled();
   });
 
-  it('keeps unsupported equipment searchable without silently treating it as bodyweight', async () => {
-    await act(async () => root.render(createElement(ExerciseSearch, { entries: [{ ...entries[0]!, equipment: null, sourceEquipment: 'machine' }], chosen: [], busy: false, onAdd: vi.fn(), onRemove: vi.fn() })));
+  it('keeps unsupported equipment searchable, says why, and never treats it as bodyweight', async () => {
+    const blocked = { ...entries[0]!, equipment: null, untracked: 'a decline bench', sourceEquipment: 'body only' };
+    await act(async () => root.render(createElement(ExerciseSearch, { entries: [blocked], chosen: [], busy: false, onAdd: vi.fn(), onRemove: vi.fn() })));
     await search('fictional');
-    expect(container.textContent).toContain('machine');
+    expect(container.textContent).toContain('It needs a decline bench');
     expect([...container.querySelectorAll('button')].find(button => button.textContent === 'Review and add')!.disabled).toBe(true);
   });
 });
