@@ -57,3 +57,5 @@ Organised by feature, one reason to change per module. Domain never imports stor
 - Each milestone ends with `docs/milestones/mN-walkthrough.md`, so Yash can explain it back in his own words.
 - Do not write the functions Yash reserves for himself without asking: `compareCandidates` (planner objective) and the PyTorch training loop.
 - Push to GitHub at every green checkpoint, roughly every 5–6 minutes of work.
+
+Current repeated-round planner and wrap-up: read `docs/handoff/claude-code.md` and `docs/milestones/m4-repeated-rounds-walkthrough.md`. Repetition is explicitly selectable; the earlier distinct-only duration notes are historical.

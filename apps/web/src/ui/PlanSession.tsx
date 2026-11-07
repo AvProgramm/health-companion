@@ -109,7 +109,7 @@ export function PlanSession({ cards }: { cards: readonly MovementCard[] }) {
             {plannedMinutes} of {minutesText} min · covers {result.plan.covered} of {categories.length} chosen areas
           </p>
           {result.unfilledMinutes > 0 && <p className="notice">{result.unfilledMinutes} min unfilled. These reviewed blocks do not fill the last part of this target. Adjust the target or choose additional blocks.</p>}
-          {result.schedule && <p className="body">{result.schedule.fullRounds} full rounds{result.schedule.extraBlocks > 0 && ` + ${result.schedule.extraBlocks} extra blocks`}. Review these repeated blocks before training.</p>}
+          {result.schedule && <p className="body">{result.schedule.fullRounds} full {result.schedule.fullRounds === 1 ? 'round' : 'rounds'}{result.schedule.extraBlocks > 0 && ` + ${result.schedule.extraBlocks} extra blocks`}. Review these repeated blocks before training.</p>}
           <p className="hint">Up to {MAX_CARDS} distinct exercises; planning blocks keep their reviewed durations.{!result.schedule && ' Each exercise is used once.'}</p>
           <details><summary className="hint">How this plan was chosen</summary><p className="hint">Coverage first, then closest to your target without going over, then preference. Compared {result.considered} planning options.{result.schedule && ' The selected round is repeated, with extra blocks where their lengths fit.'}</p></details>
           <p className="hint">A suggestion only: log what you actually did on Today.</p>

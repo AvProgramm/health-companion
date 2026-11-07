@@ -217,3 +217,7 @@ Preview was restarted after the server-unavailable test. No diary history was se
 - Browser: starter-only bodyweight pool shows A partial session, 15/60, 45 min unfilled. With nine temporary five-minute choices confirmed through the normal UI, planner shows Your target is covered, 60/60, twelve unique exercises. Test choices removed; no workout logged.
 - Browser widths 375/1440 px: full-target ring and cards render; phone-width content has no horizontal overflow. These temporary choices test arithmetic and UI, not a recommended training programme.
 - Physical phone target-duration check: NOT TESTED. Reload twice, use 60 minutes with enough reviewed choices and available equipment; verify the target or a clearly labelled shortfall. Existing diary must remain intact.
+
+
+## Repeated rounds (7 Nov, Codex)
+Check and build pass. Browser: 31/31, 60/60 (four rounds), 90/90 and 241/241 from starter bodyweight choices; repetition off restores 15/60. Billion-minute input stays compact; ring display overlap reproduced and fixed with an exact-accessibility regression. Cached cold reload and 60/60 planning pass with preview stopped; preview restarted. Physical phone repeat-toggle and airplane-mode check: NOT TESTED. See docs/handoff/claude-code.md.

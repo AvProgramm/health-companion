@@ -136,3 +136,12 @@ export function readAmount(text: string): number | null {
   const value = Number(trimmed);
   return Number.isFinite(value) && value >= 0 ? value : null;
 }
+
+
+// Keep very large display-only labels inside the minutes ring; exact totals remain elsewhere.
+const COMPACT_MINUTES = new Intl.NumberFormat('en-AU', { notation: 'compact', maximumFractionDigits: 1 });
+
+/** Return a short ring label without changing the stored or planned minute total. */
+export function formatRingMinutes(minutes: number): string {
+  return minutes < 10_000 ? String(minutes) : COMPACT_MINUTES.format(minutes);
+}

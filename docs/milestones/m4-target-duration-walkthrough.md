@@ -42,3 +42,6 @@ npm run check and the production build pass. Browser verification passes at 375 
 Yash wants free-first agentic gym/nutrition assistants and DL/ML or BERT/transformer experiments later. No chatbot, model download, API call or training loop is added here. Later model choices need licence/access/cost checks, a baseline, held-out evaluation and measured latency. Suggestions must remain drafts, and deterministic planner constraints must still govern the final plan. Yash's training loop remains reserved.
 
 Further oracle coverage checks twelve ten-card pools with mixed durations, category goals, positive/negative preferences, missing gear, blocked capabilities and excluded IDs, comparing full optimal candidates against exhaustive enumeration. A thirteen-block case confirms the twelve-card limit still applies.
+
+
+Superseded follow-up: Yash explicitly requested repeated rounds and removal of the input cap. See `m4-repeated-rounds-walkthrough.md`; the distinct-only mode remains available by turning repetition off.
