@@ -27,6 +27,8 @@ def estimate_prompt(basis, evidence=()):
         'such as nasi lemak one serving is one plate or packet with its usual sides. State the grams '
         'you assume per serving. Never reinterpret servings as cups or spoons; if a source gives '
         'values per cup or per 100 g, scale them to your stated serving weight. '
+        'Give sodium in milligrams and every other nutrient except energy in grams. unsatfat_g is '
+        'monounsaturated plus polyunsaturated fat. '
         'Every known value above zero is an estimate: its low must be strictly below its high, '
         'reflecting real portion and recipe variation. For a mixed dish the range must cover how '
         'much typical servings sold by different stalls differ (often a quarter or more either way), '

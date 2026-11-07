@@ -14,7 +14,14 @@ LABELS = {
     'satfat_g': r'saturated fat',
     'total_sugar_g': r'(?<!added )(?:total )?sugars?',
     'added_sugar_g': r'added sugars?',
+    'carbs_g': r'(?:total )?carbohydrates?|carbs',
+    'fibre_g': r'(?:dietary )?fib(?:re|er)',
+    # \b keeps "monounsaturated fat" from counting as all unsaturated fat
+    'unsatfat_g': r'unsaturated fats?',
+    'sodium_mg': r'sodium',
 }
+# The unit each nutrient is printed in; everything else is grams
+UNITS = {'kcal': 'kcal', 'sodium_mg': 'mg'}
 # A single physical serving basis is needed before a source can be scaled.
 BASIS = re.compile(r'\bper\s+(\d+(?:\.\d+)?)\s*(kg|g|ml|l|pieces?)\b', re.I)
 # One extra lookup has to fit inside the existing browser request deadline.
@@ -40,7 +47,7 @@ def compatible_factor(content, target):
 
 def explicit_value(content, key):
     """Read a single explicit nutrient amount without guessing a missing label."""
-    unit = 'kcal' if key == 'kcal' else 'g'
+    unit = UNITS.get(key, 'g')
     pattern = rf'\b{LABELS[key]}\s*[:=]?\s*(\d+(?:\.\d+)?)\s*{unit}\b'
     values = {float(value) for value in re.findall(pattern, content, re.I)}
     if len(values) != 1:

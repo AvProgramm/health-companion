@@ -1,12 +1,12 @@
 import { useState, type FormEvent } from 'react';
 import { buildFoodVersion } from '../domain/nutrition/foods';
-import type { FoodVersion, NutrientKey, NutrientValue, SourceKind } from '../domain/nutrition/types';
+import { NUTRIENT_KEYS, type FoodVersion, type NutrientKey, type NutrientValue, type SourceKind } from '../domain/nutrition/types';
 import type { Unit } from '../domain/shared/units';
 import { NUTRIENT_LABELS } from './format';
 import { Sheet } from './Sheet';
 
 // The label fields, in the order printed on most nutrition panels
-const EDITABLE_NUTRIENTS: readonly NutrientKey[] = ['kcal', 'protein_g', 'fat_g', 'satfat_g', 'total_sugar_g', 'added_sugar_g'];
+const EDITABLE_NUTRIENTS = NUTRIENT_KEYS;
 
 const UNIT_CHOICES: readonly { unit: Unit; label: string }[] = [
   { unit: 'g', label: 'g' },

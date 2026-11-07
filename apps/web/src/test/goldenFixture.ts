@@ -5,7 +5,7 @@
  * by hand in the build kit, not computed by this code.
  */
 import goldenJson from '../../../../eval/fixtures/ledger_golden.json';
-import type { FoodVersion, NutrientKey } from '../domain/nutrition/types';
+import { NUTRIENT_KEYS, type FoodVersion } from '../domain/nutrition/types';
 import type { MealComponent } from '../domain/meals/types';
 import { isUnit, type Unit } from '../domain/shared/units';
 
@@ -24,7 +24,6 @@ interface GoldenFile {
 // The JSON's inferred type is a union per case, so it is read through one plain shape
 const golden = goldenJson as unknown as GoldenFile;
 
-const NUTRIENT_KEYS: readonly NutrientKey[] = ['kcal', 'protein_g', 'fat_g', 'satfat_g', 'total_sugar_g', 'added_sugar_g'];
 
 /**
  * Return the fixture's unit text as a Unit; the fixture writes "pieces" for "piece".

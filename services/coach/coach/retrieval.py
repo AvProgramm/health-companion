@@ -83,8 +83,9 @@ async def search_missing_nutrients(name, portion_text, missing):
     key = os.getenv('TAVILY_API_KEY', '')
     if not key:
         return []
-    labels = {'kcal': 'energy kcal', 'protein_g': 'protein', 'fat_g': 'total fat',
-        'satfat_g': 'saturated fat', 'total_sugar_g': 'total sugar', 'added_sugar_g': 'added sugar'}
+    labels = {'kcal': 'energy kcal', 'protein_g': 'protein', 'carbs_g': 'carbohydrate', 'fibre_g': 'dietary fibre',
+        'total_sugar_g': 'total sugar', 'added_sugar_g': 'added sugar', 'fat_g': 'total fat',
+        'satfat_g': 'saturated fat', 'unsatfat_g': 'unsaturated fat', 'sodium_mg': 'sodium mg'}
     query = f'{name} {portion_text} ' + ' '.join(labels[item] for item in missing) + ' nutrition per 100 g'
     async with httpx.AsyncClient(timeout=1.5) as client:
         response = await client.post('https://api.tavily.com/search', headers={'Authorization': f'Bearer {key}'}, json={

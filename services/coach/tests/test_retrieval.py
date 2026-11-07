@@ -6,13 +6,13 @@ from unittest.mock import AsyncMock, patch
 import httpx
 from coach.retrieval import WebEvidence, parse_search_results
 from coach.huggingface import hf_estimate
-from coach.models import Estimate
+from coach.models import Estimate, Nutrients
 from coach.pipeline import estimate_food
 
 
 def proposal():
     """Return fictional nutrition with no personal diary records."""
-    keys = ['kcal', 'protein_g', 'fat_g', 'satfat_g', 'total_sugar_g', 'added_sugar_g']
+    keys = list(Nutrients.model_fields)
     return {'basis': {'amount': 100, 'unit': 'g'},
         'nutrients': {key: 120 if key == 'kcal' else None for key in keys},
         'range': {key: {'low': 100, 'high': 150} if key == 'kcal' else None for key in keys},

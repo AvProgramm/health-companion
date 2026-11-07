@@ -27,9 +27,20 @@ describe('estimate boundary and totals', () => {
     expect(food.source.reference).toContain('USDA');
   });
 
-  it('rejects missing, non-finite, negative, unsafe-source and inconsistent proposals', () => {
+  // Added 7 Nov with carbohydrate, fibre, sodium and unsaturated fat: a service from
+  // before those existed sends six nutrients, and the rest must read as unknown, never 0
+  it('treats a nutrient the service did not send as unknown', () => {
+    const estimate = readEstimate(proposal);
+    expect(estimate.nutrients.kcal).toBe(60);
+    expect(estimate.nutrients.carbs_g).toBeNull();
+    expect(estimate.nutrients.sodium_mg).toBeNull();
+    expect(estimate.range.fibre_g).toBeNull();
+  });
+
+  it('rejects missing, non-finite, negative, unsupported, unsafe-source and inconsistent proposals', () => {
     for (const invalid of [
-      {}, { ...proposal, nutrients: { kcal: 60 } },
+      {}, { ...proposal, nutrients: {} },
+      { ...proposal, range: { ...proposal.range, iron_mg: null } },
       { ...proposal, nutrients: { ...proposal.nutrients, kcal: -1 } },
       { ...proposal, nutrients: { ...proposal.nutrients, kcal: Number.NaN } },
       { ...proposal, range: { ...proposal.range, kcal: { low: 70, high: 80 } } },

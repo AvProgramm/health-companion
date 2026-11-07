@@ -3,7 +3,7 @@ import type { NutrientKey } from '../domain/nutrition/types';
 import { NUTRIENT_LABELS } from './format';
 
 // The totals shown on Today; saturated fat stays in the meal sheet to keep this short
-const SHOWN: readonly NutrientKey[] = ['kcal', 'protein_g', 'fat_g', 'total_sugar_g', 'added_sugar_g'];
+const SHOWN: readonly NutrientKey[] = ['kcal', 'protein_g', 'carbs_g', 'fibre_g', 'fat_g', 'total_sugar_g', 'added_sugar_g', 'sodium_mg'];
 
 interface DaySummaryCardProps {
   summary: DaySummary;

@@ -189,6 +189,11 @@ describe('parseEntry: sleep', () => {
 describe('parseEntry: questions', () => {
   it.each([
     ['How much protein today?', 'protein_g'],
+    ['how much fibre today?', 'fibre_g'],
+    ['total carbs?', 'carbs_g'],
+    ['how much sodium did I have?', 'sodium_mg'],
+    ["what's my unsaturated fat", 'unsatfat_g'],
+    ['saturated fat?', 'satfat_g'],
     ["what's my added sugar", 'added_sugar_g'],
     ['total calories?', 'kcal'],
     ['how much sugar did I have?', 'total_sugar_g'],

@@ -6,6 +6,7 @@ import { EstimateDraft } from './EstimateDraft';
 import { DraftCard } from './DraftCard';
 import { FoodEditor } from './FoodEditor';
 import { estimatedFood, readEstimate } from '../domain/nutrition/estimates';
+import { NUTRIENT_KEYS } from '../domain/nutrition/types';
 
 // A fictional response makes the confirmation test independent of a provider.
 const proposal = {
@@ -91,7 +92,7 @@ describe('estimate draft', () => {
     expect(container.textContent).toContain('Could not reach the laptop');
     expect(onUse).not.toHaveBeenCalled();
     await tap('Log with unknown values');
-    expect(Object.values(onUse.mock.calls[0]![0].nutrients)).toEqual([null, null, null, null, null, null]);
+    expect(Object.values(onUse.mock.calls[0]![0].nutrients)).toEqual(NUTRIENT_KEYS.map(() => null));
     expect(onUse.mock.calls[0]![0].range).toBeUndefined();
   });
 

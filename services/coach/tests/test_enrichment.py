@@ -10,7 +10,8 @@ from coach.enrichment import enrich_unknown
 
 def base_estimate():
     """Return fictional known nutrition with only added sugar missing."""
-    values = {'kcal': 120, 'protein_g': 4, 'fat_g': 2, 'satfat_g': 1, 'total_sugar_g': 5, 'added_sugar_g': None}
+    values = {'kcal': 120, 'protein_g': 4, 'carbs_g': 20, 'fibre_g': 2, 'total_sugar_g': 5, 'added_sugar_g': None,
+              'fat_g': 2, 'satfat_g': 1, 'unsatfat_g': 1, 'sodium_mg': 90}
     return Estimate.model_validate({'basis': {'amount': 50, 'unit': 'g'}, 'nutrients': values,
         'range': {key: None if value is None else {'low': value, 'high': value} for key,value in values.items()},
         'sourceKind': 'database', 'reason': 'Fictional label.',
@@ -55,6 +56,27 @@ class EnrichmentTests(unittest.TestCase):
         search.assert_not_awaited()
         failing = AsyncMock(side_effect=TimeoutError())
         self.assertEqual(asyncio.run(enrich_unknown('Fictional oatcakes', '50 g', base, failing)), base)
+
+    def test_sodium_is_read_in_milligrams_and_every_nutrient_has_a_search_label(self):
+        """Fill sodium from an explicit mg value, and build a query for any missing nutrient."""
+        base = base_estimate().model_copy(deep=True)
+        base.nutrients.sodium_mg = None
+        base.range['sodium_mg'] = None
+        calls = []
+
+        def respond(request):
+            """Return a fictional label giving sodium in milligrams."""
+            import json
+            calls.append(json.loads(request.content)['query'])
+            return httpx.Response(200, json={'results': [{'title': 'Fictional oatcakes label', 'url': 'https://example.org/label',
+                'content': 'Fictional oatcakes per 100 g. Sodium: 400 mg. Added sugars: 2 g.'}]})
+        client = httpx.AsyncClient
+        with patch.dict('os.environ', {'TAVILY_API_KEY': 'fictional-token'}):
+            with patch('coach.retrieval.httpx.AsyncClient', side_effect=lambda **kwargs: client(**kwargs, transport=httpx.MockTransport(respond))):
+                result = asyncio.run(enrich_unknown('Fictional oatcakes', '50 g', base))
+        # 400 mg per 100 g, scaled to the 50 g portion
+        self.assertEqual(result.nutrients.sodium_mg, 200)
+        self.assertIn('sodium', calls[0])
 
     def test_live_adapter_budget_is_one_small_search_with_no_model(self):
         """Send only a targeted public query with two bounded results."""

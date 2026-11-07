@@ -10,8 +10,12 @@ const QUESTION_LEAD = /^(?:how\s+much|how\s+many|what(?:'s|\s+is|\s+was|\s+were)
 // Nutrient words, most specific first so "added sugar" wins over "sugar"
 const NUTRIENT_WORDS: readonly [RegExp, NutrientKey][] = [
   [/\badded\s+sugars?\b/, 'added_sugar_g'],
+  [/\bunsaturated\s+fats?\b/, 'unsatfat_g'],
   [/\bsat(?:urated)?\s+fat\b/, 'satfat_g'],
   [/\bprotein\b/, 'protein_g'],
+  [/\b(?:carbs|carbohydrates?)\b/, 'carbs_g'],
+  [/\bfib(?:re|er)\b/, 'fibre_g'],
+  [/\b(?:sodium|salt)\b/, 'sodium_mg'],
   [/\b(?:calories|calorie|kcal|energy)\b/, 'kcal'],
   [/\bsugars?\b/, 'total_sugar_g'],
   [/\bfat\b/, 'fat_g'],

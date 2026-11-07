@@ -1,9 +1,7 @@
 import { totalNutrient, type NutrientTotal } from './aggregate';
-import type { FoodVersion, NutrientKey } from './types';
+import { NUTRIENT_KEYS, type FoodVersion, type NutrientKey } from './types';
 import type { MealRevision } from '../meals/types';
 
-// The nutrients the day summary reports, in display order
-export const SUMMARY_NUTRIENTS: readonly NutrientKey[] = ['kcal', 'protein_g', 'fat_g', 'satfat_g', 'total_sugar_g', 'added_sugar_g'];
 
 /**
  * The totals for one diary date.
@@ -34,7 +32,7 @@ export function summariseDay(
 
   // Add up each nutrient across those meals, keeping unknown items separate
   const totals = {} as Record<NutrientKey, NutrientTotal>;
-  for (const nutrient of SUMMARY_NUTRIENTS) {
+  for (const nutrient of NUTRIENT_KEYS) {
     const total: NutrientTotal = { known: 0, unknownItems: 0 };
     for (const meal of meals) {
       const mealTotal = totalNutrient(meal, foods, nutrient);

@@ -9,7 +9,7 @@
 import { reviseMeal } from '../domain/meals/revisions';
 import type { MealEditRequest, MealRevision } from '../domain/meals/types';
 import { totalNutrient } from '../domain/nutrition/aggregate';
-import { SUMMARY_NUTRIENTS } from '../domain/nutrition/day';
+import { NUTRIENT_KEYS } from '../domain/nutrition/types';
 import type { FoodVersion } from '../domain/nutrition/types';
 import { resultOf, runTransaction } from './connection';
 
@@ -198,7 +198,7 @@ export function countMeals(db: IDBDatabase): Promise<number> {
  * saved, rather than when the day view later tries to add it up.
  */
 function assertTotalable(revision: MealRevision, foods: ReadonlyMap<string, FoodVersion>): void {
-  for (const nutrient of SUMMARY_NUTRIENTS) {
+  for (const nutrient of NUTRIENT_KEYS) {
     totalNutrient(revision, foods, nutrient);
   }
 }

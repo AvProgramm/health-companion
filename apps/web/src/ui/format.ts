@@ -6,10 +6,14 @@ import type { Quantity } from '../domain/shared/units';
 export const NUTRIENT_LABELS: Record<NutrientKey, { label: string; unit: string }> = {
   kcal: { label: 'Energy', unit: 'kcal' },
   protein_g: { label: 'Protein', unit: 'g' },
-  fat_g: { label: 'Fat', unit: 'g' },
-  satfat_g: { label: 'Saturated fat', unit: 'g' },
+  carbs_g: { label: 'Carbohydrate', unit: 'g' },
+  fibre_g: { label: 'Fibre', unit: 'g' },
   total_sugar_g: { label: 'Total sugar', unit: 'g' },
   added_sugar_g: { label: 'Added sugar', unit: 'g' },
+  fat_g: { label: 'Fat', unit: 'g' },
+  satfat_g: { label: 'Saturated fat', unit: 'g' },
+  unsatfat_g: { label: 'Unsaturated fat', unit: 'g' },
+  sodium_mg: { label: 'Sodium', unit: 'mg' },
 };
 
 // The badge text for where a food's numbers came from

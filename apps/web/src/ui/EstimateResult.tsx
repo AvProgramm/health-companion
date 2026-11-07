@@ -1,9 +1,9 @@
 import type { NutritionEstimate } from '../domain/nutrition/estimates';
-import type { NutrientKey } from '../domain/nutrition/types';
+import { NUTRIENT_KEYS } from '../domain/nutrition/types';
 import { formatQuantity, formatTotal, NUTRIENT_LABELS, SOURCE_LABELS } from './format';
 
 // Every tracked nutrient after energy, so nothing a source gave is hidden; unknown ones say so
-const DETAIL_NUTRIENTS: readonly NutrientKey[] = ['protein_g', 'fat_g', 'satfat_g', 'total_sugar_g', 'added_sugar_g'];
+const DETAIL_NUTRIENTS = NUTRIENT_KEYS.filter((key) => key !== 'kcal');
 
 interface EstimateResultProps {
   estimate: NutritionEstimate;

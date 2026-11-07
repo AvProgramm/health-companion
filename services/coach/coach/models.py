@@ -24,10 +24,16 @@ class Nutrients(StrictModel):
     """Require every nutrient key while allowing unknown values."""
     kcal: float | None = Field(ge=0)
     protein_g: float | None = Field(ge=0)
-    fat_g: float | None = Field(ge=0)
-    satfat_g: float | None = Field(ge=0)
+    carbs_g: float | None = Field(ge=0)
+    fibre_g: float | None = Field(ge=0)
     total_sugar_g: float | None = Field(ge=0)
     added_sugar_g: float | None = Field(ge=0)
+    fat_g: float | None = Field(ge=0)
+    satfat_g: float | None = Field(ge=0)
+    # Monounsaturated plus polyunsaturated; unknown unless both parts are known
+    unsatfat_g: float | None = Field(ge=0)
+    # Milligrams, as printed on labels
+    sodium_mg: float | None = Field(ge=0)
 
 
 class Spread(StrictModel):

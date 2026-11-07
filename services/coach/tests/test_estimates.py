@@ -11,7 +11,7 @@ from coach.app import app
 from coach.databases import parse_usda, parse_off, average_matches
 from coach.databases import portion_basis
 from coach.model_client import check_model_spread, request_model
-from coach.models import Basis, Estimate
+from coach.models import Basis, Estimate, Nutrients
 from coach.pipeline import estimate_food
 from coach.prompts import estimate_prompt
 
@@ -36,6 +36,33 @@ class EstimateTests(unittest.TestCase):
         self.assertEqual(match.nutrients.kcal, 120)
         self.assertIsNone(match.nutrients.added_sugar_g)
         self.assertIsNone(match.nutrients.fat_g)
+
+    # Asked for on 7 Nov: carbohydrate, fibre, sodium and unsaturated fat
+    def test_usda_reads_carbs_fibre_sodium_and_sums_unsaturated_fat(self):
+        """Read the added nutrients by ID and unit, and add mono and poly fat only when both are known."""
+        payload = {'foods': [{'fdcId': 7, 'description': 'Fictional oats', 'foodNutrients': [
+            {'nutrientId': 1005, 'unitName': 'G', 'value': 66},
+            {'nutrientId': 1079, 'unitName': 'G', 'value': 10},
+            {'nutrientId': 1093, 'unitName': 'MG', 'value': 6},
+            {'nutrientId': 1292, 'unitName': 'G', 'value': 2.2},
+            {'nutrientId': 1293, 'unitName': 'G', 'value': 2.5},
+        ]}]}
+        match = parse_usda(payload, 'oats')[0]
+        self.assertEqual((match.nutrients.carbs_g, match.nutrients.fibre_g, match.nutrients.sodium_mg), (66, 10, 6))
+        self.assertAlmostEqual(match.nutrients.unsatfat_g, 4.7)
+        # With only one part known, unsaturated fat stays unknown rather than half-counted
+        payload['foods'][0]['foodNutrients'] = payload['foods'][0]['foodNutrients'][:4]
+        self.assertIsNone(parse_usda(payload, 'oats')[0].nutrients.unsatfat_g)
+
+    def test_off_converts_sodium_grams_to_milligrams(self):
+        """Open Food Facts publishes sodium in grams; the diary stores milligrams."""
+        payload = {'products': [{'code': '111', 'product_name': 'Fictional oats', 'nutriments': {
+            'carbohydrates_100g': 60, 'fiber_100g': 9, 'sodium_100g': 0.4,
+            'monounsaturated-fat_100g': 2, 'polyunsaturated-fat_100g': 3}}]}
+        match = parse_off(payload, 'oats')[0]
+        self.assertEqual((match.nutrients.carbs_g, match.nutrients.fibre_g), (60, 9))
+        self.assertAlmostEqual(match.nutrients.sodium_mg, 400)
+        self.assertEqual(match.nutrients.unsatfat_g, 5)
 
     def test_malformed_records_are_ignored_and_piece_counts_are_not_grams(self):
         """Reject malformed upstream rows and incompatible serving units."""
@@ -185,7 +212,7 @@ class EstimateTests(unittest.TestCase):
 
 def proposal(kind='ai_estimate'):
     """Return a complete fictional proposal for boundary tests."""
-    keys = ['kcal', 'protein_g', 'fat_g', 'satfat_g', 'total_sugar_g', 'added_sugar_g']
+    keys = list(Nutrients.model_fields)
     return {
         'basis': {'amount': 50, 'unit': 'g'},
         'nutrients': {key: 60 if key == 'kcal' else None for key in keys},

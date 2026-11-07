@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { requestEstimate } from '../api/estimate';
 import { estimatedFood, type NutritionEstimate } from '../domain/nutrition/estimates';
 import { buildFoodVersion } from '../domain/nutrition/foods';
-import { SUMMARY_NUTRIENTS } from '../domain/nutrition/day';
+import { NUTRIENT_KEYS } from '../domain/nutrition/types';
 import type { FoodVersion } from '../domain/nutrition/types';
 import { Sparkle } from '@phosphor-icons/react';
 import { EstimateResult } from './EstimateResult';
@@ -54,7 +54,7 @@ export function EstimateDraft({ name: initialName, portionText: initialPortion, 
     try {
       const food = unknown
         ? buildFoodVersion({ name, aliases: [], basis: { amount: 1, unit: 'piece' },
-            nutrients: Object.fromEntries(SUMMARY_NUTRIENTS.map((key) => [key, null])), sourceKind: 'user_estimate' }, foodId.current)
+            nutrients: Object.fromEntries(NUTRIENT_KEYS.map((key) => [key, null])), sourceKind: 'user_estimate' }, foodId.current)
         : estimatedFood(name, estimate!, foodId.current);
       await onUse(food);
     } catch (problem) {

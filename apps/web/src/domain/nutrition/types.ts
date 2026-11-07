@@ -6,7 +6,15 @@ import type { Quantity } from '../shared/units';
 // A label can leave a nutrient blank; null keeps it unknown instead of becoming 0
 export type NutrientValue = number | null;
 
-export type NutrientKey = 'kcal' | 'protein_g' | 'fat_g' | 'satfat_g' | 'total_sugar_g' | 'added_sugar_g';
+// Every tracked nutrient, in the order a nutrition panel lists them. This is the one
+// list the app derives the others from, so adding a nutrient is a change here.
+// unsatfat_g is monounsaturated plus polyunsaturated fat; sodium is in milligrams.
+export const NUTRIENT_KEYS = [
+  'kcal', 'protein_g', 'carbs_g', 'fibre_g', 'total_sugar_g', 'added_sugar_g',
+  'fat_g', 'satfat_g', 'unsatfat_g', 'sodium_mg',
+] as const;
+
+export type NutrientKey = (typeof NUTRIENT_KEYS)[number];
 
 // Where a food's numbers came from, shown as a badge beside every row
 export type SourceKind = 'label' | 'user_estimate' | 'fixture' | 'database' | 'ai_estimate' | 'web_estimate';

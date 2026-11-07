@@ -1,5 +1,5 @@
 import { buildFoodVersion } from './foods';
-import { SUMMARY_NUTRIENTS } from './day';
+import { NUTRIENT_KEYS } from './types';
 import type { FoodVersion, NutrientKey, NutrientRange } from './types';
 import type { Quantity } from '../shared/units';
 
@@ -27,7 +27,7 @@ function nonNegative(value: unknown): value is number {
 export function validateRanges(nutrients: FoodVersion['nutrients'], range: unknown): void {
   if (!record(range)) throw new Error('Return nutrient ranges as an object.');
   for (const [key, spread] of Object.entries(range)) {
-    if (!SUMMARY_NUTRIENTS.includes(key as NutrientKey)) throw new Error('Return only supported nutrient ranges.');
+    if (!NUTRIENT_KEYS.includes(key as NutrientKey)) throw new Error('Return only supported nutrient ranges.');
     const value = nutrients[key as NutrientKey] ?? null;
     if (spread === null && value === null) continue;
     if (!record(spread) || !nonNegative(spread.low) || !nonNegative(spread.high) || value === null || spread.low > value || spread.high < value) {
@@ -44,13 +44,20 @@ export function readEstimate(value: unknown): NutritionEstimate {
       !Array.isArray(value.sources) || value.sources.length === 0 || value.sources.length > 12) {
     throw new Error('The estimate is incomplete. Edit this food manually.');
   }
-  for (const key of SUMMARY_NUTRIENTS) {
-    const nutrient = value.nutrients[key];
+  // A nutrient the service did not send is unknown, as on a saved label, so a service
+  // from before a nutrient was added still works; a value that is sent must be valid
+  const nutrients: Record<string, unknown> = {};
+  const range: Record<string, unknown> = {};
+  for (const key of NUTRIENT_KEYS) {
+    const nutrient = value.nutrients[key] ?? null;
     if (nutrient !== null && !nonNegative(nutrient)) throw new Error('Return each nutrient as a number or null.');
-    if (!(key in value.range)) throw new Error('Return a range for every nutrient.');
+    nutrients[key] = nutrient;
+    range[key] = value.range[key] ?? null;
   }
-  const nutrients = value.nutrients;
-  if (SUMMARY_NUTRIENTS.every((key) => nutrients[key] === null)) {
+  for (const key of Object.keys(value.range)) {
+    if (!NUTRIENT_KEYS.includes(key as NutrientKey)) throw new Error('Return only supported nutrient ranges.');
+  }
+  if (NUTRIENT_KEYS.every((key) => nutrients[key] === null)) {
     throw new Error('No nutrition values were returned. Try a clearer portion or add the food manually.');
   }
   for (const source of value.sources) {
@@ -60,7 +67,7 @@ export function readEstimate(value: unknown): NutritionEstimate {
     }
   }
   // Reuse label validation for the portion and all finite nutrient values.
-  const proposal = value as unknown as NutritionEstimate;
+  const proposal = { ...value, nutrients, range } as unknown as NutritionEstimate;
   buildFoodVersion({ name: 'Estimate', aliases: [], basis: proposal.basis, nutrients: proposal.nutrients, sourceKind: proposal.sourceKind }, 'validation');
   validateRanges(proposal.nutrients, proposal.range);
   return proposal;
