@@ -4,7 +4,8 @@ import { estimatedFood, type NutritionEstimate } from '../domain/nutrition/estim
 import { buildFoodVersion } from '../domain/nutrition/foods';
 import { SUMMARY_NUTRIENTS } from '../domain/nutrition/day';
 import type { FoodVersion } from '../domain/nutrition/types';
-import { formatQuantity, formatTotal } from './format';
+import { Sparkle } from '@phosphor-icons/react';
+import { EstimateResult } from './EstimateResult';
 
 interface EstimateDraftProps {
   name: string;
@@ -63,39 +64,33 @@ export function EstimateDraft({ name: initialName, portionText: initialPortion, 
     }
   }
 
-  return (
-    <div className="estimate-panel">
-      <p className="hint">Optional lookup: only this food name and portion text go to the laptop and food providers.</p>
+  // Reuse the inputs before lookup and inside the collapsed result editor.
+  const inputFields = <>
+      <div className="estimate-fields">
       <label className="field">
         <span className="label">Food to estimate</span>
         <input className="input" maxLength={80} value={name} disabled={busy} onChange={(event) => { setName(event.target.value); setEstimate(null); }} />
       </label>
       <label className="field">
         <span className="label">Portion text</span>
-        <input className="input" maxLength={80} placeholder="e.g. 150 g or 2 pieces" value={portionText} disabled={busy} onChange={(event) => { setPortionText(event.target.value); setEstimate(null); }} />
+        <input className="input" maxLength={80} placeholder="Typical serving, or e.g. 150 g" value={portionText} disabled={busy} onChange={(event) => { setPortionText(event.target.value); setEstimate(null); }} />
       </label>
-      <button type="button" className="button button-secondary" disabled={busy || name.trim() === ''} onClick={loadEstimate}>Estimate nutrition</button>
+      </div>
+      <button type="button" className="button button-secondary estimate-trigger" disabled={busy || name.trim() === ''} onClick={loadEstimate}>Estimate nutrition</button>
+  </>;
+
+  return (
+    <div className="estimate-panel">
+      <p className="lookup-caption"><Sparkle size={18} /> Nutrition lookup <span>Food name and portion only</span></p>
+      {estimate === null ? inputFields : <details className="estimate-inputs"><summary>{name} · {portionText.trim() || 'Typical serving'} <span>Change</span></summary>{inputFields}</details>}
       {busy && <div className="skeleton estimate-loading" role="status" aria-label="Looking up nutrition" />}
       {error !== null && <p className="field-error" role="status">{error}</p>}
-      {estimate !== null && (
-        <div aria-live="polite">
-          <p className="badge">{estimate.sourceKind === 'database' ? 'Database estimate' : 'AI estimate'} · Not saved</p>
-          {!hideNumbers && <p className="numbers">Estimated: {estimate.nutrients.kcal == null ? 'kcal unknown' : formatTotal({ known: estimate.nutrients.kcal ?? 0,
-            unknownItems: estimate.nutrients.kcal == null ? 1 : 0,
-            ...(estimate.range.kcal == null ? {} : { range: estimate.range.kcal }) }, 'kcal')}</p>}
-          <p className="hint">For {formatQuantity(estimate.basis)}. {estimate.reason}</p>
-          <ul className="estimate-sources">
-            {estimate.sources.map((source, index) => <li key={`${source.url}-${index}`}><a href={source.url} target="_blank" rel="noreferrer">{source.provider}: {source.description}</a></li>)}
-          </ul>
-          <div className="actions">
-            <button type="button" className="button" disabled={busy} onClick={() => accept()}>Use estimate</button>
-            <button type="button" className="button button-secondary" disabled={busy} onClick={() => onEdit(estimatedFood(name, estimate, foodId.current))}>Edit</button>
-          </div>
-          <p className="hint">Use estimate saves this food on your device. Review the portion, then save the meal separately.</p>
-        </div>
-      )}
+      {estimate !== null && <EstimateResult estimate={estimate} hideNumbers={hideNumbers} typicalServing={portionText.trim() === ''}
+        busy={busy} onAccept={() => accept()} onEdit={() => onEdit(estimatedFood(name, estimate, foodId.current))} />}
+      <details className="manual-options"><summary>Log without an estimate</summary>
       <button type="button" className="button button-quiet" disabled={busy || name.trim() === ''} onClick={() => accept(true)}>Log with unknown values</button>
-      <p className="hint">Unknown-value logging adds one piece to the draft. Set the amount before saving the meal. You can replace it with an estimated food later.</p>
+      <p className="hint">Adds an unknown serving to the draft. Review the amount before saving.</p>
+      </details>
     </div>
   );
 }

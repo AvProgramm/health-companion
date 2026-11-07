@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
+import { House, Barbell, BowlFood, UserCircle, Leaf, ShieldCheck } from '@phosphor-icons/react';
 import { foodKey } from '../domain/nutrition/aggregate';
 import { latestVersions } from '../domain/nutrition/foods';
 import type { FoodVersion } from '../domain/nutrition/types';
@@ -111,7 +112,12 @@ export function App() {
 
   return (
     <div className="app">
-      <main className="page">
+      <a className="skip-link" href="#main-content">Skip to diary</a>
+      <header className="brandbar">
+        <span className="brand-mark"><Leaf size={24} weight="bold" /></span>
+        <div><span className="brand-name">Health Companion</span><span className="brand-caption">A little balance, every day.</span></div>
+      </header>
+      <main id="main-content" className="page">
         {tab === 'today' && (
           <TodayView key={diaryVersion} db={db} foods={foods} currentFoods={currentFoods} hideNumbers={hideNumbers} durability={durability} onSaveFood={handleSaveFood} />
         )}
@@ -133,6 +139,7 @@ export function App() {
       </main>
 
       <nav className="tabbar" aria-label="Sections">
+        <span className="nav-caption">YOUR SPACE</span>
         {TABS.map((item) => (
           <button
             key={item.id}
@@ -141,9 +148,14 @@ export function App() {
             aria-current={tab === item.id ? 'page' : undefined}
             onClick={() => setTab(item.id)}
           >
-            {item.label}
+            {item.id === 'today' && <House size={22} weight={tab === item.id ? 'fill' : 'regular'} />}
+            {item.id === 'gym' && <Barbell size={22} weight={tab === item.id ? 'fill' : 'regular'} />}
+            {item.id === 'foods' && <BowlFood size={22} weight={tab === item.id ? 'fill' : 'regular'} />}
+            {item.id === 'me' && <UserCircle size={22} weight={tab === item.id ? 'fill' : 'regular'} />}
+            <span>{item.label}</span>
           </button>
         ))}
+        <div className="nav-footer"><ShieldCheck size={20} /><span>Your diary stays<br />on this device.</span></div>
       </nav>
     </div>
   );

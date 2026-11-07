@@ -28,6 +28,7 @@ class RetrievalTests(unittest.TestCase):
         results = parse_search_results({'results': [
             {'title': 'Fictional oatcakes nutrition', 'url': 'https://example.org/oatcakes', 'content': 'Fictional oatcakes: 120 kcal per 100 g. ' + 'x' * 3000},
             {'title': 'Fictional oatcakes nutrition', 'url': 'http://127.0.0.1/private', 'content': '120 kcal'},
+            {'title': 'Fictional oatcakes', 'url': 'https://[broken', 'content': '120 kcal'},
             {'title': 'Unrelated beans', 'url': 'https://example.org/beans', 'content': '100 kcal'},
             {'title': 'Fictional oatcakes story', 'url': 'https://example.org/story', 'content': 'A story about breakfast.'},
         ]}, 'fictional oatcakes')
@@ -87,3 +88,24 @@ class RetrievalTests(unittest.TestCase):
         self.assertEqual(result.sourceKind, 'ai_estimate')
         self.assertEqual(result.sources[0].url, 'https://example.org/oatcakes')
         self.assertEqual(json.loads(captured[0]['messages'][1]['content']), {'name': 'fictional oatcakes', 'portionText': '100 g'})
+
+    def test_model_exhaustion_returns_unavailable_without_a_save(self):
+        """Leave manual logging available after both model providers fail."""
+        result = asyncio.run(estimate_food('fictional oatcakes', '100 g',
+            AsyncMock(return_value=None), AsyncMock(side_effect=TimeoutError()),
+            AsyncMock(return_value=[]), AsyncMock(side_effect=ValueError('No usable proposal.'))))
+        self.assertIsNone(result)
+
+    def test_rejects_a_model_citation_not_present_in_retrieval(self):
+        """Reject invented source IDs rather than attaching an unrelated URL."""
+        evidence = [WebEvidence('source-1', 'Fictional oatcakes', 'https://example.org/oatcakes', '120 kcal per 100 g')]
+        data = proposal()
+        del data['sourceKind']
+        del data['sources']
+        data['evidenceIds'] = ['invented-source']
+        original = httpx.AsyncClient
+        transport = httpx.MockTransport(lambda request: httpx.Response(200, json={'choices': [{'message': {'content': json.dumps(data)}}]}))
+        with patch.dict('os.environ', {'HF_TOKEN': 'fictional-token'}):
+            with patch('coach.model_client.httpx.AsyncClient', side_effect=lambda **kwargs: original(**kwargs, transport=transport)):
+                with self.assertRaises(ValueError):
+                    asyncio.run(hf_estimate('fictional oatcakes', '100 g', evidence))

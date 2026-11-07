@@ -145,7 +145,7 @@ export function DraftCard({ rows, onRowsChange, foods, currentFoods, hideNumbers
             <li key={row.key} className="draft-row">
               {row.text !== '' && <p className="hint">You wrote "{row.text}"</p>}
 
-              <div className="row">
+              <div className="row food-picker">
                 <select
                   className="input"
                   aria-label="Food"
@@ -174,8 +174,8 @@ export function DraftCard({ rows, onRowsChange, foods, currentFoods, hideNumbers
                   hideNumbers={hideNumbers} onUse={(accepted) => onUseEstimate(food === null ? accepted : { ...accepted, id: food.id, version: food.version + 1 }, row.key)} onEdit={(proposal) => onEditEstimate(proposal, row.key, food ?? undefined)} />
               )}
               {food === null && (
-                <button type="button" className="button button-secondary" onClick={() => onCreateFood(nameFromText(row.text), row.key, row.unit)}>
-                  Add "{nameFromText(row.text) || 'a new food'}" as a food
+                <button type="button" className="button button-quiet manual-food-button" onClick={() => onCreateFood(nameFromText(row.text), row.key, row.unit)}>
+                  Enter nutrition manually
                 </button>
               )}
 
@@ -202,10 +202,10 @@ export function DraftCard({ rows, onRowsChange, foods, currentFoods, hideNumbers
               )}
 
               {food !== null && <span className="badge">{SOURCE_LABELS[food.source.kind]}</span>}
-              {check.error !== null ? (
+              {check.error !== null && food !== null ? (
                 <p className="field-error">{check.error}</p>
               ) : (
-                !hideNumbers && (
+                !hideNumbers && food !== null && (
                   <p className="hint numbers">
                     {check.kcal === null ? 'kcal unknown' : formatTotal(check.kcalTotal!, 'kcal')} ·{' '}
                     {check.protein === null ? 'protein unknown' : `${check.protein.toFixed(1)} g protein`} · {food?.basis.amount} {food?.basis.unit} basis
@@ -221,7 +221,7 @@ export function DraftCard({ rows, onRowsChange, foods, currentFoods, hideNumbers
         Add another food
       </button>
 
-      <div className="actions">
+      <div className="actions draft-actions">
         <button type="button" className="button" disabled={components === null || busy} onClick={() => components !== null && onSave(components)}>
           {busy ? 'Saving…' : `Save meal to ${dateLabel}`}
         </button>

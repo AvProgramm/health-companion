@@ -1,6 +1,6 @@
 import type { DaySummary } from '../domain/nutrition/day';
 import type { NutrientKey } from '../domain/nutrition/types';
-import { NUTRIENT_LABELS, formatTotal } from './format';
+import { NUTRIENT_LABELS } from './format';
 
 // The totals shown on Today; saturated fat stays in the meal sheet to keep this short
 const SHOWN: readonly NutrientKey[] = ['kcal', 'protein_g', 'fat_g', 'total_sugar_g', 'added_sugar_g'];
@@ -18,8 +18,8 @@ export function DaySummaryCard({ summary, dateLabel, hideNumbers }: DaySummaryCa
   // An empty day is "nothing logged", never "0 kcal"
   if (summary.coverage === 'no_entries') {
     return (
-      <section className="card card-muted" aria-label={`Summary for ${dateLabel}`}>
-        <p className="body">Nothing logged for {dateLabel}.</p>
+      <section className="card summary-card summary-empty" aria-label={`Summary for ${dateLabel}`}>
+        <p className="eyebrow">DAILY OVERVIEW</p><h2 className="heading">A fresh page.</h2><p className="body">Nothing logged for {dateLabel}.</p>
         <p className="hint">Missing meals are not counted as zero.</p>
       </section>
     );
@@ -28,7 +28,7 @@ export function DaySummaryCard({ summary, dateLabel, hideNumbers }: DaySummaryCa
   const meals = `${summary.mealCount} ${summary.mealCount === 1 ? 'meal' : 'meals'} logged`;
 
   return (
-    <section className="card" aria-labelledby="summary-heading">
+    <section className="card summary-card" aria-labelledby="summary-heading">
       <div className="card-head">
         <h2 id="summary-heading" className="heading">{dateLabel.charAt(0).toUpperCase() + dateLabel.slice(1)} so far</h2>
         <span className="hint">{meals}</span>
@@ -39,9 +39,13 @@ export function DaySummaryCard({ summary, dateLabel, hideNumbers }: DaySummaryCa
       ) : (
         <dl className="readout numbers">
           {SHOWN.map((key) => (
-            <div key={key}>
+            <div key={key} className={key === 'kcal' ? 'energy-readout' : 'nutrient-readout'}>
               <dt>{NUTRIENT_LABELS[key].label}</dt>
-              <dd>{formatTotal(summary.totals[key], NUTRIENT_LABELS[key].unit)}</dd>
+              <dd>
+                <span className="summary-value">{summary.totals[key].range === undefined ? '' : '≈ '}{summary.totals[key].known.toFixed(1)} {NUTRIENT_LABELS[key].unit}</span>
+                {summary.totals[key].range !== undefined && <span className="summary-range">{summary.totals[key].range!.low.toFixed(1)}–{summary.totals[key].range!.high.toFixed(1)} {NUTRIENT_LABELS[key].unit}</span>}
+                {summary.totals[key].unknownItems > 0 && <span className="summary-unknown">Known + {summary.totals[key].unknownItems} unknown</span>}
+              </dd>
             </div>
           ))}
         </dl>

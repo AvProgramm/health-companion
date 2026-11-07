@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type FormEvent } from 'react';
+import { Leaf, ShieldCheck, Plus } from '@phosphor-icons/react';
 import { foodKey } from '../domain/nutrition/aggregate';
 import { correctedQuantity, type CorrectionTarget } from '../domain/meals/corrections';
 import { addDays, deviceZone, localDateIn } from '../domain/shared/dates';
@@ -206,19 +207,24 @@ export function TodayView({ db, foods, currentFoods, hideNumbers, durability, on
   return (
     <>
       <header className="masthead">
+        <div><p className="eyebrow">YOUR DAILY SPACE</p><h1 className="page-title">A day in balance<span>.</span></h1></div>
         <nav className="date-nav" aria-label="Choose day">
           <button type="button" className="button button-quiet" aria-label="Previous day" onClick={() => setDate(addDays(date, -1))}>‹</button>
-          <h1 className="title">{formatDiaryDate(date)}</h1>
+          <h2 className="date-title">{formatDiaryDate(date)}</h2>
           <button type="button" className="button button-quiet" aria-label="Next day" disabled={date >= today} onClick={() => setDate(addDays(date, 1))}>›</button>
           {date !== today && (
             <button type="button" className="button button-quiet" onClick={() => setDate(today)}>Today</button>
           )}
         </nav>
-        <p className="status">{DURABILITY_TEXT[durability]}</p>
+
       </header>
 
+      <div className="today-layout">
+      <div className="today-main">
+      <details className="composer-card card" open={panel === null}>
+      <summary><span className="composer-symbol"><Plus size={20} /></span><span><strong>Quick entry</strong><span className="hint">{panel === null ? 'Food, movement or rest' : 'Your entry is ready to review'}</span></span><span className="composer-toggle">{panel === null ? 'Start here' : 'Expand'}</span></summary>
       <form className="composer" onSubmit={handleSubmit}>
-        <label htmlFor="composer" className="label">What did you eat, train or sleep, or what should change?</label>
+        <label htmlFor="composer" className="label">What would you like to log?</label>
         <textarea
           id="composer"
           className="input composer-input"
@@ -235,13 +241,14 @@ export function TodayView({ db, foods, currentFoods, hideNumbers, durability, on
           }}
         />
         <div className="row">
-          <button type="submit" className="button">Read it</button>
+          <button type="submit" className="button">Review entry</button>
           <button type="button" className="button button-secondary" onClick={() => showPanel({ kind: 'draft', rows: [emptyDraftRow()] })}>
             Add manually
           </button>
         </div>
-        <p className="hint">Read on this device by a fixed grammar. Nothing is saved until you confirm.</p>
+        <p className="hint">Nothing is saved until you confirm.</p>
       </form>
+      </details>
 
       {notice !== null && (
         <p className={`notice notice-${notice.kind}`} role={notice.kind === 'error' ? 'alert' : 'status'}>{notice.text}</p>
@@ -336,6 +343,10 @@ export function TodayView({ db, foods, currentFoods, hideNumbers, durability, on
       )}
 
       <section className="timeline" aria-label={`Diary for ${dateLabel}`}>
+        <div className="section-head"><h2 className="heading">Your diary</h2><span className="hint">{dateLabel}</span></div>
+        {meals.length === 0 && workouts.length === 0 && sleeps.length === 0 && (
+          <div className="diary-empty"><span className="empty-symbol"><Leaf size={32} /></span><h3 className="heading">Start with one small thing.</h3><p className="hint">A meal, a little movement, a good rest.<br />Your day comes together here.</p></div>
+        )}
         {sleeps.map((entry) => (
           <SleepCard key={entry.id} db={db} entry={entry} onChanged={reloadDay} />
         ))}
@@ -347,7 +358,12 @@ export function TodayView({ db, foods, currentFoods, hideNumbers, durability, on
         ))}
       </section>
 
-      <DaySummaryCard summary={summary} dateLabel={dateLabel} hideNumbers={hideNumbers} />
+      </div>
+      <aside className="day-sidebar" aria-label="Daily overview">
+        <DaySummaryCard summary={summary} dateLabel={dateLabel} hideNumbers={hideNumbers} />
+        <div className="device-note"><ShieldCheck size={22} /><div><strong>Made for your everyday</strong><details><summary>Saved on this device</summary><p>{DURABILITY_TEXT[durability]}</p></details></div></div>
+      </aside>
+      </div>
 
       {openMeal !== undefined && (
         <MealSheet

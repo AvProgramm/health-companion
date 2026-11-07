@@ -25,8 +25,12 @@ def public_url(value):
     """Accept public HTTPS links without credentials or local addresses."""
     if not isinstance(value, str) or len(value) > 500:
         return False
-    parsed = urlsplit(value)
-    host = parsed.hostname or ''
+    try:
+        parsed = urlsplit(value)
+        host = parsed.hostname or ''
+    except ValueError:
+        # Ignore a malformed URL because it cannot be a usable source link.
+        return False
     if parsed.scheme != 'https' or not host or parsed.username or parsed.password or host == 'localhost' or host.endswith(('.local', '.localhost')):
         return False
     try:

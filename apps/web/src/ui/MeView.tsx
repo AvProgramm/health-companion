@@ -128,7 +128,7 @@ export function MeView({ db, durability, foodCount, hideNumbers, onHideNumbersCh
     <>
       <header className="masthead">
         <h1 className="title">Me</h1>
-        <p className="status">No account. Everything stays on this device unless you export it.</p>
+        <p className="status">Your diary stays on this device. Optional nutrition lookup sends only the selected food name and portion.</p>
       </header>
 
       {message !== null && (
