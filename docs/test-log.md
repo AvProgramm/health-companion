@@ -77,3 +77,20 @@ The test meals above were entered in the separate browser preview for verificati
 | Unknown food while unplugged | Lookup explains laptop requirement; manual and Log with unknown values remain usable | NOT TESTED |
 | Log unknowns now, estimate later | Review one-piece default before saving; later compose same saved food and estimate; Change → Replace updates an old meal explicitly | NOT TESTED |
 | Export and restore a backup after using an estimate | Ranges and source references survive alongside earlier records | NOT TESTED |
+
+
+## M3a configured-provider follow-up (7 Nov 2026, Codex terminal)
+
+These observations supersede the earlier missing-key status; earlier records are retained as history.
+
+| Check | Observed | Result |
+|---|---|---|
+| Root environment | USDA, Groq, Tavily and HF variable names are configured; values not displayed | PASS (presence only) |
+| Live USDA adapter | Four usable oats records parsed | PASS |
+| Live preview database path | HTTP 200, sourceKind database, USDA source records | PASS |
+| Original Groq model | Llama default unavailable to this account, HTTP 404; authenticated model list did not include it | FIXED |
+| Corrected Groq model | openai/gpt-oss-20b available; default, local model setting and example updated; regression test first | PASS |
+| Live preview AI path | nasi lemak / 1 piece returned HTTP 200, sourceKind ai_estimate, Groq AI source | PASS |
+| Direct live Groq validation | Model proposal passed the strict nutrient/range/basis validator | PASS |
+| Tavily / Hugging Face API | Tokens reserved for later work; no calls made | NOT TESTED |
+| Physical phone | Startup and acceptance instructions provided to Yash | NOT TESTED |

@@ -7,13 +7,16 @@ Read `CLAUDE.md` first; its invariants and rules apply to you too, along with `.
   - **M1:** offline save, correct and reopen on the phone.
   - **M2:** a usable diary (parser, drafts, corrections, meal sheet, foods, backup and restore, hide numbers, hook and CI).
   - **M3:** training, sleep, the Gym tab, schema v3, and the feature-folder restructure.
+  - **M3a implementation:** database-first nutrition estimates, Groq fallback, ranges/provenance, confirmation, manual/unknown fallback, tests and CI. Live USDA and Groq calls through the preview pass (7 Nov). Physical-phone acceptance is still pending; see `docs/test-log.md`.
 - **Last commit:** see `git log -1`. Walkthroughs are in `docs/milestones/`.
 - **Phone setup and gates:** `docs/test-log.md` (USB forwarding `4173 → 127.0.0.1:4173`, then reload twice).
 
 ## Next milestones, in order
 Work on one branch per milestone, with small commits.
 
-### M3a (do first, Yash's priority): AI nutrition estimates instead of typing label numbers
+### M3a (implemented; finish the phone gate): AI nutrition estimates instead of typing label numbers
+
+Current walkthrough: `docs/milestones/m3a-walkthrough.md`. Local startup: `docs/run-locally.md`. Groq uses `openai/gpt-oss-20b`: the earlier Llama default returned 404 for this account. Keep the requirements below as the acceptance checklist, not a request to reimplement completed code. Test the existing flow on the phone before moving to M3b.
 Goal: when the composer meets an unknown food ("nasi lemak", "2 weetabix"), the app proposes the nutrition itself. The user should not have to type label values. Manual editing stays as the fallback.
 
 1. **Laptop service** `services/coach` (FastAPI on 127.0.0.1:8000, proxied as `/api`), with a new endpoint `POST /api/estimate { name, portionText }`.
@@ -69,6 +72,8 @@ Goal: when the composer meets an unknown food ("nasi lemak", "2 weetabix"), the 
 - **Reuse rule:** Yash's Veritaserum `pipeline/ranking.py` (`BM25Ranker`, `_ranked_copies`) may be ported **only after** a `REUSE.md` entry (repo, commit `36110aa`, blob hash, `git log --follow` authors, team permission). Anything co-authored gets reimplemented instead.
 
 ### Later (Yash's direction)
+
+Read `docs/handoff/integrations.md`: Tavily and Hugging Face credentials are available in the ignored laptop `.env` for later retrieval/DL work. Neither is used in M3a. Do not copy secrets into notes, fixtures, Vite variables or tool output. Visual redesign and signup/security remain explicit later milestones; available credentials alone do not change the current data-sharing or confirmation rules.
 - Photo → ViT/LoRA food suggestions and nutrition lookup by retrieval or web search. These fill a **draft with a source badge and a range**; the user still confirms. Manual edit stays.
 - An LLM or BERT parser for free text. Same rule: it only fills drafts.
 - An RL experiment (Q-learning/SARSA from FIT3080), for example adaptive reminder timing in a simulator. It needs an honest baseline, and real diary data must never be used as reward.

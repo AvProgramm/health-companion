@@ -11,7 +11,7 @@ npm run check
 npm --prefix apps/web run build
 npm --prefix apps/web run preview
 ```
-For phone setup and the offline test, see `docs/test-log.md`.
+For the optional estimate service and VS Code/phone startup, see [Run locally](docs/run-locally.md). For observed checks and the phone acceptance gate, see [Test log](docs/test-log.md). Later credential availability is recorded without values in [Integration handoff](docs/handoff/integrations.md).
 
 ## How the repository is organised for AI-assisted work
 Claude Code reads the files below, so project knowledge, rules and safety checks live in the repo instead of in one chat.
@@ -38,7 +38,7 @@ CLAUDE.local.md               personal machine notes (git-ignored)
     ├── guard-commands.mjs    PreToolUse: blocks secret files, git add -A, force-push, --no-verify
     ├── check-changed.mjs     PostToolUse: typecheck + tests after edits to domain/storage/fixtures
     └── guard-commands.test.mjs
-.github/workflows/check.yml   runs the same check-changed.mjs in CI, because local hooks can be bypassed
+.github/workflows/check.yml   runs npm run check (app, hook and coach tests) in CI
 ```
 `.mcp.json` arrives with the coach milestone, when the MCP tools server (`search_evidence`, `get_demo_day`) exists. Configuring a server that doesn't exist yet would only produce startup errors.
 

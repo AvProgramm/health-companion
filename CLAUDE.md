@@ -7,7 +7,7 @@ A free, local-first diary for balancing food, exercise and sleep. It remembers w
   - Diary in IndexedDB.
   - Hand-written service worker (`src/sw/service-worker.js`, filled in by the build).
   - No backend for the diary.
-- `services/coach` (planned, Codex): FastAPI on 127.0.0.1, BM25 retrieval, MCP stdio tools. Optional; the diary never depends on it.
+- `services/coach`: optional FastAPI nutrition estimates on 127.0.0.1:8000, proxied as `/api`. USDA/Open Food Facts first, Groq second. BM25 retrieval and MCP stdio tools remain planned; the diary never depends on this service.
 - `experiments/router` (planned, Codex harness, Yash's training loop): frozen MiniLM + `Linear(384, 6)` intent head.
 
 ## Commands
@@ -16,13 +16,13 @@ npm run check                                     # typecheck + all tests (same 
 npm --prefix apps/web run build                   # production build, regenerates sw.js
 npm --prefix apps/web run preview                 # serves the build at 127.0.0.1:4173 for the phone
 ```
-Phone setup and the offline gate are in `docs/test-log.md`.
+Phone setup and the offline gate are in `docs/test-log.md`. Start the optional laptop service using `services/coach/README.md`; VS Code instructions are in `docs/run-locally.md`. Read `docs/handoff/integrations.md` before later retrieval/model work. Credentials stay in the ignored root `.env`; the tracked `.env.example` documents names only.
 
 ## Where things live
 Organised by feature, one reason to change per module. Domain never imports storage or UI.
 - `apps/web/src/domain/`: pure logic. This is where the numbers come from.
   - `shared/`: `units` (conversion, no mass↔volume), `validate` (finite-then-range checks), `dates`.
-  - `nutrition/`: food `types`, `scale` (nutrient per portion), `aggregate` (per meal), `day` (per date), `foods` (label versions, name matching).
+  - `nutrition/`: `estimates` (proposal validation and confirmed food construction), food `types`, `scale` (nutrient per portion), `aggregate` (per meal), `day` (per date), `foods` (label versions, name matching).
   - `meals/`: meal `types`, `revisions` (`startMeal`, `reviseMeal`: every change is a new revision), `corrections` (which item "actually 250 mL" means).
   - `training/workouts`, `sleep/sleep`: build and describe workout and sleep entries.
   - `parsing/`: the composer grammar. `parseEntry` tries an ordered list of small parsers (`question`, `correction`, `sleepEntry`, `workoutEntry`, `meal`); a new kind of entry is a new parser in that list.
@@ -41,7 +41,7 @@ Organised by feature, one reason to change per module. Domain never imports stor
 2. **Snapshots are immutable.** Corrections, undo and deletes add a revision; nothing is edited in place.
 3. **One write = one IndexedDB transaction.** Every write carries an operation key (replay on retry) and an expected revision (conflict on a stale screen).
 4. **Nothing saves without the user confirming.** The parser, and any future AI, only fill drafts.
-5. **No diary data leaves the device.** No accounts, telemetry or cloud calls with personal data. Fixtures are fictional only.
+5. **No diary history leaves the device.** Optional nutrition lookup may send only the selected food name and portion text. No accounts, telemetry or other personal-data uploads. Fixtures are fictional only.
 6. **Round for display only** (`ui/format.ts`).
 
 ## Working rules
