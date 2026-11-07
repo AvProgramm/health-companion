@@ -58,6 +58,31 @@ describe('parseEntry: meals', () => {
     ]);
   });
 
+  // Typed on the phone on 7 Nov: the correction came inside the same message
+  it('lets "actually" inside an item replace that item\'s amount', () => {
+    expect(itemsOf(parseEntry('2 weetabix and 250ml of milk actually 300ml', TEST_FOODS))).toEqual([
+      { food: 'weetabix', quantity: { amount: 2, unit: 'piece' }, problem: null },
+      { food: 'demo_milk', quantity: { amount: 300, unit: 'mL' }, problem: null },
+    ]);
+  });
+
+  it('joins a correction split off by a comma to the item before it', () => {
+    expect(itemsOf(parseEntry('300 ml milk, actually 250 ml', TEST_FOODS))).toEqual([
+      { food: 'demo_milk', quantity: { amount: 250, unit: 'mL' }, problem: null },
+    ]);
+  });
+
+  it('keeps the first unit when the correction is only a number', () => {
+    expect(itemsOf(parseEntry('2 weetabix no 3', TEST_FOODS))).toEqual([
+      { food: 'weetabix', quantity: { amount: 3, unit: 'piece' }, problem: null },
+    ]);
+  });
+
+  it('does not treat "no" without a number inside an item as a correction', () => {
+    const [item] = itemsOf(parseEntry('black coffee no sugar', TEST_FOODS));
+    expect(item?.food).toBe('coffee');
+  });
+
   it('returns empty for blank text', () => {
     expect(parseEntry('   ', TEST_FOODS)).toEqual({ kind: 'empty' });
   });

@@ -36,6 +36,9 @@ const ITEM_SEPARATOR = /\s*(?:,|\+|&|\band\b|\bwith\b|\bplus\b)\s*/;
 // "actually 250 ml", "no, it was 250 ml of milk", "sorry make it 2"
 const CORRECTION_LEAD = /^(?:actually|no|nope|sorry|oops|wait|correction)\b[\s,.:;!-]*(?:(?:it\s+)?was\s+|it'?s\s+|make\s+it\s+|i\s+had\s+|only\s+)?/;
 
+// A correction inside one item: "250ml of milk actually 300ml", "2 weetabix no 3"
+const INLINE_CORRECTION = /[\s,]+(?:actually|no|sorry|i\s+mean|make\s+(?:that|it)|or\s+rather)\b[\s,:-]*/;
+
 // "change the milk to 250 ml", "make the milk 250ml"
 const CHANGE_TARGET = /^(?:change|make|set)\s+(?:the\s+|my\s+)?(.+?)\s+(?:to\s+)?(\d+(?:\.\d+)?\s*[a-z]*)$/;
 
@@ -169,12 +172,21 @@ function parseMeal(clean: string, foods: readonly FoodVersion[]): ParseResult {
   // Strip "i had" and "for breakfast", which are not foods
   const body = clean.replace(LEAD_IN, '').replace(MEAL_SUFFIX, '').replace(/[.!?]+$/, '');
 
-  // Split into items and read each one
-  const items = body
-    .split(ITEM_SEPARATOR)
-    .map((part) => part.trim())
-    .filter((part) => part !== '')
-    .map((part) => parseItem(part, foods));
+  // Split into items
+  const parts: string[] = [];
+  for (const part of body.split(ITEM_SEPARATOR).map((text) => text.trim()).filter((text) => text !== '')) {
+    // "milk, actually 300 ml": a correction split off by the comma belongs to the item before it
+    const lead = CORRECTION_LEAD.exec(part);
+    const previous = parts.length - 1;
+    if (lead !== null && previous >= 0 && readLeadingAmount(part.slice(lead[0].length)).amount !== null) {
+      parts[previous] = `${parts[previous]} actually ${part.slice(lead[0].length)}`;
+      continue;
+    }
+    parts.push(part);
+  }
+
+  // Read each item
+  const items = parts.map((part) => parseItem(part, foods));
 
   // Return unknown if nothing at all could be read
   if (items.length === 0) {
@@ -187,7 +199,7 @@ function parseMeal(clean: string, foods: readonly FoodVersion[]): ParseResult {
  * Return one draft item ("300 ml milk", "2 weetabix", "a mug of milk").
  */
 function parseItem(part: string, foods: readonly FoodVersion[]): DraftItem {
-  const read = readLeadingAmount(part);
+  const read = readCorrectedAmount(part);
 
   // "mug of milk": the container is not a unit, so the amount stays open
   const container = read.unit === null ? /^(\w+)\s+of\s+(.+)$/.exec(read.rest) : null;
@@ -223,6 +235,30 @@ function parseItem(part: string, foods: readonly FoodVersion[]): DraftItem {
       ? `How much was the ${container[1]}? Enter the amount in ${food.basis.unit}.`
       : `Enter how much ${food.name}, in ${food.basis.unit}.`;
   return { text: part, food, quantity: null, typedAmount, problem };
+}
+
+/**
+ * Return an item's amount and name, letting a later "actually 300ml" replace the first amount.
+ *
+ * "250ml of milk actually 300ml" gives 300, mL and "milk". When only a number
+ * follows ("2 weetabix no 3"), the first unit is kept.
+ */
+function readCorrectedAmount(part: string): { amount: number | null; unit: Unit | null; rest: string } {
+  const correction = INLINE_CORRECTION.exec(part);
+  if (correction === null) {
+    return readLeadingAmount(part);
+  }
+
+  const first = readLeadingAmount(part.slice(0, correction.index));
+  const fix = readLeadingAmount(part.slice(correction.index + correction[0].length));
+
+  // Ignore "milk no sugar": without a number after it, the word is not a correction
+  if (fix.amount === null) {
+    return readLeadingAmount(part);
+  }
+
+  // The corrected amount wins, keeping the first unit and name when the correction omits them
+  return { amount: fix.amount, unit: fix.unit ?? first.unit, rest: fix.rest !== '' ? fix.rest : first.rest };
 }
 
 /**
