@@ -1,0 +1,55 @@
+{
+  "split": "validation",
+  "note": "C and the threshold were chosen on this split, so these numbers are optimistic; the sealed test run is the fair one.",
+  "majority": {
+    "label": "meal",
+    "messages": 72,
+    "accuracy": 0.16666666666666666,
+    "macro_f1": 0.047619047619047616,
+    "recall_per_class": {
+      "meal": 1.0,
+      "correction": 0.0,
+      "workout": 0.0,
+      "sleep": 0.0,
+      "daily_summary": 0.0,
+      "other": 0.0
+    },
+    "coverage": 1.0,
+    "error_among_accepted": 0.8333333333333334,
+    "critical_errors": 24
+  },
+  "keyword": {
+    "messages": 72,
+    "accuracy": 0.7638888888888888,
+    "macro_f1": 0.771297900771585,
+    "recall_per_class": {
+      "meal": 0.5833333333333334,
+      "correction": 0.5833333333333334,
+      "workout": 1.0,
+      "sleep": 0.8333333333333334,
+      "daily_summary": 0.5833333333333334,
+      "other": 1.0
+    },
+    "coverage": 0.6527777777777778,
+    "error_among_accepted": 0.0851063829787234,
+    "critical_errors": 0
+  },
+  "tfidf": {
+    "C": 1.0,
+    "threshold": 0.65,
+    "messages": 72,
+    "accuracy": 0.7638888888888888,
+    "macro_f1": 0.7504366575146975,
+    "recall_per_class": {
+      "meal": 0.8333333333333334,
+      "correction": 0.8333333333333334,
+      "workout": 0.5833333333333334,
+      "sleep": 0.9166666666666666,
+      "daily_summary": 1.0,
+      "other": 0.4166666666666667
+    },
+    "coverage": 0.1111111111111111,
+    "error_among_accepted": 0.0,
+    "critical_errors": 0
+  }
+}
