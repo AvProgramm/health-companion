@@ -42,14 +42,15 @@ It returns a negative number if session `a` is better. The order:
 
 ## Verified (7 Nov 2026)
 - `npm run check`: the search matches the independent oracle on all 12 kit scenarios, with **zero rule violations**, and the greedy counterexample holds.
-- Your 6 `compareCandidates` / `bestPlan` tests are `it.fails` while the stub is in place. With a correct implementation dropped in temporarily, all 6 flipped. Then the stub was restored.
-- **Browser pane:**
-  - "Find a plan" shows "compareCandidates is not written yet", a clear message rather than a crash.
-  - 0 minutes shows "There is no time for a session today. Rest is a valid choice", with every exclusion's reason.
+- **Browser pane:** 0 minutes shows "There is no time for a session today. Rest is a valid choice", with every exclusion's reason.
 
-**Not verified yet:** a real plan on screen (it needs your function) and the phone.
+## Verified with your `compareCandidates` (7 Nov 2026)
+- `npm run check`: all green, including your 6 ranking tests (now plain `it`) and the kit counterexample, where the plan is B + C rather than the favourite A.
+- **Browser pane:** 20 min, dumbbells, push + pull gives one-arm dumbbell row + push-up: "14 of 20 min · covers 2 of 2 chosen areas", best of 34 possible sessions.
 
-## Your task: write `compareCandidates`
+**Not verified yet:** the phone.
+
+## Your task (done): write `compareCandidates`
 1. Open `apps/web/src/domain/training/planner.ts` and replace the `throw` in `compareCandidates` with the four-step rule above. About 5–10 lines, in your FIT3080 style: a comment above each tie-break.
 2. Run `npm run check`. Your 6 tests now report "Expect test to fail". Change each `it.fails(` to `it(` in `planner.test.ts`.
 3. Run `npm run check` again until it's all green. Then try "Find a plan" on the Gym tab: 20 min, dumbbells, push + pull.

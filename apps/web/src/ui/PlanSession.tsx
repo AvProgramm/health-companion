@@ -1,7 +1,6 @@
 import { useState, type FormEvent } from 'react';
 import { MOVEMENT_CARDS, type Capability, type Category, type Equipment } from '../domain/training/catalogue';
 import { bestPlan, type PlanResult } from '../domain/training/planner';
-import { errorText } from './useSave';
 
 // The choices on the form, as they read on screen
 const EQUIPMENT_CHOICES: readonly [Equipment, string][] = [['dumbbells', 'Dumbbells'], ['band', 'Resistance band'], ['pull_up_bar', 'Pull-up bar']];
@@ -35,12 +34,7 @@ export function PlanSession() {
       return;
     }
 
-    try {
-      setResult(bestPlan({ minutes, equipment, unableTo, neverSuggest: [], categories, preferences: {} }, MOVEMENT_CARDS));
-    } catch (problem) {
-      setResult(null);
-      setError(errorText(problem));
-    }
+    setResult(bestPlan({ minutes, equipment, unableTo, neverSuggest: [], categories, preferences: {} }, MOVEMENT_CARDS));
   }
 
   return (

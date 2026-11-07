@@ -133,27 +133,25 @@ describe('bestPlan without a ranking', () => {
   });
 });
 
-// YASH: these fail while compareCandidates is a stub, which is what it.fails expects.
-// When your function is right they "unexpectedly pass": then change it.fails to it.
 describe('compareCandidates', () => {
   // Build a candidate from the kit cards
   const pick = (...ids: string[]) => summarise(KIT_CARDS.filter((card) => ids.includes(card.id)), KIT_REQUEST);
 
-  it.fails('ranks more requested categories first, even over a favourite', () => {
+  it('ranks more requested categories first, even over a favourite', () => {
     expect(compareCandidates(pick('B', 'C'), pick('A'))).toBeLessThan(0);
   });
 
-  it.fails('breaks a coverage tie on the higher preference total', () => {
+  it('breaks a coverage tie on the higher preference total', () => {
     expect(compareCandidates(pick('A'), pick('B'))).toBeLessThan(0);
   });
 
-  it.fails('breaks a preference tie on the shorter session', () => {
+  it('breaks a preference tie on the shorter session', () => {
     const short = summarise([KIT_CARDS[1]!], { ...KIT_REQUEST, preferences: {} });
     const long = summarise([KIT_CARDS[0]!], { ...KIT_REQUEST, preferences: {} });
     expect(compareCandidates(short, long)).toBeLessThan(0);
   });
 
-  it.fails('breaks every other tie on the ids, so the result never depends on luck', () => {
+  it('breaks every other tie on the ids, so the result never depends on luck', () => {
     const b = summarise([KIT_CARDS[1]!], { ...KIT_REQUEST, preferences: {} });
     const c = summarise([KIT_CARDS[2]!], { ...KIT_REQUEST, categories: ['push', 'pull'], preferences: {} });
     // Same coverage (1), preference (0) and minutes (6): "B" comes before "C"
@@ -163,12 +161,12 @@ describe('compareCandidates', () => {
 });
 
 describe('bestPlan with compareCandidates', () => {
-  it.fails('picks B + C over the favourite A in the kit counterexample', () => {
+  it('picks B + C over the favourite A in the kit counterexample', () => {
     const result = bestPlan(KIT_REQUEST, KIT_CARDS);
     expect(result.status === 'plan' && result.plan.ids).toBe('B,C');
   });
 
-  it.fails('plans the kit demo: 12 min, dumbbells, no pull-ups', () => {
+  it('plans the kit demo: 12 min, dumbbells, no pull-ups', () => {
     const result = bestPlan(SCENARIOS[2]![1], MOVEMENT_CARDS);
     expect(result.status).toBe('plan');
     expect(result.status === 'plan' && result.plan.cards.some((card) => card.id === 'pull_up')).toBe(false);

@@ -82,16 +82,26 @@ export function summarise(cards: readonly MovementCard[], request: PlanRequest):
 /**
  * Return a negative number if session a is better than b, positive if b is better.
  *
- * YASH WRITES THIS (reserved in CLAUDE.md). The rule, in order:
- *   1. More requested categories covered is better.
- *   2. If equal, a higher preference total is better.
- *   3. If equal, the shorter session is better.
- *   4. If still equal, compare the ids strings alphabetically, so the result never depends on luck.
- * Tests: planner.test.ts, "compareCandidates" and "bestPlan". They are marked it.fails
- * while this is unwritten; when they "unexpectedly pass", remove .fails.
+ * Written by Yash. Tests: planner.test.ts, "compareCandidates" and "bestPlan with compareCandidates".
  */
 export function compareCandidates(a: Candidate, b: Candidate): number {
-  throw new Error(`compareCandidates is not written yet (comparing ${a.ids} with ${b.ids})`);
+  // 1. More requested categories covered is better
+  if (a.covered !== b.covered) {
+    return b.covered - a.covered;
+  }
+
+  // 2. Higher preference total is better
+  if (a.preference !== b.preference) {
+    return b.preference - a.preference;
+  }
+
+  // 3. Shorter session is better
+  if (a.minutes !== b.minutes) {
+    return a.minutes - b.minutes;
+  }
+
+  // 4. Deterministic tie-breaker
+  return a.ids.localeCompare(b.ids);
 }
 
 /**
