@@ -42,3 +42,38 @@ Open `chrome://inspect` → inspect the phone tab → Application. Write each fi
 5. **IndexedDB populated?** `health-companion` → `meals` / `revisions` should have rows. Also check `persisted()` and the site-data settings.
 6. **Same Chrome profile?** Not incognito, and not opened in another app's WebView.
 7. **Reproducible on the laptop?** Tick DevTools Network → Offline and reload.
+
+## Milestone M3a browser verification (7 Nov 2026, Codex in-app browser)
+
+| Step | Observed | Result |
+|---|---|---|
+| Live lookup through preview /api proxy | Open Food Facts returned oats on a 50 g basis with source and per-nutrient ranges | PASS |
+| First request encounters provider failure, then retry | Actionable manual/unknown fallback; retry returned a proposal | PASS |
+| Before Use estimate | Proposal said Not saved; no meal appeared | PASS |
+| Use estimate, then Save meal | Food version filled the draft; meal appeared only after Save meal | PASS |
+| Reload/reopen | Saved meal and approximate day ranges survived | PASS |
+| Coach process stopped | Fictional oatcakes still logged locally with null nutrients; totals showed + 1 unknown | PASS |
+| Coach and preview both stopped, reload | Cached diary opened and retained both test meals | PASS |
+| Phone-width viewport (390 px) | Document width did not exceed viewport; cards and navigation remained readable | PASS (browser viewport only) |
+| Final app tests | 148 tests in 17 files; typecheck and hook tests pass | PASS |
+| Coach tests | 7 tests, including synthetic Groq HTTP fallback and privacy rejection | PASS |
+| Production build | Vite build completed | PASS |
+| Live Groq / live USDA | Keys still blank at verification time | NOT TESTED |
+| Physical phone | No physical-phone interaction in this milestone | NOT TESTED |
+
+The test meals above were entered in the separate browser preview for verification, not copied into fixtures. The existing M1 walkthrough edit was left untouched.
+
+## Milestone M3a phone checklist
+
+| Step | Expected | Observed |
+|---|---|---|
+| Add GROQ_API_KEY to root .env, then restart coach using services/coach/README.md | Key stays on laptop; /api uses it through the proxy | NOT TESTED |
+| USB forwarding 4173 → 127.0.0.1:4173; open http://localhost:4173 and reload twice (close/reopen if still showing the old build) | Earlier diary entries remain; unknown draft offers Estimate nutrition | NOT TESTED |
+| Type an unknown food and portion, e.g. 2 weetabix or nasi lemak; request estimate | Source badge, range, portion assumptions, and Use estimate/Edit; nothing saved yet | NOT TESTED |
+| Tap Edit and change a value | Manual values remain editable and are labelled My estimate | NOT TESTED |
+| Tap Use estimate, review amount, then Save meal | Food accepted first; meal saved once; day shows ≈ and ranges | NOT TESTED |
+| Change amount / eaten fraction, undo, reload | Revision history stays intact and estimate ranges scale with the serving | NOT TESTED |
+| Unplug, airplane mode, close/reopen | Existing meals, training and sleep still visible | NOT TESTED |
+| Unknown food while unplugged | Lookup explains laptop requirement; manual and Log with unknown values remain usable | NOT TESTED |
+| Log unknowns now, estimate later | Review one-piece default before saving; later compose same saved food and estimate; Change → Replace updates an old meal explicitly | NOT TESTED |
+| Export and restore a backup after using an estimate | Ranges and source references survive alongside earlier records | NOT TESTED |
