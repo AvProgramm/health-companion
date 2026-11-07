@@ -66,6 +66,15 @@ describe('parseEntry: meals', () => {
     ]);
   });
 
+  // Also typed on the phone: two correction words, and a number glued to "actually"
+  it('reads stacked correction words and a number with no space', () => {
+    expect(itemsOf(parseEntry('2 weetabix and 300ml milk no actually250 ml milk', TEST_FOODS))).toEqual([
+      { food: 'weetabix', quantity: { amount: 2, unit: 'piece' }, problem: null },
+      { food: 'demo_milk', quantity: { amount: 250, unit: 'mL' }, problem: null },
+    ]);
+    expect(parseEntry('no, actually 250ml', TEST_FOODS)).toEqual({ kind: 'correction', amount: { amount: 250, unit: 'mL' }, foodHint: null });
+  });
+
   it('joins a correction split off by a comma to the item before it', () => {
     expect(itemsOf(parseEntry('300 ml milk, actually 250 ml', TEST_FOODS))).toEqual([
       { food: 'demo_milk', quantity: { amount: 250, unit: 'mL' }, problem: null },

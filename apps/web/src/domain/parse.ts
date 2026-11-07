@@ -34,10 +34,12 @@ const MEAL_SUFFIX = /\s+(?:for|at)\s+(?:breakfast|lunch|dinner|supper|brunch|sna
 const ITEM_SEPARATOR = /\s*(?:,|\+|&|\band\b|\bwith\b|\bplus\b)\s*/;
 
 // "actually 250 ml", "no, it was 250 ml of milk", "sorry make it 2"
-const CORRECTION_LEAD = /^(?:actually|no|nope|sorry|oops|wait|correction)\b[\s,.:;!-]*(?:(?:it\s+)?was\s+|it'?s\s+|make\s+it\s+|i\s+had\s+|only\s+)?/;
+// The words may repeat ("no, actually") and a number may follow with no space ("actually250"),
+// but a longer word is not a correction ("nothing" is not "no")
+const CORRECTION_LEAD = /^(?:(?:actually|no|nope|sorry|oops|wait|correction)(?![a-z])[\s,.:;!-]*)+(?:(?:it\s+)?was\s+|it'?s\s+|make\s+it\s+|i\s+had\s+|only\s+)?/;
 
 // A correction inside one item: "250ml of milk actually 300ml", "2 weetabix no 3"
-const INLINE_CORRECTION = /[\s,]+(?:actually|no|sorry|i\s+mean|make\s+(?:that|it)|or\s+rather)\b[\s,:-]*/;
+const INLINE_CORRECTION = /[\s,]+(?:(?:actually|no|sorry|i\s+mean|make\s+(?:that|it)|or\s+rather)(?![a-z])[\s,:-]*)+/;
 
 // "change the milk to 250 ml", "make the milk 250ml"
 const CHANGE_TARGET = /^(?:change|make|set)\s+(?:the\s+|my\s+)?(.+?)\s+(?:to\s+)?(\d+(?:\.\d+)?\s*[a-z]*)$/;
