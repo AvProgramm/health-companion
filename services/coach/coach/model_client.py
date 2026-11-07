@@ -55,6 +55,7 @@ async def ask_model(endpoint, token, model, provider, provider_url, name, portio
     if result.basis != basis:
         raise ValueError('Keep the requested portion basis unchanged.')
     check_model_spread(result)
+    check_energy_consistency(result)
     return result
 
 
@@ -69,6 +70,33 @@ def scale_estimate(estimate, basis):
                      for key, spread in data['range'].items()}
     data['reason'] = f'Per serving, multiplied by {basis.amount:g}. {data["reason"]}'[:500]
     return Estimate.model_validate(data)
+
+
+# Energy per gram of each macronutrient (general Atwater factors)
+KCAL_PER_GRAM = {'protein_g': 4, 'carbs_g': 4, 'fat_g': 9}
+
+# Real foods drift from those factors (fibre, alcohol, label rounding), so allow a quarter either way
+ENERGY_TOLERANCE = 0.25
+
+
+def check_energy_consistency(estimate):
+    """Reject a model estimate whose macros contradict its own energy.
+
+    With protein, carbohydrate and fat all known, energy must be within 25% of
+    4P + 4C + 9F. With any of them unknown the check is one-sided: the known
+    macros alone cannot add up to more energy than the stated total allows.
+    """
+    values = estimate.nutrients.model_dump()
+    kcal = values['kcal']
+    # Ignore an estimate without energy, since there is nothing to compare against
+    if kcal is None:
+        return
+    known = [values[key] * factor for key, factor in KCAL_PER_GRAM.items() if values[key] is not None]
+    from_macros = sum(known)
+    if from_macros > kcal * (1 + ENERGY_TOLERANCE):
+        raise ValueError('The macronutrients add up to more energy than the estimate states.')
+    if len(known) == len(KCAL_PER_GRAM) and from_macros < kcal * (1 - ENERGY_TOLERANCE):
+        raise ValueError('The macronutrients add up to much less energy than the estimate states.')
 
 
 def check_model_spread(estimate):

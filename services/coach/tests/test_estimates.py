@@ -10,7 +10,7 @@ from fastapi.testclient import TestClient
 from coach.app import app
 from coach.databases import parse_usda, parse_off, average_matches
 from coach.databases import portion_basis
-from coach.model_client import check_model_spread, request_model
+from coach.model_client import check_energy_consistency, check_model_spread, request_model
 from coach.models import Basis, Estimate, Nutrients
 from coach.pipeline import estimate_food
 from coach.prompts import estimate_prompt
@@ -137,6 +137,34 @@ class EstimateTests(unittest.TestCase):
         zero['nutrients'] = {**zero['nutrients'], 'total_sugar_g': 0}
         zero['range'] = {**zero['range'], 'total_sugar_g': {'low': 0, 'high': 0}}
         check_model_spread(Estimate.model_validate(zero))
+
+    # Added 7 Nov after checking "nasi lemak chicken, 1 plate" by hand: 4P + 4C + 9F = 995 vs 1015 kcal
+    def test_model_energy_must_roughly_match_its_macros(self):
+        """Reject a model estimate whose macros contradict its own energy, within 25%."""
+        def with_values(**values):
+            data = proposal()
+            data['nutrients'] = {**data['nutrients'], **values}
+            data['range'] = {key: None if value is None else {'low': value * 0.9, 'high': value * 1.1}
+                             for key, value in data['nutrients'].items()}
+            return Estimate.model_validate(data)
+
+        # 4 x 20 + 4 x 60 + 9 x 20 = 500 kcal: consistent
+        check_energy_consistency(with_values(kcal=500, protein_g=20, carbs_g=60, fat_g=20))
+        # The phone result: 4 x 29 + 4 x 87 + 9 x 59 = 995 against 1015, within 2%
+        check_energy_consistency(with_values(kcal=1015, protein_g=29, carbs_g=87, fat_g=59))
+        # 860 kcal of macros claimed as 500 kcal
+        with self.assertRaises(ValueError):
+            check_energy_consistency(with_values(kcal=500, protein_g=20, carbs_g=60, fat_g=60))
+        # 2000 kcal claimed for only 500 kcal of macros
+        with self.assertRaises(ValueError):
+            check_energy_consistency(with_values(kcal=2000, protein_g=20, carbs_g=60, fat_g=20))
+        # Carbohydrate unknown: fat alone (450 kcal) cannot exceed a 300 kcal total
+        with self.assertRaises(ValueError):
+            check_energy_consistency(with_values(kcal=300, protein_g=None, carbs_g=None, fat_g=50))
+        # Carbohydrate unknown, known macros below the total: nothing to contradict
+        check_energy_consistency(with_values(kcal=1110, protein_g=54, carbs_g=None, fat_g=72))
+        # Energy unknown: nothing to check against
+        check_energy_consistency(with_values(kcal=None, protein_g=20, carbs_g=60, fat_g=20))
 
     def test_counted_servings_are_asked_once_and_multiplied_in_code(self):
         """Ask the model about one serving and scale its values and bounds here."""
