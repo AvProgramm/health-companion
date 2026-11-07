@@ -199,3 +199,12 @@ Final automated checkpoint for this follow-up: 150 app tests, 15 coach tests, ty
 | Real phone upgrade and airplane-mode cold reopen | Follow walkthrough; old entries must remain before adding | NOT TESTED |
 
 Preview was restarted after the server-unavailable test. No diary history was sent to any service. See `docs/milestones/m4-exercise-search-walkthrough.md` for limits and explain-back.
+
+
+## Compact Gym session setup (7 Nov 2026, Codex)
+
+- Yash reported the previous exercise feature works on his phone; screenshot shows the Gym planner. This does not establish the full migration/airplane-mode gate.
+- Red first: the new compact-control and equipment-mode tests failed against the previous form. Five planner UI tests now pass with the full check and build.
+- Browser at 375 px: shorter form, Without / With equipment, What to train retained, no horizontal overflow, bottom dock visible. Laptop layout retained at 1440 px.
+- Browser: Without equipment produces a bodyweight plan; With equipment with no gear prompts for selection. Selecting resistance band yields band pull-apart + push-up, 11 of 20 min. Switching mode clears the previous plan.
+- Physical phone check of the new controls: NOT TESTED. Reload twice and test both modes after confirming the existing diary is still present.

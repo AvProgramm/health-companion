@@ -28,3 +28,12 @@ Keep the same `http://localhost:4173` origin and existing USB forwarding. Run pr
 ## Remaining work
 
 Task A is implemented with conservative equipment coverage. More equipment and independently reviewed capability metadata need a later change. Task B's lightweight depth, SVG map, ring and chips are included; the map is a target illustration, not an interactive injury selector. Task D and chatbots are not implemented. `compareCandidates`, `ineligibleReason` and the PyTorch training loop were not changed. Yash owns the later injury/seated rules; leave those for his implementation.
+
+
+## Simpler session setup (7 Nov, Yash's phone feedback)
+
+The planner now asks for minutes, **Without equipment / With equipment**, and **What to train**. The old always-visible equipment and capability checklists are removed. Without equipment is the default and sends an empty equipment list to the existing hard filters. With equipment reveals only gear used by the current pool. Added exercises supply visible gear suggestions; the person can adjust them before planning. No added gear means nothing is assumed: choose what is available today. Bodyweight movements can still be part of an equipment session.
+
+Changing mode or gear clears the previous result. No diary write, schema change, ownership profile or health inference is introduced. The request's capability list is empty because this form no longer collects limitations; this is not a replacement for Task D's future profile. The domain hard filters and Yash's ranking function are unchanged.
+
+Five UI tests cover the compact controls, bodyweight exclusion, suggested gear, unavailable gear, empty-gear prompt and stale-result clearing. The new tests failed against the previous form before implementation. Check and production build pass. Browser 375 px: no horizontal overflow and bottom dock retained. Browser equipment mode: no gear prompts for a selection; resistance band produces band pull-apart plus push-up (11/20 min). Switching back clears the result. Physical phone verification of these new controls is pending. Reload twice, try both modes and confirm only gear available today is checked.

@@ -88,3 +88,7 @@ Written 7 Nov 2026, after M4 part 1 merged (`main` at e5bf9ac). Read `CLAUDE.md`
 Implemented on `codex/exercise-search`: schema-v4 immutable choices, bounded offline search over 876 pinned Unlicense records, explicit requirements review and confirmation, backup compatibility, and chosen-pool planning. Dataset provenance: `docs/data/exercise-dataset.md`. Explain-back, verification evidence and phone gate: `docs/milestones/m4-exercise-search-walkthrough.md`.
 
 Task B's lightweight CSS depth, front/back SVG targets, minutes ring and coverage chips are also present. Physical phone verification remains pending. Unknown source equipment is searchable but unavailable to add; capability metadata always needs review. No injury safety claims. Next schema version is **v5**, including for profile/diet rules. Task D's new `ineligibleReason` rules remain reserved for Yash. Task C and the training loop remain untouched.
+
+
+### Planner form follow-up (7 Nov)
+Yash reported the exercise feature works on his phone and approved the Gym visual direction. At his request the planner now uses Without equipment / With equipment, keeps What to train, and removes You cannot do from this form. Equipment details appear only in With equipment; suggestions come from added exercises and remain editable for today. Nothing is inferred about health or saved as an ownership profile. See the updated Task A walkthrough for request semantics and tests. Task D's limitation profile/rules are still outstanding and reserved for Yash; do not treat the simplified form as implementing them.

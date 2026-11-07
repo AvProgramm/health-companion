@@ -262,3 +262,13 @@ svg { flex-shrink: 0; }
 @media (min-width: 1180px) { .gym-layout { grid-template-columns: minmax(0,1fr) 360px; } }
 @media (max-width: 479px) { .gym-masthead { padding: 16px; border-radius: 16px; } .gym-title { gap: 12px; } .gym-title .page-title { font-size: 24px; line-height: 32px; } .gym-emblem { width: 48px; height: 48px; } .exercise-result { grid-template-columns: 56px minmax(0,1fr); padding: 12px; } .minutes-ring { width: 96px; height: 96px; } .exercise-review-head { grid-template-columns: 56px minmax(0,1fr); } .exercise-review-head .title { font-size: 20px; line-height: 28px; } }
 @media (prefers-reduced-motion: no-preference) { .exercise-result { transition: transform 500ms var(--ease), box-shadow 500ms var(--ease); } .exercise-result:hover { transform: perspective(800px) rotateX(1deg) translateY(-2px); box-shadow: var(--gym-shadow); } }
+
+/* Keep session setup compact, with gear details visible only when requested. */
+.equipment-modes { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+.equipment-mode { display: flex; align-items: center; gap: 8px; padding: 12px; min-height: 56px; border: 1px solid var(--line); border-radius: 12px; background: var(--paper); font-size: 14px; line-height: 20px; cursor: pointer; }
+.equipment-mode input { width: 18px; height: 18px; margin: 0; flex-shrink: 0; accent-color: var(--action); }
+.equipment-mode:has(input:checked) { border-color: var(--action); background: var(--action-soft); box-shadow: inset 0 0 0 1px var(--action); }
+.equipment-mode:focus-within { outline: 2px solid var(--action); outline-offset: 4px; }
+.session-equipment { display: grid; gap: 8px; padding: 12px; border: 1px solid var(--line); border-radius: 12px; }
+.plan-session-card .choice { padding: 8px 12px; border: 1px solid var(--line); border-radius: 12px; cursor: pointer; }
+.plan-session-card .choice:has(input:checked) { background: var(--action-soft); border-color: var(--action); }

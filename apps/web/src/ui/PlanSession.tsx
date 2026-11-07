@@ -1,12 +1,12 @@
 import { useEffect, useState, type FormEvent } from 'react';
-import { type MovementCard, type Capability, type Category, type Equipment } from '../domain/training/catalogue';
+import { type MovementCard, type Category, type Equipment } from '../domain/training/catalogue';
 import { bestPlan, type PlanResult } from '../domain/training/planner';
 import { MinutesRing } from './MinutesRing';
 import { MuscleMap } from './MuscleMap';
 
-// The choices on the form, as they read on screen
+// Label only the equipment types the existing planner understands.
 const EQUIPMENT_CHOICES: readonly [Equipment, string][] = [['dumbbells', 'Dumbbells'], ['band', 'Resistance band'], ['pull_up_bar', 'Pull-up bar']];
-const CAPABILITY_CHOICES: readonly [Capability, string][] = [['pull_up', 'Pull-ups'], ['jumping', 'Jumping']];
+// Keep the four training areas available in both equipment modes.
 const CATEGORY_CHOICES: readonly [Category, string][] = [['push', 'Push'], ['pull', 'Pull'], ['legs', 'Legs'], ['core', 'Core']];
 
 /**
@@ -16,11 +16,17 @@ const CATEGORY_CHOICES: readonly [Category, string][] = [['push', 'Push'], ['pul
  */
 export function PlanSession({ cards }: { cards: readonly MovementCard[] }) {
   const [minutesText, setMinutesText] = useState('20');
-  const [equipment, setEquipment] = useState<Equipment[]>(['dumbbells']);
-  const [unableTo, setUnableTo] = useState<Capability[]>([]);
+  // Start with a bodyweight session; choosing an exercise does not establish equipment ownership.
+  const [equipmentMode, setEquipmentMode] = useState<'without' | 'with'>('without');
+  const [selectedEquipment, setSelectedEquipment] = useState<Equipment[] | null>(null);
   const [categories, setCategories] = useState<Category[]>(['push', 'pull']);
   const [result, setResult] = useState<PlanResult | null>(null);
   const [error, setError] = useState<string | null>(null);
+
+  // Suggest gear from explicitly added exercises, while offering only gear used by the pool.
+  const equipmentChoices = EQUIPMENT_CHOICES.filter(([value]) => cards.some(card => card.equipment.includes(value)));
+  const suggestedEquipment = [...new Set(cards.filter(card => card.id.startsWith('free-exercise-db:')).flatMap(card => card.equipment))];
+  const equipment = (selectedEquipment ?? suggestedEquipment).filter(value => equipmentChoices.some(([option]) => option === value));
 
   // Ignore a stale result because the set of chosen exercises has changed.
   useEffect(() => setResult(null), [cards]);
@@ -39,7 +45,14 @@ export function PlanSession({ cards }: { cards: readonly MovementCard[] }) {
       return;
     }
 
-    setResult(bestPlan({ minutes, equipment, unableTo, neverSuggest: [], categories, preferences: {} }, cards));
+    // Ignore an equipment session without selected gear because ownership must not be guessed.
+    if (equipmentMode === 'with' && equipment.length === 0) {
+      setError('Choose the equipment available today, or switch to Without equipment.');
+      return;
+    }
+
+    // Pass the chosen kit through the existing hard filters; no capability profile is inferred here.
+    setResult(bestPlan({ minutes, equipment: equipmentMode === 'without' ? [] : equipment, unableTo: [], neverSuggest: [], categories, preferences: {} }, cards));
   }
 
   return (
@@ -51,8 +64,17 @@ export function PlanSession({ cards }: { cards: readonly MovementCard[] }) {
           <span className="label">Minutes you have</span>
           <input className="input input-short" inputMode="numeric" value={minutesText} onChange={(event) => setMinutesText(event.target.value)} />
         </label>
-        <Choices legend="Equipment you have" choices={EQUIPMENT_CHOICES} selected={equipment} onChange={setEquipment} />
-        <Choices legend="You cannot do" choices={CAPABILITY_CHOICES} selected={unableTo} onChange={setUnableTo} />
+        <fieldset className="fieldset">
+          <legend className="label">Session setup</legend>
+          <div className="equipment-modes">
+            <label className="equipment-mode"><input type="radio" name="session-equipment" value="without" checked={equipmentMode === 'without'} onChange={() => { setEquipmentMode('without'); setError(null); }} /><span>Without equipment</span></label>
+            <label className="equipment-mode"><input type="radio" name="session-equipment" value="with" checked={equipmentMode === 'with'} onChange={() => { setEquipmentMode('with'); setError(null); }} /><span>With equipment</span></label>
+          </div>
+        </fieldset>
+        {equipmentMode === 'with' && <div className="session-equipment">
+          <Choices legend="Available for this session" choices={equipmentChoices} selected={equipment} onChange={setSelectedEquipment} />
+          <p className="hint">{suggestedEquipment.length > 0 ? 'Suggested from your added exercises. Keep only the gear you have today.' : 'Choose the gear you have today.'} Bodyweight movements can still be included.</p>
+        </div>}
         <Choices legend="What to train" choices={CATEGORY_CHOICES} selected={categories} onChange={setCategories} />
         <button type="submit" className="button">Find a plan</button>
       </form>
@@ -117,6 +139,7 @@ function Choices<T extends string>({ legend, choices, selected, onChange }: Choi
           <label key={value} className="choice">
             <input
               type="checkbox"
+              value={value}
               checked={selected.includes(value)}
               onChange={(event) => onChange(event.target.checked ? [...selected, value] : selected.filter((item) => item !== value))}
             />
