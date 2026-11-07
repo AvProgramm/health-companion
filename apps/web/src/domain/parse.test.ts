@@ -114,6 +114,77 @@ describe('parseEntry: corrections', () => {
   });
 });
 
+describe('parseEntry: training', () => {
+  it('reads "add gym: row 3 x 8 at 5 kg each hand" as three sets at 5 kg each hand (kit Tuesday test 2)', () => {
+    const result = parseEntry('add gym: row 3 x 8 at 5 kg each hand', TEST_FOODS);
+    expect(result.kind).toBe('workout');
+    if (result.kind === 'workout') {
+      expect(result.draft.movement).toBe('Row');
+      expect(result.draft.sets).toHaveLength(3);
+      expect(result.draft.sets[0]).toEqual({ reps: 8, load: 5, loadUnit: 'kg', perHand: true, minutes: null, distanceKm: null });
+    }
+  });
+
+  it.each([
+    ['3x10 squats at 40kg', 'Squats', 3, 10, 40],
+    ['bench press 5 x 5 @ 60 kg', 'Bench press', 5, 5, 60],
+    ['pushups 20 reps', 'Pushups', 1, 20, null],
+  ] as const)('reads "%s"', (text, movement, sets, reps, load) => {
+    const result = parseEntry(text, TEST_FOODS);
+    expect(result.kind === 'workout' ? [result.draft.movement, result.draft.sets.length, result.draft.sets[0]?.reps, result.draft.sets[0]?.load] : result.kind).toEqual([movement, sets, reps, load]);
+  });
+
+  it('reads a run with distance and time in either order', () => {
+    const result = parseEntry('ran 5 km in 30 min', TEST_FOODS);
+    expect(result).toEqual({ kind: 'workout', draft: { movement: 'Run', status: 'done', sets: [{ reps: null, load: null, loadUnit: null, perHand: false, minutes: 30, distanceKm: 5 }] }, problem: null });
+  });
+
+  it('asks for the time when an activity has none', () => {
+    const result = parseEntry('badminton', TEST_FOODS);
+    expect(result.kind === 'workout' ? result.problem : null).toMatch(/how long/);
+  });
+
+  it('records a skipped day', () => {
+    expect(parseEntry('rest day', TEST_FOODS)).toEqual({ kind: 'workout', draft: { movement: 'Gym', status: 'skipped', sets: [] }, problem: null });
+  });
+
+  it('keeps food that looks like sets as food', () => {
+    expect(parseEntry('20 almonds', TEST_FOODS).kind).toBe('meal');
+    expect(parseEntry('2 x 2 weetabix', TEST_FOODS).kind).toBe('meal');
+  });
+});
+
+describe('parseEntry: sleep', () => {
+  it('reads "slept 23:30 to 07:00"', () => {
+    expect(parseEntry('slept 23:30 to 07:00', TEST_FOODS)).toEqual({
+      kind: 'sleep',
+      bed: { hour: 23, minute: 30, meridiem: null },
+      wake: { hour: 7, minute: 0, meridiem: null },
+      asleepMin: null,
+      problem: null,
+    });
+  });
+
+  it('reads "went to bed at 11, got up at 7" (router smoke case)', () => {
+    const result = parseEntry('went to bed at 11, got up at 7', TEST_FOODS);
+    expect(result.kind === 'sleep' ? [result.bed?.hour, result.wake?.hour, result.problem] : result.kind).toEqual([11, 7, null]);
+  });
+
+  it('keeps a reported duration as time asleep, not as a clock time', () => {
+    const result = parseEntry('bed 11:30pm woke 7am, slept 6 hours', TEST_FOODS);
+    expect(result.kind === 'sleep' ? [result.bed, result.wake, result.asleepMin] : result.kind).toEqual([
+      { hour: 11, minute: 30, meridiem: 'pm' },
+      { hour: 7, minute: 0, meridiem: 'am' },
+      360,
+    ]);
+  });
+
+  it('asks for bedtime when only waking is given', () => {
+    const result = parseEntry('woke up at 7', TEST_FOODS);
+    expect(result.kind === 'sleep' ? [result.wake?.hour, result.problem] : result.kind).toEqual([7, 'Add when you went to bed.']);
+  });
+});
+
 describe('parseEntry: questions', () => {
   it.each([
     ['How much protein today?', 'protein_g'],

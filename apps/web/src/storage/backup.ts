@@ -5,9 +5,14 @@
  * file has passed validation, so a damaged or foreign file can never leave the
  * diary half-restored.
  */
+import type { SleepEntry } from '../domain/sleep';
 import type { FoodVersion, MealRevision } from '../domain/types';
 import { isUnit } from '../domain/units';
+import type { WorkoutEntry } from '../domain/workouts';
 import { DB_VERSION, STORE_NAMES, resultOf, runTransaction, type MealHeader, type OperationRecord } from './db';
+
+// Lists added after the first backups were made; an older file without them restores them as empty
+const OPTIONAL_LISTS = ['workouts', 'sleep'] as const;
 
 // Identifies our backup files, so a random JSON file is rejected straight away
 export const BACKUP_FORMAT = 'health-companion-backup';
@@ -25,12 +30,16 @@ export interface DiaryBackup {
   meals: MealHeader[];
   revisions: MealRevision[];
   operations: OperationRecord[];
+  workouts: WorkoutEntry[];
+  sleep: SleepEntry[];
 }
 
 export interface BackupCounts {
   foods: number;
   meals: number;
   revisions: number;
+  workouts: number;
+  sleep: number;
 }
 
 export type BackupCheck =
@@ -51,9 +60,11 @@ export function exportDiary(db: IDBDatabase, now: Date = new Date()): Promise<Di
       meals: [],
       revisions: [],
       operations: [],
+      workouts: [],
+      sleep: [],
     };
 
-    // Read the four stores; finish once the last one arrives
+    // Read every store; finish once the last one arrives
     let remaining = STORE_NAMES.length;
     for (const name of STORE_NAMES) {
       tx.objectStore(name).getAll().onsuccess = (event) => {
@@ -71,7 +82,13 @@ export function exportDiary(db: IDBDatabase, now: Date = new Date()): Promise<Di
  * Return the counts of records in a backup, for the "this will restore…" message.
  */
 export function countBackup(backup: DiaryBackup): BackupCounts {
-  return { foods: backup.foods.length, meals: backup.meals.length, revisions: backup.revisions.length };
+  return {
+    foods: backup.foods.length,
+    meals: backup.meals.length,
+    revisions: backup.revisions.length,
+    workouts: backup.workouts.length,
+    sleep: backup.sleep.length,
+  };
 }
 
 /**
@@ -100,11 +117,48 @@ export function validateBackup(data: unknown): BackupCheck {
     return { ok: false, errors: ['This backup comes from a newer version of the app. Update the app first.'] };
   }
   for (const name of STORE_NAMES) {
-    if (!Array.isArray(data[name])) {
+    const optional = (OPTIONAL_LISTS as readonly string[]).includes(name);
+    if (!Array.isArray(data[name]) && !(optional && data[name] === undefined)) {
       return { ok: false, errors: [`The backup has no "${name}" list.`] };
     }
   }
-  const backup = data as unknown as DiaryBackup;
+  // Fill in lists an older backup did not have, without changing the parsed file
+  const backup = { ...data, workouts: data.workouts ?? [], sleep: data.sleep ?? [] } as unknown as DiaryBackup;
+
+  // Check each workout entry
+  for (const workout of backup.workouts) {
+    if (!isRecord(workout) || typeof workout.id !== 'string' || !isDiaryDate(workout.localDate) || !isPositiveInteger(workout.version)) {
+      report('A workout is missing its ID, date or version.');
+      continue;
+    }
+    if (typeof workout.movement !== 'string' || (workout.status !== 'done' && workout.status !== 'skipped') || !Array.isArray(workout.sets)) {
+      report(`Workout ${workout.id} has an invalid movement, status or sets.`);
+      continue;
+    }
+    for (const set of workout.sets as unknown[]) {
+      const numbers = isRecord(set) ? [set.reps, set.load, set.minutes, set.distanceKm] : [Number.NaN];
+      if (numbers.some((value) => value !== null && !isFiniteAbove(value, 0, true))) {
+        report(`Workout ${workout.id} has a set with a number that is not 0 or more.`);
+      }
+      if (isRecord(set) && set.loadUnit !== null && set.loadUnit !== 'kg' && set.loadUnit !== 'lb') {
+        report(`Workout ${workout.id} has a load unit other than kg or lb.`);
+      }
+    }
+  }
+
+  // Check each sleep entry
+  for (const sleep of backup.sleep) {
+    if (!isRecord(sleep) || typeof sleep.id !== 'string' || !isDiaryDate(sleep.localDate) || !isPositiveInteger(sleep.version)) {
+      report('A sleep entry is missing its ID, date or version.');
+      continue;
+    }
+    if (!isFiniteAbove(sleep.timeInBedMin, 0, false) || (sleep.asleepMin !== null && !isFiniteAbove(sleep.asleepMin, 0, false))) {
+      report(`Sleep ${sleep.id} has an invalid duration.`);
+    }
+    if (typeof sleep.bedTime !== 'string' || typeof sleep.wakeTime !== 'string' || !/^\d{2}:\d{2}$/.test(sleep.bedTime) || !/^\d{2}:\d{2}$/.test(sleep.wakeTime)) {
+      report(`Sleep ${sleep.id} has an invalid bed or wake time.`);
+    }
+  }
 
   // Check each food version
   const foodKeys = new Set<string>();
@@ -131,7 +185,7 @@ export function validateBackup(data: unknown): BackupCheck {
       continue;
     }
     const label = `Meal ${revision.mealId} revision ${revision.revision}`;
-    if (typeof revision.localDate !== 'string' || !/^\d{4}-\d{2}-\d{2}$/.test(revision.localDate)) {
+    if (!isDiaryDate(revision.localDate)) {
       report(`${label} has an invalid date.`);
     }
     for (const component of revision.components) {
@@ -195,6 +249,13 @@ export function restoreDiary(db: IDBDatabase, checked: Extract<BackupCheck, { ok
  */
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null && !Array.isArray(value);
+}
+
+/**
+ * Return true for a diary date written as YYYY-MM-DD.
+ */
+function isDiaryDate(value: unknown): boolean {
+  return typeof value === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(value);
 }
 
 /**

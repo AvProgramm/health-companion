@@ -1,5 +1,5 @@
 /**
- * The on-device diary database (IndexedDB, schema version 2).
+ * The on-device diary database (IndexedDB, schema version 3).
  *
  * Every write that changes a meal happens inside one readwrite transaction, so the
  * revision, the meal's latest-revision pointer and the operation key are saved
@@ -9,14 +9,23 @@
 import { SUMMARY_NUTRIENTS } from '../domain/day';
 import { totalNutrient } from '../domain/aggregate';
 import { reviseMeal } from '../domain/revisions';
+import type { SleepEntry } from '../domain/sleep';
 import type { ChangeAmountRequest, FoodVersion, MealEditRequest, MealRevision } from '../domain/types';
+import type { WorkoutEntry } from '../domain/workouts';
 
 // Bump only together with a new step in upgradeSchema
 const DB_NAME = 'health-companion';
-export const DB_VERSION = 2;
+export const DB_VERSION = 3;
 
 // Every store, in the order a backup lists them
-export const STORE_NAMES = ['foods', 'meals', 'revisions', 'operations'] as const;
+export const STORE_NAMES = ['foods', 'meals', 'revisions', 'operations', 'workouts', 'sleep'] as const;
+
+// The stores that hold simple dated logs rather than revisioned meals
+export type LogStore = 'workouts' | 'sleep';
+export type LogEntry = WorkoutEntry | SleepEntry;
+export type LogResult<T extends LogEntry> =
+  | { status: 'saved'; entry: T; replayed: boolean }
+  | { status: 'conflict'; latest: T };
 
 /**
  * The small header kept per meal, so the latest revision can be found in one read.
@@ -92,6 +101,98 @@ function upgradeSchema(db: IDBDatabase, tx: IDBTransaction, oldVersion: number):
   if (oldVersion < 2) {
     tx.objectStore('meals').createIndex('byDate', 'localDate');
   }
+
+  // Version 3: training and sleep logs, found by date (and workouts by movement for "last time")
+  if (oldVersion < 3) {
+    const workouts = db.createObjectStore('workouts', { keyPath: 'id' });
+    workouts.createIndex('byDate', 'localDate');
+    workouts.createIndex('byMovement', 'movementKey');
+    db.createObjectStore('sleep', { keyPath: 'id' }).createIndex('byDate', 'localDate');
+  }
+}
+
+/**
+ * Save a new workout or sleep entry.
+ *
+ * Replaying the same operation key returns the stored entry, so a double tap saves once.
+ * The same ID with a different key is a programming error and saves nothing.
+ */
+export function saveLogEntry<T extends LogEntry>(db: IDBDatabase, store: LogStore, entry: T): Promise<LogResult<T>> {
+  return runTransaction(db, [store], (tx, finish, fail) => {
+    const logs = tx.objectStore(store);
+    logs.get(entry.id).onsuccess = (event) => {
+      const existing = resultOf(event) as T | undefined;
+
+      // Replay a save that already happened
+      if (existing !== undefined && existing.operationKey === entry.operationKey) {
+        finish({ status: 'saved', entry: existing, replayed: true });
+        return;
+      }
+      if (existing !== undefined) {
+        fail(new Error(`Entry ${entry.id} already exists`));
+        return;
+      }
+
+      logs.add(entry);
+      finish({ status: 'saved', entry, replayed: false });
+    };
+  });
+}
+
+/**
+ * Delete or restore a workout or sleep entry, based on the version the screen showed.
+ *
+ * Deleting only sets a flag, so it can always be undone. A stale screen gets a
+ * conflict instead of overwriting a newer change.
+ */
+export function setLogDeleted<T extends LogEntry>(
+  db: IDBDatabase,
+  store: LogStore,
+  change: { id: string; expectedVersion: number; deleted: boolean; operationKey: string; savedAt: string },
+): Promise<LogResult<T>> {
+  return runTransaction(db, [store], (tx, finish, fail) => {
+    const logs = tx.objectStore(store);
+    logs.get(change.id).onsuccess = (event) => {
+      const existing = resultOf(event) as T | undefined;
+      if (existing === undefined) {
+        fail(new Error(`Entry ${change.id} is not saved on this device`));
+        return;
+      }
+
+      // Replay a change that already happened, then refuse a stale one
+      if (existing.operationKey === change.operationKey) {
+        finish({ status: 'saved', entry: existing, replayed: true });
+        return;
+      }
+      if (existing.version !== change.expectedVersion) {
+        finish({ status: 'conflict', latest: existing });
+        return;
+      }
+
+      const next = { ...existing, deleted: change.deleted, version: existing.version + 1, operationKey: change.operationKey, savedAt: change.savedAt };
+      logs.put(next);
+      finish({ status: 'saved', entry: next, replayed: false });
+    };
+  });
+}
+
+/**
+ * Return the workout or sleep entries saved under one diary date.
+ */
+export function logsOn<T extends LogEntry>(db: IDBDatabase, store: LogStore, localDate: string): Promise<T[]> {
+  return runTransaction(db, [store], (tx, finish) => {
+    tx.objectStore(store).index('byDate').getAll(localDate).onsuccess = (event) =>
+      finish((resultOf(event) as T[]).sort((a, b) => a.savedAt.localeCompare(b.savedAt)));
+  }, 'readonly');
+}
+
+/**
+ * Return every workout entry, for the Gym tab's history and "last time".
+ */
+export function listWorkouts(db: IDBDatabase): Promise<WorkoutEntry[]> {
+  return runTransaction(db, ['workouts'], (tx, finish) => {
+    tx.objectStore('workouts').getAll().onsuccess = (event) => finish(resultOf(event) as WorkoutEntry[]);
+  }, 'readonly');
 }
 
 /**
