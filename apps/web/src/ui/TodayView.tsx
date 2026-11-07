@@ -67,7 +67,7 @@ export function TodayView({ db, foods, currentFoods, hideNumbers, durability, on
   const [text, setText] = useState('');
   const [panel, setPanel] = useState<Panel | null>(null);
   const [openMealId, setOpenMealId] = useState<string | null>(null);
-  const [creatingFood, setCreatingFood] = useState<{ name: string; rowKey: string; unit: Unit } | null>(null);
+  const [creatingFood, setCreatingFood] = useState<{ name: string; rowKey: string; unit: Unit; initialFood?: FoodVersion } | null>(null);
   const [busy, setBusy] = useState(false);
   const [notice, setNotice] = useState<Notice | null>(null);
 
@@ -258,6 +258,12 @@ export function TodayView({ db, foods, currentFoods, hideNumbers, durability, on
           busy={busy}
           onSave={saveDraft}
           onCancel={() => showPanel(null)}
+          onUseEstimate={async (food, rowKey) => {
+            await onSaveFood(food);
+            setPanel((current) => current?.kind === 'draft' ? { ...current, rows: current.rows.map((row) =>
+              row.key === rowKey ? { ...row, foodKey: foodKey(food.id, food.version), amountText: String(food.basis.amount), unit: food.basis.unit, problem: null } : row) } : current);
+          }}
+          onEditEstimate={(food, rowKey) => setCreatingFood({ name: food.name, rowKey, unit: food.basis.unit, initialFood: food })}
           onCreateFood={(name, rowKey, unit) => setCreatingFood({ name, rowKey, unit })}
         />
       )}
@@ -356,6 +362,7 @@ export function TodayView({ db, foods, currentFoods, hideNumbers, durability, on
 
       {creatingFood !== null && (
         <FoodEditor
+          initialFood={creatingFood.initialFood}
           initialName={creatingFood.name}
           initialUnit={creatingFood.unit}
           onClose={() => setCreatingFood(null)}
@@ -369,7 +376,7 @@ export function TodayView({ db, foods, currentFoods, hideNumbers, durability, on
                 kind: 'draft',
                 rows: panel.rows.map((row) =>
                   row.key === rowKey
-                    ? { ...row, foodKey: foodKey(food.id, food.version), unit: areCompatible(row.unit, food.basis.unit) ? row.unit : food.basis.unit, problem: null }
+                    ? { ...row, ...(creatingFood.initialFood === undefined ? {} : { amountText: String(food.basis.amount) }), foodKey: foodKey(food.id, food.version), unit: areCompatible(row.unit, food.basis.unit) ? row.unit : food.basis.unit, problem: null }
                     : row,
                 ),
               });

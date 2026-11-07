@@ -19,6 +19,7 @@ const UNIT_CHOICES: readonly { unit: Unit; label: string }[] = [
 interface FoodEditorProps {
   // The version being edited, or undefined for a new food
   previous?: FoodVersion;
+  initialFood?: FoodVersion;
   // A name and unit to start with, e.g. the words the composer could not match
   initialName?: string;
   initialUnit?: Unit;
@@ -30,18 +31,19 @@ interface FoodEditorProps {
  * The label editor. Saving an existing food creates its next version, so meals
  * saved earlier keep the numbers they were saved with.
  */
-export function FoodEditor({ previous, initialName, initialUnit, onSave, onClose }: FoodEditorProps) {
-  const startUnit = previous?.basis.unit ?? initialUnit ?? 'g';
-  const [name, setName] = useState(previous?.name ?? initialName ?? '');
-  const [aliases, setAliases] = useState((previous?.aliases ?? []).join(', '));
+export function FoodEditor({ previous, initialFood, initialName, initialUnit, onSave, onClose }: FoodEditorProps) {
+  const seed = previous ?? initialFood;
+  const startUnit = seed?.basis.unit ?? initialUnit ?? 'g';
+  const [name, setName] = useState(seed?.name ?? initialName ?? '');
+  const [aliases, setAliases] = useState((seed?.aliases ?? []).join(', '));
   // Labels are usually per 100 g or 100 mL; counted foods usually per 1 piece
-  const [basisAmount, setBasisAmount] = useState(previous !== undefined ? String(previous.basis.amount) : startUnit === 'piece' ? '1' : '100');
+  const [basisAmount, setBasisAmount] = useState(seed !== undefined ? String(seed.basis.amount) : startUnit === 'piece' ? '1' : '100');
   const [basisUnit, setBasisUnit] = useState<Unit>(startUnit);
-  const [sourceKind, setSourceKind] = useState<SourceKind>(previous?.source.kind === 'user_estimate' ? 'user_estimate' : 'label');
+  const [sourceKind, setSourceKind] = useState<SourceKind>(initialFood !== undefined || previous?.source.kind === 'user_estimate' || previous?.source.kind === 'database' || previous?.source.kind === 'ai_estimate' ? 'user_estimate' : 'label');
   const [values, setValues] = useState<Record<NutrientKey, string>>(() => {
     const start = {} as Record<NutrientKey, string>;
     for (const key of EDITABLE_NUTRIENTS) {
-      const value = previous?.nutrients[key];
+      const value = seed?.nutrients[key];
       start[key] = value === undefined || value === null ? '' : String(value);
     }
     return start;

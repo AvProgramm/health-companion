@@ -160,3 +160,21 @@ describe('validateBackup', () => {
     expect(validateBackup(file).ok).toBe(false);
   });
 });
+
+describe('estimate backup compatibility', () => {
+  it('round-trips estimate metadata without changing the schema version', async () => {
+    const food = { ...RICE, id: 'fictional-estimate', source: { kind: 'database' as const, reference: 'Fictional source' }, range: { kcal: { low: 0, high: 1000 } } };
+    await saveFoodVersion(db, food);
+    const exported = await checkedExport();
+    await wipeDiary(db);
+    await restoreDiary(db, exported);
+    const restored = await exportDiary(db);
+    expect(restored.foods.find((item) => item.id === food.id)).toEqual(food);
+  });
+
+  it('rejects inverted ranges before restoring anything', async () => {
+    const backup = await exportDiary(db);
+    backup.foods[0]!.range = { kcal: { low: 900, high: 100 } };
+    expect(validateBackup(backup).ok).toBe(false);
+  });
+});

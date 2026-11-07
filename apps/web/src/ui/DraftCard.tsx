@@ -5,6 +5,7 @@ import type { FoodVersion } from '../domain/nutrition/types';
 import type { MealComponent } from '../domain/meals/types';
 import { areCompatible, type Unit } from '../domain/shared/units';
 import { readAmount } from './format';
+import { EstimateDraft } from './EstimateDraft';
 
 // Every unit, filtered per row to the ones that fit the chosen food
 const ALL_UNITS: readonly Unit[] = ['g', 'kg', 'mL', 'L', 'piece'];
@@ -110,13 +111,15 @@ interface DraftCardProps {
   busy: boolean;
   onSave: (components: MealComponent[]) => void;
   onCancel: () => void;
+  onUseEstimate: (food: FoodVersion, rowKey: string) => Promise<void>;
+  onEditEstimate: (food: FoodVersion, rowKey: string) => void;
   onCreateFood: (name: string, rowKey: string, unit: Unit) => void;
 }
 
 /**
  * The "Review meal, not saved yet" card: every row can be fixed before one save.
  */
-export function DraftCard({ rows, onRowsChange, foods, currentFoods, hideNumbers, dateLabel, busy, onSave, onCancel, onCreateFood }: DraftCardProps) {
+export function DraftCard({ rows, onRowsChange, foods, currentFoods, hideNumbers, dateLabel, busy, onSave, onCancel, onCreateFood, onUseEstimate, onEditEstimate }: DraftCardProps) {
   const components = draftComponents(rows, foods);
 
   // Replace one row, keeping the others as they are
@@ -163,6 +166,10 @@ export function DraftCard({ rows, onRowsChange, foods, currentFoods, hideNumbers
                 </button>
               </div>
 
+              {food === null && (
+                <EstimateDraft name={nameFromText(row.text)} portionText={row.amountText === '' ? '' : `${row.amountText} ${row.unit}`}
+                  hideNumbers={hideNumbers} onUse={(accepted) => onUseEstimate(accepted, row.key)} onEdit={(proposal) => onEditEstimate(proposal, row.key)} />
+              )}
               {food === null && (
                 <button type="button" className="button button-secondary" onClick={() => onCreateFood(nameFromText(row.text), row.key, row.unit)}>
                   Add "{nameFromText(row.text) || 'a new food'}" as a food

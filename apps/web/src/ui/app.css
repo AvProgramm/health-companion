@@ -572,3 +572,8 @@ body {
     animation: none;
   }
 }
+
+/* Keep lookup controls and long source names readable on a narrow phone. */
+.estimate-panel { display: grid; gap: 12px; padding: 16px; border: 1px solid var(--line); border-radius: var(--radius-card); }
+.estimate-loading { height: 48px; }
+.estimate-sources { padding-left: 16px; overflow-wrap: anywhere; }

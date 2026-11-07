@@ -50,6 +50,7 @@ function precacheServiceWorker(): Plugin {
 export default defineConfig({
   plugins: [react(), precacheServiceWorker()],
   // Keep the phone on one fixed origin, since a different port means a different, empty database
-  preview: { host: '127.0.0.1', port: 4173, strictPort: true },
+  server: { proxy: { '/api': 'http://127.0.0.1:8000' } },
+  preview: { host: '127.0.0.1', port: 4173, strictPort: true, proxy: { '/api': 'http://127.0.0.1:8000' } },
   test: { environment: 'node', include: ['src/**/*.test.ts'] },
 });

@@ -1,0 +1,84 @@
+// @vitest-environment jsdom
+import { act, createElement } from 'react';
+import { createRoot, type Root } from 'react-dom/client';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { EstimateDraft } from './EstimateDraft';
+
+// A fictional response makes the confirmation test independent of a provider.
+const proposal = {
+  basis: { amount: 50, unit: 'g' },
+  nutrients: { kcal: 60, protein_g: null, fat_g: null, satfat_g: null, total_sugar_g: null, added_sugar_g: null },
+  range: { kcal: { low: 50, high: 70 }, protein_g: null, fat_g: null, satfat_g: null, total_sugar_g: null, added_sugar_g: null },
+  sourceKind: 'database', reason: 'Two fictional matches.',
+  sources: [{ provider: 'USDA', description: 'Fictional oats', url: 'https://example.org/food' }],
+};
+let container: HTMLDivElement;
+let root: Root;
+
+beforeEach(() => {
+  Object.assign(globalThis, { IS_REACT_ACT_ENVIRONMENT: true });
+  container = document.createElement('div');
+  document.body.append(container);
+  root = createRoot(container);
+});
+afterEach(async () => {
+  await act(async () => root.unmount());
+  container.remove();
+  vi.unstubAllGlobals();
+});
+
+/** Tap one visible action and flush its request. */
+async function tap(label: string) {
+  const button = [...container.querySelectorAll('button')].find((item) => item.textContent === label);
+  expect(button).toBeDefined();
+  await act(async () => button!.click());
+}
+
+describe('estimate draft', () => {
+  it('shows sources and a range without saving until Use estimate is tapped', async () => {
+    const onUse = vi.fn().mockResolvedValue(undefined);
+    const onEdit = vi.fn();
+    const fetchMock = vi.fn().mockResolvedValue({ ok: true, json: async () => proposal });
+    vi.stubGlobal('fetch', fetchMock);
+    await act(async () => root.render(createElement(EstimateDraft, { name: 'Fictional oats', portionText: '50 g', hideNumbers: false, onUse, onEdit })));
+    expect(fetchMock).not.toHaveBeenCalled();
+    await tap('Estimate nutrition');
+    expect(container.textContent).toContain('60.0 kcal (50.0–70.0)');
+    expect(container.textContent).toContain('USDA');
+    expect(onUse).not.toHaveBeenCalled();
+    await tap('Use estimate');
+    expect(onUse).toHaveBeenCalledTimes(1);
+    expect(onUse.mock.calls[0]![0].range.kcal).toEqual({ low: 50, high: 70 });
+  });
+
+  it('allows editing a proposal without accepting its values', async () => {
+    const onUse = vi.fn();
+    const onEdit = vi.fn();
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue({ ok: true, json: async () => proposal }));
+    await act(async () => root.render(createElement(EstimateDraft, { name: 'Fictional oats', portionText: '50 g', hideNumbers: false, onUse, onEdit })));
+    await tap('Estimate nutrition');
+    await tap('Edit');
+    expect(onUse).not.toHaveBeenCalled();
+    expect(onEdit.mock.calls[0]![0].source.kind).toBe('database');
+  });
+
+  it('keeps manual and unknown-value logging available when offline', async () => {
+    const onUse = vi.fn().mockResolvedValue(undefined);
+    vi.stubGlobal('fetch', vi.fn().mockRejectedValue(new TypeError('Offline')));
+    await act(async () => root.render(createElement(EstimateDraft, { name: 'Fictional oats', portionText: '50 g', hideNumbers: false, onUse, onEdit: vi.fn() })));
+    await tap('Estimate nutrition');
+    expect(container.textContent).toContain('Estimates need the laptop');
+    expect(onUse).not.toHaveBeenCalled();
+    await tap('Log with unknown values');
+    expect(Object.values(onUse.mock.calls[0]![0].nutrients)).toEqual([null, null, null, null, null, null]);
+    expect(onUse.mock.calls[0]![0].range).toBeUndefined();
+  });
+
+  it('hides all nutrient values when numbers are hidden', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue({ ok: true, json: async () => proposal }));
+    await act(async () => root.render(createElement(EstimateDraft, { name: 'Fictional oats', portionText: '50 g', hideNumbers: true, onUse: vi.fn(), onEdit: vi.fn() })));
+    await tap('Estimate nutrition');
+    expect(container.textContent).not.toContain('60.0');
+    expect(container.textContent).toContain('USDA');
+  });
+});
