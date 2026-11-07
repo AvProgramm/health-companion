@@ -2,7 +2,7 @@ import { foodKey } from '../domain/nutrition/aggregate';
 import { scaleNutrient } from '../domain/nutrition/scale';
 import type { FoodVersion } from '../domain/nutrition/types';
 import type { SavedMeal } from '../storage/mealsRepo';
-import { SOURCE_LABELS, formatEaten, formatQuantity, formatTime, formatValue, mealTitle } from './format';
+import { SOURCE_LABELS, describeSource, formatEaten, formatQuantity, formatTime, formatValue, mealTitle } from './format';
 
 interface MealCardProps {
   meal: SavedMeal;
@@ -71,7 +71,7 @@ export function MealCard({ meal, foods, hideNumbers, onOpen }: MealCardProps) {
                   </span>
                 )}
               </div>
-              {food.source.reference && <details className="hint"><summary>Sources and assumptions</summary><p>{food.source.reference}</p></details>}
+              {describeSource(food.source) !== null && <details className="hint"><summary>Sources and assumptions</summary><p>{describeSource(food.source)}</p></details>}
             </li>
           );
         })}

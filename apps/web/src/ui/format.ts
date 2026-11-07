@@ -27,6 +27,20 @@ export const SOURCE_LABELS: Record<SourceKind, string> = {
 };
 
 /**
+ * Return the "Sources and assumptions" text for a food, or null when there is none.
+ *
+ * A sample's reference is a repository file path, which means nothing to a person,
+ * so it reads as what it is instead.
+ */
+export function describeSource(source: { kind: SourceKind; reference?: string }): string | null {
+  // Ignore the file path of a sample because only the tests need it
+  if (source.kind === 'fixture') {
+    return 'A fictional sample label from the app\'s test data, not a real product.';
+  }
+  return source.reference ?? null;
+}
+
+/**
  * Return a nutrient total as display text, e.g. "110.8 kcal" or "0.0 g known + 1 unknown".
  *
  * Rounding happens only here, so stored values keep full precision.
