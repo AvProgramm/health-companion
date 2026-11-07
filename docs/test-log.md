@@ -139,3 +139,13 @@ Final automated checkpoint for this follow-up: 150 app tests, 15 coach tests, ty
 | Estimate card sources | Plain text ("USDA: ROLLED OATS"), 0 links | PASS (browser pane) |
 | Automated | App tests, hook tests, 22 coach tests incl. zero-width range rejection and serving multiplication | PASS |
 | Phone, after restarting the estimate service | Retry "nasi lemak" / "2" with both servers up | NOT TESTED |
+
+## Estimate card and app updates (7 Nov 2026, Claude)
+
+| Check | Observed | Result |
+|---|---|---|
+| Yash's phone at 18:11: sources still links, only protein and fat | Phone was running an older cached build (the 17:57 build has no links) | Cause: cache-first shell kept the old build until a second reload |
+| Fix: app checks for a new build when it returns to the foreground, and reloads once when the new build takes over (not on first install) | `src/sw/register.ts` | Needs one last manual reload on the phone to get this code; later builds switch automatically |
+| Estimate card, rolled oats 50 g (browser pane) | Energy 188.2 kcal (187.5–191.0); protein, fat, saturated fat, total sugar, added sugar each shown with range; 0 links | PASS |
+| Automated | UI test: every tracked nutrient listed, unknown says "Unknown", no links in sources | PASS |
+| Phone after one reload | Card shows all nutrients, no links | NOT TESTED |

@@ -130,8 +130,9 @@ svg { flex-shrink: 0; }
 .estimate-loading { height: 64px; }
 .estimate-result { display: grid; align-content: start; gap: 12px; padding: 16px; border-radius: 16px; background: var(--paper); }
 .estimate-energy { font-size: 24px; line-height: 32px; font-weight: 600; letter-spacing: -.04em; overflow-wrap: anywhere; }
-.estimate-macros { display: flex; gap: 24px; font-size: 12px; line-height: 16px; color: var(--ink-muted); }
-.estimate-macros span { display: grid; gap: 4px; }
+.estimate-macros { display: grid; grid-template-columns: repeat(auto-fill, minmax(112px, 1fr)); gap: 16px 24px; font-size: 12px; line-height: 16px; color: var(--ink-muted); }
+.estimate-macros span { display: grid; gap: 4px; align-content: start; }
+.estimate-macros small { font-size: 12px; color: var(--ink-muted); }
 .estimate-macros strong { font-size: 16px; line-height: 24px; color: var(--ink); font-weight: 500; }
 .estimate-details, .manual-options { font-size: 12px; line-height: 16px; color: var(--ink-muted); }
 .estimate-details summary, .manual-options summary { cursor: pointer; padding: 4px 0; }

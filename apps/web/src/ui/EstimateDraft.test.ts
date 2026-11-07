@@ -38,6 +38,24 @@ async function tap(label: string) {
 }
 
 describe('estimate draft', () => {
+  // Reported on the phone on 7 Nov: the card showed only protein and fat, and sources as links
+  it('lists every tracked nutrient, says which are unknown, and shows sources as plain text', async () => {
+    const full = {
+      ...proposal,
+      nutrients: { ...proposal.nutrients, protein_g: 6, fat_g: 3.5, satfat_g: 0.6, total_sugar_g: 0.5 },
+      range: { ...proposal.range, protein_g: { low: 5, high: 7 }, fat_g: { low: 3, high: 4 }, satfat_g: { low: 0.5, high: 0.7 }, total_sugar_g: { low: 0.4, high: 0.6 } },
+    };
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue({ ok: true, json: async () => full }));
+    await act(async () => root.render(createElement(EstimateDraft, { name: 'Fictional oats', portionText: '50 g', hideNumbers: false, onUse: vi.fn(), onEdit: vi.fn() })));
+    await tap('Estimate nutrition');
+    for (const label of ['Protein', 'Fat', 'Saturated fat', 'Total sugar', 'Added sugar']) {
+      expect(container.textContent).toContain(label);
+    }
+    // Added sugar was not given, so it reads Unknown rather than 0
+    expect(container.querySelector('.estimate-macros')?.textContent).toContain('Added sugarUnknown');
+    expect(container.querySelectorAll('.estimate-sources a')).toHaveLength(0);
+  });
+
   it('shows sources and a range without saving until Use estimate is tapped', async () => {
     const onUse = vi.fn().mockResolvedValue(undefined);
     const onEdit = vi.fn();
