@@ -161,3 +161,13 @@ Final automated checkpoint for this follow-up: 150 app tests, 15 coach tests, ty
 | Auto-update | Browser pane switched to each new build by itself (navigation type "reload") | PASS (browser pane) |
 | Automated | App tests incl. missing-as-unknown, question parser for fibre/sodium/carbs/unsaturated fat; 25 coach tests incl. USDA IDs, OFF sodium g→mg, mono+poly sum | PASS |
 | Phone, after restarting the estimate service | All ten nutrients on a new estimate | NOT TESTED |
+
+## Phone: estimate with all nutrients (7 Nov 2026, 18:45, Yash's Samsung SM-S918B)
+
+| Check | Observed | Result |
+|---|---|---|
+| USB link after re-approving "Allow USB debugging" | Estimate request reached the laptop | PASS |
+| "nasi lemak chicken", "1 plate" | ≈ 1015 kcal (950–1080); protein 29 g; carbohydrate 87 g; fat 59 g; sodium 500 mg (400–600); fibre, sugars, saturated and unsaturated fat Unknown | PASS (all ten nutrients shown; unknowns say Unknown) |
+| Energy consistency (4 × protein + 4 × carbohydrate + 9 × fat) | 995 kcal vs 1015 shown, within 2% | PASS |
+| Plausibility | Energy and macros plausible for one plate with fried chicken; sodium likely low (sambal, anchovies and fried chicken usually give 1,000–2,000 mg); range narrow for a stall dish | NOTE |
+| Phone build | New error wording appeared before the link was restored, then the newest card layout | PASS (self-update reached the phone) |
