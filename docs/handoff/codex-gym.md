@@ -56,3 +56,28 @@ Written 7 Nov 2026, after M4 part 1 merged (`main` at e5bf9ac). Read `CLAUDE.md`
 - `npm run check` must stay green, plus `npm --prefix apps/web run build`.
 - Do the phone gate (`docs/test-log.md`) after any UI change.
 - Stage explicit paths only. Push at every green checkpoint.
+
+## Task D: adapt to disabilities, injuries and conditions (Yash, 7 Nov)
+**What his friend's FitSense does** (GitHub `Divi19/FitSense`, Flutter, KitaHack 2026; read 7 Nov for ideas only, copy no code):
+- **Onboarding body map:** you tap body areas to mark injury or chronic pain. There are 19 areas, from rotator cuff, elbow, wrist and knee to lumbar spine and hernia.
+- **Other conditions:** cardiovascular, asthma, osteoarthritis, wheelchair user and prosthesis, plus free-text clinical notes.
+- **How it is used:** the profile is stored in Firestore and pasted as text into a Gemini prompt (`rag_service.dart`), so the **model** decides what is safe.
+- **Diabetes:** no handling was found in its code.
+
+**What we take, and what we do differently:**
+- **Take the UX:** a tappable SVG body map (front and back) with "I have no limitations", the systemic-condition chips, a wheelchair or seated mode, and a notes field. It fits the Task B muscle-map design.
+- **Make it a hard filter, not a prompt:**
+  - Each `MovementCard` gets `loads: BodyArea[]` (joints and areas it stresses) and `positions: ('standing' | 'seated' | 'floor')[]`.
+  - `PlanRequest` gets `avoidAreas` and `seatedOnly`.
+  - `ineligibleReason` adds "it loads your knee" and "it needs standing", checked from the firmest rule down and never relaxed, with oracle tests for each.
+  - The model can explain a plan, but it can never be the safety check.
+- **Keep it on the device:** limitations and conditions are health data. They live in IndexedDB (a `profile` store, using the schema-migration skill) and are never sent to the coach service or any model (invariant 5). FitSense uploads them; we must not.
+- **Seated set:** add a seated/wheelchair-friendly set of cards (seated press, band row, seated core) so a wheelchair user gets a real plan, not "no plan".
+
+**Diabetes and other diet conditions** (M3b diet rules, which also feed the nutritionist chatbot later):
+- **Opt-in profile:** for example "I manage diabetes", stored only on the device.
+- **What it changes:** it shows carbohydrate, added sugar and fibre first on each meal and day. Day totals already keep unknown separate from zero.
+- **Exercise note:** a plain "check your glucose before and after exercise as your care team advised" on the plan card.
+- **Never:** insulin or medication dosing, carb-ratio maths, glucose targets, or anything that reads as medical advice. Point to the care team instead. Any number shown comes from logged food, with its unknowns kept separate.
+- Other conditions can follow the same pattern later (for example hypertension, where sodium is shown first).
+- **Tests:** a diabetes profile reorders what is shown and never hides a nutrient. An unknown carb value stays "Unknown", never 0.
