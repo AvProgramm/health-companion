@@ -1,0 +1,8 @@
+{
+  "name": "health-companion",
+  "private": true,
+  "description": "Repository-level commands; the app itself lives in apps/web.",
+  "scripts": {
+    "check": "node scripts/check-changed.mjs --all"
+  }
+}
