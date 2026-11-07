@@ -35,6 +35,8 @@ Keep USB forwarding `4173 → 127.0.0.1:4173`; only the laptop needs port 8000. 
 
 Counts and unclear portions are never converted into grams without evidence. The current database stage handles g/kg and explicitly identified mL/L records; pieces and free-form portions use the model fallback. A blank/unclear portion asks the model to assume one piece and explain its size/recipe. Review that assumption before accepting. MyFCD and database serving-weight mapping are deferred.
 
-Groq uses JSON object mode, followed by our own strict validation. The default model is `llama-3.3-70b-versatile`; change `GROQ_MODEL` in `.env` if needed.
+Groq uses JSON object mode, followed by our own strict validation. The default model is `openai/gpt-oss-20b`; change `GROQ_MODEL` in `.env` if needed.
 
-Sources: [USDA API guide](https://fdc.nal.usda.gov/api-guide/), [Open Food Facts API](https://openfoodfacts.github.io/openfoodfacts-server/api/), [Groq JSON output](https://console.groq.com/docs/structured-outputs), [Groq model](https://console.groq.com/docs/model/llama-3.3-70b-versatile).
+Sources: [USDA API guide](https://fdc.nal.usda.gov/api-guide/), [Open Food Facts API](https://openfoodfacts.github.io/openfoodfacts-server/api/), [Groq JSON output](https://console.groq.com/docs/structured-outputs), [Groq model](https://console.groq.com/docs/models).
+
+Later Tavily/Hugging Face configuration is documented in `docs/handoff/integrations.md`. Those tokens are not used by M3a.

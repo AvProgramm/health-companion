@@ -1,6 +1,7 @@
 """Check fictional database records and the estimate boundary."""
 import asyncio
 import json
+import os
 import httpx
 import unittest
 from unittest.mock import AsyncMock, patch
@@ -94,6 +95,7 @@ class EstimateTests(unittest.TestCase):
 
         original_client = httpx.AsyncClient
         with patch.dict('os.environ', {'GROQ_API_KEY': 'fictional-test-key', 'USDA_API_KEY': 'fictional-test-key'}):
+            os.environ.pop('GROQ_MODEL', None)
             with patch('coach.providers.httpx.AsyncClient', side_effect=lambda **kwargs: original_client(**kwargs, transport=httpx.MockTransport(respond))):
                 response = TestClient(app).post('/api/estimate', json={'name': 'Fictional oats', 'portionText': '50 g'})
         self.assertEqual(response.status_code, 200)
@@ -103,6 +105,8 @@ class EstimateTests(unittest.TestCase):
         body = json.loads(model_request.content)
         self.assertEqual(json.loads(body['messages'][1]['content']), {'name': 'Fictional oats', 'portionText': '50 g'})
         self.assertEqual(body['response_format'], {'type': 'json_object'})
+        self.assertEqual(body['model'], 'openai/gpt-oss-20b')
+        self.assertEqual(body['reasoning_effort'], 'low')
         self.assertEqual(len(requests), 3)
 
     def test_endpoint_rejects_diary_and_does_not_echo_invalid_input(self):

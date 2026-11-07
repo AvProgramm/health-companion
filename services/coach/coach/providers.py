@@ -61,9 +61,9 @@ async def llm_estimate(name, portion_text):
     async with httpx.AsyncClient(timeout=LLM_TIMEOUT) as client:
         response = await client.post('https://api.groq.com/openai/v1/chat/completions',
             headers={'Authorization': f'Bearer {key}'}, json={
-                'model': os.getenv('GROQ_MODEL', 'llama-3.3-70b-versatile'),
+                'model': os.getenv('GROQ_MODEL', 'openai/gpt-oss-20b'),
                 'response_format': {'type': 'json_object'}, 'temperature': 0,
-                'max_completion_tokens': 900,
+                'max_completion_tokens': 2048, 'reasoning_effort': 'low',
                 'messages': [{'role': 'system', 'content': prompt},
                     {'role': 'user', 'content': json.dumps({'name': name, 'portionText': portion_text})}],
             })
