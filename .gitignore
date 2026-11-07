@@ -1,0 +1,39 @@
+# Dependencies and build output
+node_modules/
+dist/
+coverage/
+*.tsbuildinfo
+
+# Python environments and caches
+.venv/
+__pycache__/
+*.pyc
+
+# Secrets: only the documented example file may be committed
+.env*
+!.env.example
+
+# Personal data never belongs in the repository
+private/
+exports/
+uploads/
+*.sqlite*
+
+# Model weights and training artefacts stay outside Git
+models/
+artifacts/checkpoints/
+*.pt
+*.safetensors
+*.gguf
+
+# Research packets and archives (private background, not source)
+*.zip
+Health_App_Product_Requirements*.md
+
+# Editor and OS noise
+.claude/settings.local.json
+.vscode/
+.idea/
+Thumbs.db
+desktop.ini
+.DS_Store

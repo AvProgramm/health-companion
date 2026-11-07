@@ -1,0 +1,31 @@
+[
+  {
+    "input": "two biscuits and a mug of milk",
+    "expect": "meal"
+  },
+  {
+    "input": "actually one biscuit, not two",
+    "expect": "correction"
+  },
+  {
+    "input": "row 3 x 8 at 5 kg each hand",
+    "expect": "workout"
+  },
+  {
+    "input": "went to bed at 11, got up at 7",
+    "expect": "sleep"
+  },
+  {
+    "input": "show today's added sugar incl missing labels",
+    "expect": "daily-summary"
+  },
+  {
+    "input": "what's the bus timetable?",
+    "expect": "other"
+  },
+  {
+    "input": "add milk and log two sets of rows",
+    "expect": "other",
+    "action": "clarify multiple intents"
+  }
+]

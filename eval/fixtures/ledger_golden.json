@@ -1,0 +1,124 @@
+{
+  "purpose": "Fictional QA profile. Illustrative label, not a personalised nutrition target.",
+  "zone": "Asia/Kuala_Lumpur",
+  "products": {
+    "demo_milk": {
+      "basis": [
+        250,
+        "mL"
+      ],
+      "kcal": 110.8,
+      "protein_g": 8.5,
+      "fat_g": 3.8,
+      "satfat_g": 2.5,
+      "total_sugar_g": 10.8,
+      "added_sugar_g": 0
+    },
+    "demo_biscuit": {
+      "basis": [
+        2,
+        "pieces"
+      ],
+      "kcal": 133,
+      "protein_g": 4.1,
+      "added_sugar_g": null
+    }
+  },
+  "cases": [
+    {
+      "id": "A",
+      "date": "2026-11-09",
+      "op": "confirm",
+      "meal": "m1",
+      "key": "save1",
+      "items": [
+        [
+          "demo_milk",
+          300,
+          "mL",
+          1
+        ],
+        [
+          "demo_biscuit",
+          2,
+          "pieces",
+          1
+        ]
+      ],
+      "expect": {
+        "revision": 1,
+        "kcal": 265.96,
+        "protein_g": 14.3,
+        "added_sugar_known_g": 0,
+        "added_sugar_unknown_items": 1
+      }
+    },
+    {
+      "id": "B",
+      "op": "change_amount",
+      "meal": "m1",
+      "expectedRevision": 1,
+      "key": "edit1",
+      "component": "demo_milk",
+      "amount": 250,
+      "expect": {
+        "revision": 2,
+        "kcal": 243.8,
+        "protein_g": 12.6,
+        "added_sugar_known_g": 0,
+        "added_sugar_unknown_items": 1
+      }
+    },
+    {
+      "id": "C",
+      "op": "repeat_previous_request",
+      "key": "edit1",
+      "expect": {
+        "revision": 2,
+        "meal_count": 1,
+        "kcal": 243.8
+      }
+    },
+    {
+      "id": "D",
+      "op": "change_amount",
+      "meal": "m1",
+      "expectedRevision": 1,
+      "key": "late1",
+      "amount": 150,
+      "expect": {
+        "status": "conflict",
+        "revision": 2
+      }
+    },
+    {
+      "id": "E",
+      "op": "get_day",
+      "date": "2026-11-10",
+      "expect": {
+        "meal_count": 0,
+        "coverage": "no_entries",
+        "protein_status": "unknown_intake"
+      }
+    },
+    {
+      "id": "F",
+      "op": "confirm_planned_only",
+      "status": "planned",
+      "expect": {
+        "intake_increment_kcal": 0
+      }
+    },
+    {
+      "id": "G",
+      "op": "sleep_interval",
+      "start": "2026-11-09T23:30:00+08:00",
+      "end": "2026-11-10T07:00:00+08:00",
+      "expect": {
+        "diary_date": "2026-11-10",
+        "time_in_bed_min": 450,
+        "measured_sleep_min": null
+      }
+    }
+  ]
+}
