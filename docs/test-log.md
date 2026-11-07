@@ -149,3 +149,15 @@ Final automated checkpoint for this follow-up: 150 app tests, 15 coach tests, ty
 | Estimate card, rolled oats 50 g (browser pane) | Energy 188.2 kcal (187.5–191.0); protein, fat, saturated fat, total sugar, added sugar each shown with range; 0 links | PASS |
 | Automated | UI test: every tracked nutrient listed, unknown says "Unknown", no links in sources | PASS |
 | Phone after one reload | Card shows all nutrients, no links | NOT TESTED |
+
+## Carbohydrate, fibre, sodium, unsaturated fat (7 Nov 2026, Claude)
+
+| Check | Observed | Result |
+|---|---|---|
+| Live pipeline, rolled oats 50 g (USDA path) | carbs 33.8 g, fibre 5.2 g, unsat fat 2.5 g, sat fat 0.5 g, sodium 0.6 mg | PASS (USDA ≈ 68 g carbs, 10 g fibre per 100 g) |
+| Estimate card against the older running service | New nutrients show "Unknown"; existing ones unchanged; 0 links | PASS (backward compatible) |
+| Day summary with no values for a nutrient | "Carbohydrate: Unknown, 2 without a value" (was "0.0 g known + 2 unknown") | FOUND AND FIXED |
+| Real zero next to an unknown item | "Added sugar 0.0 g, known + 1 unknown" | PASS (golden A) |
+| Auto-update | Browser pane switched to each new build by itself (navigation type "reload") | PASS (browser pane) |
+| Automated | App tests incl. missing-as-unknown, question parser for fibre/sodium/carbs/unsaturated fat; 25 coach tests incl. USDA IDs, OFF sodium g→mg, mono+poly sum | PASS |
+| Phone, after restarting the estimate service | All ten nutrients on a new estimate | NOT TESTED |

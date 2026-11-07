@@ -23,7 +23,7 @@ Phone setup and the offline gate are in `docs/test-log.md`. Start the optional l
 Organised by feature, one reason to change per module. Domain never imports storage or UI.
 - `apps/web/src/domain/`: pure logic. This is where the numbers come from.
   - `shared/`: `units` (conversion, no mass↔volume), `validate` (finite-then-range checks), `dates`.
-  - `nutrition/`: `estimates` (proposal validation and confirmed food construction), food `types`, `scale` (nutrient per portion), `aggregate` (per meal), `day` (per date), `foods` (label versions, name matching).
+  - `nutrition/`: `estimates` (proposal validation and confirmed food construction), food `types` (with `NUTRIENT_KEYS`, the one list of tracked nutrients: energy, protein, carbohydrate, fibre, total and added sugar, fat, saturated and unsaturated fat, sodium in mg), `scale` (nutrient per portion), `aggregate` (per meal), `day` (per date), `foods` (label versions, name matching).
   - `meals/`: meal `types`, `revisions` (`startMeal`, `reviseMeal`: every change is a new revision), `corrections` (which item "actually 250 mL" means).
   - `training/workouts`, `sleep/sleep`: build and describe workout and sleep entries.
   - `parsing/`: the composer grammar. `parseEntry` tries an ordered list of small parsers (`question`, `correction`, `sleepEntry`, `workoutEntry`, `meal`); a new kind of entry is a new parser in that list.
@@ -40,7 +40,7 @@ Organised by feature, one reason to change per module. Domain never imports stor
 - **Responsive UI:** `ui/app.css` owns the spacing/type/surface tokens. The app uses a sidebar and two columns on laptops, and an edge-to-edge single column with a bottom dock on phones. Do not restore a narrow fixed-width wrapper around the whole app. Sources and secondary explanations stay expandable; confirmation remains explicit.
 
 ## Invariants (never break these)
-1. **Unknown is not zero.** A blank label value is `null` and shows as "+ N unknown". An empty day is "nothing logged".
+1. **Unknown is not zero.** A blank label value is `null` and shows as "+ N unknown"; a nutrient no item has a value for shows "Unknown". A nutrient missing from an older record or response is unknown. An empty day is "nothing logged".
 2. **Snapshots are immutable.** Corrections, undo and deletes add a revision; nothing is edited in place.
 3. **One write = one IndexedDB transaction.** Every write carries an operation key (replay on retry) and an expected revision (conflict on a stale screen).
 4. **Nothing saves without the user confirming.** The parser, and any future AI, only fill drafts.
