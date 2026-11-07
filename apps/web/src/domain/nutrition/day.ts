@@ -33,7 +33,7 @@ export function summariseDay(
   // Add up each nutrient across those meals, keeping unknown items separate
   const totals = {} as Record<NutrientKey, NutrientTotal>;
   for (const nutrient of NUTRIENT_KEYS) {
-    const total: NutrientTotal = { known: 0, unknownItems: 0 };
+    const total: NutrientTotal = { known: 0, knownItems: 0, unknownItems: 0 };
     for (const meal of meals) {
       const mealTotal = totalNutrient(meal, foods, nutrient);
       if (mealTotal.range !== undefined || total.range !== undefined) {
@@ -44,6 +44,7 @@ export function summariseDay(
         };
       }
       total.known += mealTotal.known;
+      total.knownItems += mealTotal.knownItems;
       total.unknownItems += mealTotal.unknownItems;
     }
     totals[nutrient] = total;

@@ -32,6 +32,10 @@ export const SOURCE_LABELS: Record<SourceKind, string> = {
  * Rounding happens only here, so stored values keep full precision.
  */
 export function formatTotal(total: NutrientTotal, unit: string, digits = 1): string {
+  // No item had a value, so there is no total to show, not a total of zero
+  if (total.knownItems === 0 && total.unknownItems > 0) {
+    return `unknown (${total.unknownItems} ${total.unknownItems === 1 ? 'item' : 'items'} without a value)`;
+  }
   const bounds = total.range === undefined ? '' : ` (${total.range.low.toFixed(digits)}–${total.range.high.toFixed(digits)})`;
   const known = `${total.range === undefined ? '' : '≈ '}${total.known.toFixed(digits)} ${unit}${bounds}`;
   // An unknown item is shown in words, never folded into the number

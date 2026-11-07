@@ -20,7 +20,7 @@ export function EstimateResult({ estimate, hideNumbers, typicalServing, busy, on
   return (
     <div className="estimate-result" aria-live="polite">
       <div className="card-head"><span className="badge badge-estimate">{SOURCE_LABELS[estimate.sourceKind]}</span><span className="hint">Not saved</span></div>
-      {!hideNumbers && <p className="estimate-energy numbers">{kcal == null ? 'Energy unknown' : formatTotal({ known: kcal, unknownItems: 0,
+      {!hideNumbers && <p className="estimate-energy numbers">{kcal == null ? 'Energy unknown' : formatTotal({ known: kcal, knownItems: 1, unknownItems: 0,
         ...(estimate.range.kcal == null ? {} : { range: estimate.range.kcal }) }, 'kcal')}</p>}
       <p className="hint">{typicalServing ? 'For 1 typical serving. Review the assumptions below.' : `For ${formatQuantity(estimate.basis)}.`}</p>
       {!hideNumbers && (

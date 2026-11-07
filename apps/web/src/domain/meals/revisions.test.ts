@@ -49,6 +49,7 @@ describe('startMeal (golden A)', () => {
     expect(totalNutrient(first, foods, 'protein_g').known).toBeCloseTo(expectedNumber('A', 'protein_g'), 9);
     expect(totalNutrient(first, foods, 'added_sugar_g')).toEqual({
       known: expectedNumber('A', 'added_sugar_known_g'),
+      knownItems: 1,
       unknownItems: expectedNumber('A', 'added_sugar_unknown_items'),
     });
   });
@@ -71,6 +72,7 @@ describe('reviseMeal: the golden correction', () => {
     // Lactose stays out of added sugar, and the biscuit's blank value stays unknown
     expect(totalNutrient(next, foods, 'added_sugar_g')).toEqual({
       known: expectedNumber('B', 'added_sugar_known_g'),
+      knownItems: 1,
       unknownItems: expectedNumber('B', 'added_sugar_unknown_items'),
     });
   });
@@ -152,7 +154,7 @@ describe('reviseMeal', () => {
     ]);
     // 300 mL + 100 mL of milk, and no biscuit
     expect(totalNutrient(next, foods, 'kcal').known).toBeCloseTo(110.8 * 400 / 250, 9);
-    expect(totalNutrient(next, foods, 'added_sugar_g')).toEqual({ known: 0, unknownItems: 0 });
+    expect(totalNutrient(next, foods, 'added_sugar_g')).toEqual({ known: 0, knownItems: 2, unknownItems: 0 });
   });
 
   it('removes an item so it no longer counts', () => {

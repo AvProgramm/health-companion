@@ -22,7 +22,9 @@ describe('estimate boundary and totals', () => {
     const day = summariseDay('2026-11-09', [meal], new Map([[foodKey(food.id, 1), food]]));
     expect(day.totals.kcal.known).toBeCloseTo(60, 9);
     expect(day.totals.kcal.range).toEqual({ low: 50, high: 70 });
-    expect(day.totals.protein_g).toEqual({ known: 0, unknownItems: 1 });
+    expect(day.totals.protein_g).toEqual({ known: 0, knownItems: 0, unknownItems: 1 });
+    // Seen on 7 Nov: a nutrient nothing gave a value for read "0.0 g known + 2 unknown"
+    expect(formatTotal(day.totals.protein_g, 'g')).toBe('unknown (1 item without a value)');
     expect(formatTotal(day.totals.kcal, 'kcal')).toBe('≈ 60.0 kcal (50.0–70.0)');
     expect(food.source.reference).toContain('USDA');
   });

@@ -42,9 +42,17 @@ export function DaySummaryCard({ summary, dateLabel, hideNumbers }: DaySummaryCa
             <div key={key} className={key === 'kcal' ? 'energy-readout' : 'nutrient-readout'}>
               <dt>{NUTRIENT_LABELS[key].label}</dt>
               <dd>
-                <span className="summary-value">{summary.totals[key].range === undefined ? '' : '≈ '}{summary.totals[key].known.toFixed(1)} {NUTRIENT_LABELS[key].unit}</span>
+                <span className="summary-value">
+                  {summary.totals[key].knownItems === 0 && summary.totals[key].unknownItems > 0
+                    ? 'Unknown'
+                    : `${summary.totals[key].range === undefined ? '' : '≈ '}${summary.totals[key].known.toFixed(1)} ${NUTRIENT_LABELS[key].unit}`}
+                </span>
                 {summary.totals[key].range !== undefined && <span className="summary-range">{summary.totals[key].range!.low.toFixed(1)}–{summary.totals[key].range!.high.toFixed(1)} {NUTRIENT_LABELS[key].unit}</span>}
-                {summary.totals[key].unknownItems > 0 && <span className="summary-unknown">Known + {summary.totals[key].unknownItems} unknown</span>}
+                {summary.totals[key].unknownItems > 0 && (
+                  <span className="summary-unknown">
+                    {summary.totals[key].knownItems === 0 ? `${summary.totals[key].unknownItems} without a value` : `Known + ${summary.totals[key].unknownItems} unknown`}
+                  </span>
+                )}
               </dd>
             </div>
           ))}

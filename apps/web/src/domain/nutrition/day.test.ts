@@ -39,7 +39,7 @@ describe('summariseDay', () => {
     expect(day.mealCount).toBe(1);
     expect(day.totals.kcal.known).toBeCloseTo(expectedNumber('B', 'kcal'), 9);
     expect(day.totals.protein_g.known).toBeCloseTo(expectedNumber('B', 'protein_g'), 9);
-    expect(day.totals.added_sugar_g).toEqual({ known: 0, unknownItems: 1 });
+    expect(day.totals.added_sugar_g).toEqual({ known: 0, knownItems: 1, unknownItems: 1 });
   });
 
   it('reports no entries instead of zero intake for an empty day (golden E)', () => {

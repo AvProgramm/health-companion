@@ -6,10 +6,12 @@ import type { MealRevision } from '../meals/types';
  * A nutrient total that keeps what is known apart from what is missing.
  *
  * "0 g known + 1 unknown" is more honest than "0 g", because one item's label
- * did not give a value for this nutrient.
+ * did not give a value for this nutrient. knownItems tells "no item had a value"
+ * (show Unknown) apart from "the known values add up to 0" (show 0 g).
  */
 export interface NutrientTotal {
   known: number;
+  knownItems: number;
   unknownItems: number;
   range?: { low: number; high: number };
 }
@@ -27,6 +29,7 @@ export function totalNutrient(
 ): NutrientTotal {
   // Initialise the running total
   let known = 0;
+  let knownItems = 0;
   let unknownItems = 0;
   let low = 0;
   let high = 0;
@@ -52,6 +55,7 @@ export function totalNutrient(
       unknownItems += 1;
     } else {
       known += scaled;
+      knownItems += 1;
       // Scale each bound with the same serving and eaten fraction as the centre.
       const spread = food.range?.[nutrient];
       low += spread == null ? scaled : scaleNutrient(spread.low, food.basis, component.served, component.eatenFraction)!;
@@ -61,7 +65,7 @@ export function totalNutrient(
   }
 
   // Return the known subtotal and the number of unknown items
-  return { known, unknownItems, ...(estimated ? { range: { low, high } } : {}) };
+  return { known, knownItems, unknownItems, ...(estimated ? { range: { low, high } } : {}) };
 }
 
 /**
