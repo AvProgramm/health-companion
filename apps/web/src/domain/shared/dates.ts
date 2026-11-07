@@ -22,6 +22,17 @@ export function addDays(date: string, days: number): string {
 }
 
 /**
+ * Return the diary date to show after the device's date has changed.
+ *
+ * A screen that was showing today moves on to the new today, so an app left open
+ * overnight never saves the morning's breakfast under yesterday. A screen showing
+ * an older day the user picked stays on that day.
+ */
+export function followToday(shown: string, previousToday: string, newToday: string): string {
+  return shown === previousToday ? newToday : shown;
+}
+
+/**
  * Return the device's IANA time zone, e.g. "Asia/Kuala_Lumpur".
  */
 export function deviceZone(): string {

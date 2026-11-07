@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState, type FormEvent } fro
 import { Leaf, ShieldCheck, Plus } from '@phosphor-icons/react';
 import { foodKey } from '../domain/nutrition/aggregate';
 import { correctedQuantity, type CorrectionTarget } from '../domain/meals/corrections';
-import { addDays, deviceZone, localDateIn } from '../domain/shared/dates';
+import { addDays, deviceZone, followToday } from '../domain/shared/dates';
 import { summariseDay } from '../domain/nutrition/day';
 import { parseEntry } from '../domain/parsing/parseEntry';
 import type { ParsedAmount } from '../domain/parsing/types';
@@ -25,6 +25,7 @@ import { MealSheet } from './MealSheet';
 import { SleepCard } from './SleepCard';
 import { SleepDraftCard } from './SleepDraftCard';
 import { errorText, type Notice } from './useSave';
+import { useToday } from './useToday';
 import { WorkoutCard } from './WorkoutCard';
 import { WorkoutDraftCard } from './WorkoutDraftCard';
 
@@ -60,8 +61,17 @@ interface TodayViewProps {
  * user confirms a draft or a correction.
  */
 export function TodayView({ db, foods, currentFoods, hideNumbers, durability, onSaveFood }: TodayViewProps) {
-  const today = localDateIn(deviceZone(), new Date());
+  const today = useToday();
   const [date, setDate] = useState(today);
+
+  // Follow the device into a new day, unless an older day was picked on purpose
+  const previousToday = useRef(today);
+  useEffect(() => {
+    // Read the old value now: React runs the updater later, after the ref below has moved on
+    const before = previousToday.current;
+    setDate((shown) => followToday(shown, before, today));
+    previousToday.current = today;
+  }, [today]);
   const [meals, setMeals] = useState<SavedMeal[]>([]);
   const [workouts, setWorkouts] = useState<WorkoutEntry[]>([]);
   const [sleeps, setSleeps] = useState<SleepEntry[]>([]);
