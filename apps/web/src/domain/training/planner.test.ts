@@ -24,7 +24,7 @@ const SCENARIOS: [string, PlanRequest][] = [
   ['only 4 min', { ...OPEN, minutes: 4 }],
   ['band only, 10 min', { ...OPEN, minutes: 10, equipment: ['band'] }],
   ['no jumping, no pull-ups, 20 min', { ...OPEN, minutes: 20, unableTo: ['jumping', 'pull_up'] }],
-  ['an hour, so the three-card limit decides', { ...OPEN, minutes: 60 }],
+  ['an hour with all reviewed blocks available', { ...OPEN, minutes: 60 }],
   ['every bodyweight card ruled out, no equipment', { ...OPEN, minutes: 30, equipment: [], neverSuggest: ['push_up', 'plank', 'jump_squat'] }],
   ['a card excluded after seeing it in a preview', { ...OPEN, minutes: 16, neverSuggest: ['db_row'] }],
 ];
@@ -35,9 +35,9 @@ const SCENARIOS: [string, PlanRequest][] = [
  * Written separately from eligibility.ts and planner.ts on purpose, like the
  * oracle in the FIT3080 tests: it tries every subset and re-checks every rule.
  */
-function oracle(request: PlanRequest, catalogue: readonly MovementCard[]): string[] {
+function oracle(request: PlanRequest, catalogue: readonly MovementCard[]): Candidate[] {
   const cards = [...catalogue].sort((a, b) => a.id.localeCompare(b.id));
-  const sessions: string[] = [];
+  const sessions: Candidate[] = [];
   for (let mask = 1; mask < 1 << cards.length; mask += 1) {
     const chosen = cards.filter((_card, index) => (mask & (1 << index)) !== 0);
     const minutes = chosen.reduce((total, card) => total + card.minutes, 0);
@@ -45,11 +45,14 @@ function oracle(request: PlanRequest, catalogue: readonly MovementCard[]): strin
       !request.neverSuggest.includes(card.id)
       && card.requires.every((capability) => !request.unableTo.includes(capability))
       && card.equipment.every((item) => request.equipment.includes(item)));
-    if (chosen.length <= MAX_CARDS && minutes <= request.minutes && allowed) {
-      sessions.push(chosen.map((card) => card.id).join(','));
+    if (chosen.length <= 12 && minutes <= request.minutes && allowed) {
+      sessions.push({ cards: chosen, minutes,
+        covered: request.categories.filter(category => chosen.some(card => card.category === category)).length,
+        preference: chosen.reduce((total, card) => total + (request.preferences[card.id] ?? 0), 0),
+        ids: chosen.map(card => card.id).join(',') });
     }
   }
-  return sessions.sort();
+  return sessions.sort((left, right) => right.covered - left.covered || right.minutes - left.minutes || right.preference - left.preference || left.ids.localeCompare(right.ids));
 }
 
 /**
@@ -90,9 +93,9 @@ describe('ineligibleReason', () => {
 });
 
 describe('feasibleCandidates', () => {
-  it.each(SCENARIOS)('finds exactly the oracle sessions: %s', (_name, request) => {
-    const found = feasibleCandidates(request, MOVEMENT_CARDS).map((candidate) => candidate.ids).sort();
-    expect(found).toEqual(oracle(request, MOVEMENT_CARDS));
+  it.each(SCENARIOS)('keeps the optimal session from the independent oracle: %s', (_name, request) => {
+    const result = bestPlan(request, MOVEMENT_CARDS);
+    expect(result.status === 'plan' ? result.plan.ids : undefined).toEqual(oracle(request, MOVEMENT_CARDS)[0]?.ids);
   });
 
   it('never breaks a hard rule in any scenario (target: zero violations)', () => {
@@ -145,10 +148,10 @@ describe('compareCandidates', () => {
     expect(compareCandidates(pick('A'), pick('B'))).toBeLessThan(0);
   });
 
-  it('breaks a preference tie on the shorter session', () => {
+  it('breaks a coverage tie on the session closest to the time target', () => {
     const short = summarise([KIT_CARDS[1]!], { ...KIT_REQUEST, preferences: {} });
     const long = summarise([KIT_CARDS[0]!], { ...KIT_REQUEST, preferences: {} });
-    expect(compareCandidates(short, long)).toBeLessThan(0);
+    expect(compareCandidates(long, short)).toBeLessThan(0);
   });
 
   it('breaks every other tie on the ids, so the result never depends on luck', () => {
@@ -170,5 +173,64 @@ describe('bestPlan with compareCandidates', () => {
     const result = bestPlan(SCENARIOS[2]![1], MOVEMENT_CARDS);
     expect(result.status).toBe('plan');
     expect(result.status === 'plan' && result.plan.cards.some((card) => card.id === 'pull_up')).toBe(false);
+  });
+});
+
+
+describe('target-duration planning', () => {
+  // Keep the sixty-minute regression fictional; every block has an explicitly reviewed duration.
+  const cards: MovementCard[] = Array.from({ length: 12 }, (_, index) => ({
+    id: `fictional-${String(index).padStart(2, '0')}`, name: `Fictional movement ${index}`, minutes: 5,
+    category: (['push', 'pull', 'legs', 'core'] as const)[index % 4]!, equipment: [], requires: [], cue: 'Fictional instructions.',
+  }));
+
+  it('fills a 60-minute target with twelve distinct five-minute choices', () => {
+    expect(MAX_CARDS).toBe(12);
+    const result = bestPlan({ ...OPEN, minutes: 60, equipment: [] }, cards);
+    expect(result).toMatchObject({ status: 'plan', unfilledMinutes: 0, plan: { minutes: 60, covered: 4 } });
+    if (result.status !== 'plan') throw new Error('Expected a plan.');
+    expect(result.plan.cards).toHaveLength(12);
+    expect(new Set(result.plan.cards.map(card => card.id)).size).toBe(12);
+  });
+
+  it('reports the screenshot case honestly when only fifteen minutes of bodyweight blocks exist', () => {
+    // Reported on 7 Nov: 60 requested, jump squat + plank + push-up total only 15.
+    expect(bestPlan({ ...OPEN, minutes: 60, equipment: [] }, MOVEMENT_CARDS)).toMatchObject({
+      status: 'plan', unfilledMinutes: 45, plan: { minutes: 15 },
+    });
+  });
+
+  it('prefers a longer fitting session over a shorter favourite with the same coverage', () => {
+    const short = { ...summarise([cards[0]!], OPEN), preference: 100 };
+    const long = summarise([cards[0]!, cards[4]!], OPEN);
+    expect(compareCandidates(long, short)).toBeLessThan(0);
+  });
+
+  it('uses preference after coverage and duration, with IDs compared one by one', () => {
+    const first = { ...cards[0]!, id: 'a' };
+    const second = { ...cards[0]!, id: 'aa' };
+    const last = { ...cards[0]!, id: 'z' };
+    expect(compareCandidates(summarise([first, last], OPEN), summarise([second, last], OPEN))).toBeLessThan(0);
+    expect(compareCandidates({ ...summarise([second], OPEN), preference: 2 }, summarise([first], OPEN))).toBeLessThan(0);
+  });
+
+  it('finds a near target without stretching or repeating any block', () => {
+    const uneven = [17, 19, 23, 25].map((minutes, index) => ({ ...cards[0]!, id: `uneven-${index}`, minutes }));
+    expect(bestPlan({ ...OPEN, minutes: 60, categories: ['push'] }, uneven)).toMatchObject({
+      status: 'plan', unfilledMinutes: 1, plan: { minutes: 59 },
+    });
+  });
+
+  it('keeps larger-pool search states bounded and produces a deterministic feasible result', () => {
+    const pool = Array.from({ length: 32 }, (_, index) => ({ ...cards[index % 12]!, id: `pool-${String(index).padStart(2, '0')}` }));
+    const request = { ...OPEN, minutes: 60, equipment: [] };
+    const states = feasibleCandidates(request, pool);
+    expect(states.length).toBeLessThanOrEqual(61 * 16 * 13);
+    expect(bestPlan(request, pool)).toMatchObject({ status: 'plan', unfilledMinutes: 0, plan: { minutes: 60 } });
+    expect(bestPlan(request, [...pool].reverse())).toEqual(bestPlan(request, pool));
+  });
+
+  it.each([Number.NaN, Number.POSITIVE_INFINITY, -1, 60.5, 241])('refuses an invalid or unbounded target: %s', minutes => {
+    expect(bestPlan({ ...OPEN, minutes }, cards)).toMatchObject({ status: 'none', reason: 'Enter a target from 0 to 240 whole minutes.' });
   });
 });

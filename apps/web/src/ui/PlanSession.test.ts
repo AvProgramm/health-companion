@@ -36,7 +36,7 @@ it('plans only over the supplied pool and clears a result when that pool changes
   await render([body]);
   await click('button[type="submit"]');
   expect(container.querySelector('.gym-plan-result')?.textContent).toContain(body.name);
-  expect(container.textContent).toContain('Best of 1 possible sessions');
+  expect(container.textContent).toContain('Compared 1 planning options');
   await render([]);
   expect(container.querySelector('.gym-plan-result')).toBeNull();
 });
@@ -83,4 +83,17 @@ it('asks for actual gear when the pool has no added equipment choices', async ()
   await click('button[type="submit"]');
   expect(container.querySelector('[role="alert"]')?.textContent).toContain('Choose the equipment available today');
   expect(container.querySelector('.gym-plan-result')).toBeNull();
+});
+
+
+it('labels an underfilled sixty-minute request as a partial session', async () => {
+  await render([body]);
+  const input = container.querySelector('input[inputmode="numeric"]')!;
+  await act(async () => {
+    Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value')!.set!.call(input, '60');
+    input.dispatchEvent(new Event('input', { bubbles: true }));
+  });
+  await click('button[type="submit"]');
+  expect(container.querySelector('.gym-plan-result')?.textContent).toContain('55 min unfilled');
+  expect(container.querySelector('.gym-plan-result')?.textContent).toContain('A partial session');
 });

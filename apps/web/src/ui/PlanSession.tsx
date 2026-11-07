@@ -1,6 +1,6 @@
 import { useEffect, useState, type FormEvent } from 'react';
 import { type MovementCard, type Category, type Equipment } from '../domain/training/catalogue';
-import { bestPlan, type PlanResult } from '../domain/training/planner';
+import { bestPlan, MAX_CARDS, MAX_SESSION_MINUTES, type PlanResult } from '../domain/training/planner';
 import { MinutesRing } from './MinutesRing';
 import { MuscleMap } from './MuscleMap';
 
@@ -40,8 +40,8 @@ export function PlanSession({ cards }: { cards: readonly MovementCard[] }) {
     const minutes = Number(minutesText);
 
     // Check the time before planning, since every rule depends on it
-    if (minutesText.trim() === '' || !Number.isFinite(minutes) || minutes < 0) {
-      setError('Enter the minutes you have, for example 20.');
+    if (minutesText.trim() === '' || !Number.isFinite(minutes) || !Number.isInteger(minutes) || minutes < 0 || minutes > MAX_SESSION_MINUTES) {
+      setError(`Enter a target from 0 to ${MAX_SESSION_MINUTES} whole minutes.`);
       return;
     }
 
@@ -61,7 +61,7 @@ export function PlanSession({ cards }: { cards: readonly MovementCard[] }) {
       <p className="hint">Planning over {cards.length} reviewed or explicitly chosen exercises.</p>
       <form className="form" onSubmit={handleSubmit} onChange={() => setResult(null)}>
         <label className="field">
-          <span className="label">Minutes you have</span>
+          <span className="label">Target duration (minutes)</span>
           <input className="input input-short" inputMode="numeric" value={minutesText} onChange={(event) => setMinutesText(event.target.value)} />
         </label>
         <fieldset className="fieldset">
@@ -83,7 +83,7 @@ export function PlanSession({ cards }: { cards: readonly MovementCard[] }) {
 
       {result?.status === 'plan' && (
         <div className="stack gym-plan-result" aria-live="polite">
-          <div className="plan-overview"><MinutesRing used={result.plan.minutes} available={Number(minutesText)} /><div><p className="eyebrow">YOUR SESSION</p><h3 className="heading">A plan that fits.</h3><div className="coverage-chips">{CATEGORY_CHOICES.map(([value, label]) => <span className={`category-chip ${result.plan.cards.some(card => card.category === value) ? `category-${value}` : 'category-uncovered'}`} key={value}>{label}</span>)}</div></div></div>
+          <div className="plan-overview"><MinutesRing used={result.plan.minutes} available={Number(minutesText)} /><div><p className="eyebrow">YOUR SESSION</p><h3 className="heading">{result.unfilledMinutes === 0 ? 'Your target is covered.' : 'A partial session.'}</h3><div className="coverage-chips">{CATEGORY_CHOICES.map(([value, label]) => <span className={`category-chip ${result.plan.cards.some(card => card.category === value) ? `category-${value}` : 'category-uncovered'}`} key={value}>{label}</span>)}</div></div></div>
           <ol className="items">
             {result.plan.cards.map((card) => (
               <li key={card.id} className="item planned-exercise">
@@ -100,7 +100,10 @@ export function PlanSession({ cards }: { cards: readonly MovementCard[] }) {
           <p className="body numbers">
             {result.plan.minutes} of {minutesText} min · covers {result.plan.covered} of {categories.length} chosen areas
           </p>
-          <p className="hint">Best of {result.considered} possible sessions. A suggestion only: log what you actually did on Today.</p>
+          {result.unfilledMinutes > 0 && <p className="notice">{result.unfilledMinutes} min unfilled. The best plan for your chosen areas does not fill this target. Add more exercises or choose a shorter session.</p>}
+          <p className="hint">Up to {MAX_CARDS} distinct exercises; planning blocks keep their reviewed durations. No exercise is repeated to fill time.</p>
+          <details><summary className="hint">How this plan was chosen</summary><p className="hint">Coverage first, then closest to your target without going over, then preference. Compared {result.considered} planning options.</p></details>
+          <p className="hint">A suggestion only: log what you actually did on Today.</p>
         </div>
       )}
 
