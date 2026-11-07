@@ -30,8 +30,11 @@ artifacts/checkpoints/
 *.zip
 Health_App_Product_Requirements*.md
 
-# Editor and OS noise
+# Personal Claude Code settings and notes stay on this machine
 .claude/settings.local.json
+CLAUDE.local.md
+
+# Editor and OS noise
 .vscode/
 .idea/
 Thumbs.db

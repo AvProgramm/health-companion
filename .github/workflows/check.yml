@@ -19,5 +19,5 @@ jobs:
       - name: Install app dependencies
         run: npm ci
         working-directory: apps/web
-      - name: Typecheck and tests
-        run: node scripts/check-changed.mjs --all
+      - name: Typecheck, app tests and hook tests
+        run: node .claude/hooks/check-changed.mjs --all

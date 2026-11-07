@@ -12,12 +12,12 @@ import { readFileSync } from 'node:fs';
 import { dirname, join, relative, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-// The repository root, found from this file so the current directory never matters
-const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
+// The repository root (this file is in .claude/hooks), found from this file so the current directory never matters
+const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..', '..');
 const WEB = join(ROOT, 'apps', 'web');
 
-// Edits under these folders can change a diary total, so they trigger the checks
-const WATCHED = ['apps/web/src/domain/', 'apps/web/src/storage/', 'eval/fixtures/'];
+// Edits under these folders can change a diary total or a safety rule, so they trigger the checks
+const WATCHED = ['apps/web/src/domain/', 'apps/web/src/storage/', 'eval/fixtures/', '.claude/hooks/'];
 
 // Keep the failure message short enough for Claude to read in one go
 const MAX_OUTPUT_LINES = 40;
@@ -48,11 +48,11 @@ function isWatched(filePath) {
 }
 
 /**
- * Run one Node script inside apps/web and return whether it passed, with its output.
+ * Run one Node script and return whether it passed, with its output.
  */
-function runCheck(label, scriptAndArgs) {
+function runCheck(label, scriptAndArgs, cwd = WEB) {
   // Run the tools through Node itself, so no shell or .cmd wrapper is involved
-  const result = spawnSync(process.execPath, scriptAndArgs, { cwd: WEB, encoding: 'utf8' });
+  const result = spawnSync(process.execPath, scriptAndArgs, { cwd, encoding: 'utf8' });
   const output = `${result.stdout ?? ''}${result.stderr ?? ''}`.trim();
   return { label, passed: result.status === 0, output };
 }
@@ -70,6 +70,7 @@ if (!runAll) {
 const checks = [
   runCheck('Typecheck', [join(WEB, 'node_modules', 'typescript', 'bin', 'tsc'), '--noEmit', '-p', WEB]),
   runCheck('Tests', [join(WEB, 'node_modules', 'vitest', 'vitest.mjs'), 'run']),
+  runCheck('Hook tests', ['--test', '.claude/hooks/*.test.mjs'], ROOT),
 ];
 
 const failed = checks.filter((check) => !check.passed);
