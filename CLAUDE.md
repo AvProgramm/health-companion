@@ -9,7 +9,7 @@ A free, local-first diary for balancing food, exercise and sleep. It remembers w
   - No backend for the diary.
 - `services/coach`: optional FastAPI nutrition estimates on 127.0.0.1:8000, proxied as `/api`. USDA/Open Food Facts first, Tavily public nutrition retrieval on a miss, then Groq with Hugging Face hosted inference as a final optional fallback. BM25 retrieval and MCP stdio tools remain planned; the diary never depends on this service.
   - Model output is never trusted for arithmetic or certainty: a model estimate needs a real low-high range, its energy must agree with 4 × protein + 4 × carbohydrate + 9 × fat within 25%, and a count of servings is asked as one serving and multiplied in code (`model_client.py`). Sources are shown as plain text, not links.
-- `experiments/router` (M4, FIT3181): fictional family-split data, baselines, frozen MiniLM encoder and runner are built; Yash writes the training loop in `router/train.py`. Its own `.venv` reuses `fit3181` packages read-only. Explain-back: `experiments/router/README.md`.
+- `experiments/router` (M4, FIT3181, finished 8 Nov): fictional family-split data, baselines, frozen MiniLM encoder, `Linear(384, 6)` head and runner. The sealed test ran once and the head did not beat the keyword rules, so it does **not** ship; `results/final.json` is the record and `run final` refuses a second run. Its own `.venv` reuses `fit3181` packages read-only. Explain-back: `docs/milestones/m4-walkthrough.md`.
 
 ## Commands
 ```bash
@@ -56,7 +56,7 @@ Organised by feature, one reason to change per module. Domain never imports stor
 - Run `npm run check` before saying anything works, and say what was verified and where (unit test, browser pane, phone).
 - Stage reviewed paths only (`git add <paths>`, never `-A` or `.`). End commit messages with the Co-Authored-By line. Never force-push.
 - Each milestone ends with `docs/milestones/mN-walkthrough.md`, so Yash can explain it back in his own words.
-- Do not write the functions Yash reserves for himself without asking: `compareCandidates` (planner objective) and the PyTorch training loop.
+- `compareCandidates` (planner objective) and the PyTorch training loop are Yash's to sign off: change them only with his approval. On 8 Nov he asked Claude to write the loop in his style, and he cross-checks it.
 - Push to GitHub at every green checkpoint, roughly every 5–6 minutes of work.
 
 Current repeated-round planner and wrap-up: read `docs/handoff/claude-code.md` and `docs/milestones/m4-repeated-rounds-walkthrough.md`. Repetition is explicitly selectable; the earlier distinct-only duration notes are historical.

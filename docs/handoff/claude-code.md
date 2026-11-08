@@ -29,3 +29,5 @@ Yash asked to stop and hand over now. Do not launch another milestone automatica
 ## Update (7 Nov 2026, Claude Code)
 
 Planner behaviour changed after a full allocation sweep. "What to train" is now a hard rule in `ineligibleReason`, because duration ranking padded sessions with unchosen areas. `rounds.ts` keeps the remainder search for the total, and spreads extra blocks with a bounded subset-sum. Library facts are fixed (`whyNotAddable`, `reviewExercise(entry, minutes)`), gym equipment types are planned, and `training/packs` adds ready-made days. USDA liquids are read per 100 mL. See `docs/milestones/m4-gym-fixes-walkthrough.md`.
+
+On 8 Nov the router training loop was written at Yash's request, and the sealed test ran once: the head does not beat the keyword rules, so the router does not ship. See `docs/milestones/m4-walkthrough.md`.

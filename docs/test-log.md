@@ -225,6 +225,12 @@ Check and build pass. Browser: 31/31, 60/60 (four rounds), 90/90 and 241/241 fro
 
 ## Gym fixes and USDA liquids (7 Nov 2026, Claude Code)
 - Red first for each fix: USDA per-100 mL and Foundation sugar, importer evidence (bar, pull-up, jumping, untracked kit, gym gear), fixed review facts, packs, area rule, even repeats. `npm run check` and the build pass.
-- Live service code: "milk, 250 ml" now returns a USDA database estimate (146 kcal, all nutrients) instead of falling through to the model. Restart the coach service to load it; not checked through the app yet.
+- Live service code: "milk, 250 ml" now returns a USDA database estimate (146 kcal; every nutrient except added sugar, which stays Unknown) instead of falling through to the model.
 - Browser (laptop and 375 px): fixed facts on the review sheet (dumbbell row: Pull, Dumbbells; Pullups: Pull-up bar, A pull-up); decline crunches blocked with a reason; ready-made days update on every choice; plan form: no kit push+pull 5 min no plan, 15 min push-up ×2, 60 min push-up ×10; dumbbells push+pull 60 min floor press ×3, row ×3, push-up ×2; no area chosen asks for one. No horizontal overflow at 375 px. No diary entry added.
 - Physical phone check of packs and the new review sheet: NOT TESTED. Reload twice, open Gym, try Leg day at each difficulty, and confirm the diary is still there.
+
+
+## USDA milk through the app, and the router (8 Nov 2026, Claude Code)
+- Browser pane, with the coach service and preview started fresh: typed "250 ml milk", requested an estimate. Result: Database estimate, ≈146.0 kcal (127.5–155.0), source USDA, added sugar Unknown. POST /api/estimate returned 200. The draft was discarded, nothing was saved and no console errors appeared.
+- Router sealed test, run once after settings were committed at a181128: head 0.721 macro-F1, keyword 0.735, TF-IDF 0.723. Does not ship. Record: experiments/router/results/final.json.
+- Physical phone check of the M4 Gym features: NOT TESTED.

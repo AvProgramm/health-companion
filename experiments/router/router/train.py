@@ -1,25 +1,29 @@
 """
 Train the router head on frozen sentence vectors.
 
-YASH WRITES the parts marked "YASH WRITES THIS" (reserved in CLAUDE.md): the Dataset, the
-head's forward pass, the training loop with validation macro-F1 early stopping, scoring,
-and the confusion matrix. tests/test_train.py marks their tests expectedFailure until then;
-when one reports "unexpected success", remove its decorator.
+Follows Yash's FIT3181 habits: train_model keeps the weights from the best validation
+epoch, score runs under eval() and no_grad(), and every choice is made on validation.
+Written by Claude Code at Yash's request on 8 Nov 2026, for him to cross-check.
 """
+import copy
 import random
 import numpy as np
 import torch
 from torch import nn
 from torch.utils.data import Dataset
 from .data import LABELS, SEED
+from .metrics import macro_f1
 
 # MiniLM's sentence vector size, and one output per class
 INPUTS = 384
 CLASSES = len(LABELS)
 # At most 20 passes over the training families, as the router protocol caps it
 MAX_EPOCHS = 20
-# Learning rates compared on validation only, never on test
-LEARNING_RATES = (0.001, 0.003)
+# Stop after this many epochs without a better score; macro-F1 moves in small steps on 72 messages
+PATIENCE = 5
+# Learning rates compared on validation only, never on test. The plan's 0.001 and 0.003 underfit
+# (their best epoch was the 20-epoch cap, with loss still falling), so the grid carries on upward
+LEARNING_RATES = (0.001, 0.003, 0.01, 0.03, 0.1)
 
 
 def seed_all(seed=SEED):
@@ -33,21 +37,27 @@ def seed_all(seed=SEED):
 
 
 class VectorDataset(Dataset):
-    """
-    Hold cached sentence vectors with their label indices.  YASH WRITES THIS.
-
-    vectors is a [N, 384] float tensor; labels is a list of N label indices (0-5, in LABELS order).
-    __getitem__(index) returns (vector [384] float32, label index as a long tensor).
-    """
+    """Hold cached sentence vectors with their label indices, one pair per message."""
 
     def __init__(self, vectors, labels):
-        raise NotImplementedError('YASH: store the vectors and the label indices.')
+        """
+        Store the vectors as floats and the labels as long integers.
+
+        CrossEntropyLoss needs the class indices as long integers, so the types are set here once.
+        """
+        # Refuse mismatched lengths, because a vector without a label would silently shift every later pair
+        if len(vectors) != len(labels):
+            raise ValueError('Every sentence vector needs exactly one label.')
+        self.vectors = torch.as_tensor(vectors, dtype=torch.float32)
+        self.labels = torch.as_tensor(labels, dtype=torch.long)
 
     def __len__(self):
-        raise NotImplementedError('YASH: return how many messages there are.')
+        """Return how many messages the dataset holds."""
+        return len(self.labels)
 
     def __getitem__(self, index):
-        raise NotImplementedError('YASH: return one (vector, label) pair.')
+        """Return one (vector [384], label index) pair."""
+        return self.vectors[index], self.labels[index]
 
 
 class IntentHead(nn.Module):
@@ -58,47 +68,98 @@ class IntentHead(nn.Module):
     """
 
     def __init__(self, inputs=INPUTS, classes=CLASSES):
+        """Initialise the single linear layer."""
         super().__init__()
         self.linear = nn.Linear(inputs, classes)
 
     def forward(self, vectors):
         """
-        Return raw logits [batch, 6] for sentence vectors [batch, 384].  YASH WRITES THIS.
+        Return raw logits [batch, 6] for sentence vectors [batch, 384].
 
         Raw logits, with no softmax: CrossEntropyLoss applies log-softmax itself.
         """
-        raise NotImplementedError('YASH: return the logits for these vectors.')
+        return self.linear(vectors)
 
 
 def train_model(model, train_loader, validation_loader, learning_rate, max_epochs=MAX_EPOCHS, device='cpu'):
     """
-    Train the head and return {'state_dict': best weights, 'history': one entry per epoch}.  YASH WRITES THIS.
+    Train the head and return the weights from the best validation epoch, not the last one.
 
-    Your FIT3181 habits:
-      - CrossEntropyLoss on raw logits, and AdamW(model.parameters(), lr=learning_rate)
-      - each epoch: model.train(); for each batch: zero_grad, forward, loss, backward, step
-      - then score() the validation loader and compute router.metrics.macro_f1
-      - keep a deep copy of the state_dict with the best validation macro-F1
-      - stop early when it has not improved for a few epochs, and never pass max_epochs
-    Avoid the old BaseTrainer.evaluate bug: average the loss over all batches, not just the last one.
+    The result holds 'state_dict', 'best_epoch', 'best_valid' and a 'history' with one entry
+    per epoch. The epoch is chosen on validation macro-F1, so the test split stays out of it.
     """
-    raise NotImplementedError('YASH: write the training loop.')
+    # Initialise the loss on raw logits and the optimiser over the head's 2,310 parameters
+    model.to(device)
+    criterion = nn.CrossEntropyLoss()
+    optimizer = torch.optim.AdamW(model.parameters(), lr=learning_rate)
+
+    # Initialise the best result so far
+    best_valid, best_state, best_epoch, history = -1.0, None, 0, []
+    for epoch in range(1, max_epochs + 1):
+        # Take one gradient step per batch
+        model.train()
+        total_loss, total_messages = 0.0, 0
+        for batch_x, batch_y in train_loader:
+            batch_x, batch_y = batch_x.to(device), batch_y.to(device)
+            optimizer.zero_grad()
+            loss = criterion(model(batch_x), batch_y)
+            loss.backward()
+            optimizer.step()
+
+            # Weight each batch's mean loss by its size, so a short last batch cannot skew the epoch
+            total_loss += loss.item() * batch_y.size(0)
+            total_messages += batch_y.size(0)
+
+        # Measure this epoch on validation
+        probabilities, labels = score(model, validation_loader, device)
+        valid = macro_f1(labels.tolist(), probabilities.argmax(dim=1).tolist())
+        history.append({'epoch': epoch, 'train_loss': total_loss / total_messages, 'valid_macro_f1': valid})
+
+        # Keep a copy of the best weights, because the live ones keep changing
+        if valid > best_valid:
+            best_valid, best_state, best_epoch = valid, copy.deepcopy(model.state_dict()), epoch
+
+        # Ignore further epochs once validation has stopped improving, because they only risk overfitting
+        if epoch - best_epoch >= PATIENCE:
+            break
+
+    # Return the best weights with the record of how they were reached
+    return {'state_dict': best_state, 'best_epoch': best_epoch, 'best_valid': best_valid, 'history': history}
 
 
 def score(model, loader, device='cpu'):
     """
-    Return (probabilities [N, 6], label indices [N]) for every batch in a loader.  YASH WRITES THIS.
+    Return (probabilities [N, 6], label indices [N]) for every batch in a loader.
 
-    Run under model.eval() and torch.no_grad(), and softmax the logits so each row sums to one.
+    eval() switches off training-only behaviour and no_grad() stops PyTorch recording
+    gradients. They do different jobs, so both are used.
     """
-    raise NotImplementedError('YASH: score the loader without gradients.')
+    # Get the model ready for inference
+    model.to(device)
+    model.eval()
+
+    # Turn each batch's raw logits into one probability per class
+    probabilities, labels = [], []
+    with torch.no_grad():
+        for batch_x, batch_y in loader:
+            probabilities.append(torch.softmax(model(batch_x.to(device)), dim=1).cpu())
+            labels.append(batch_y)
+
+    # Return one row per message, in loader order
+    return torch.cat(probabilities), torch.cat(labels)
 
 
 def confusion_matrix(true, predicted, classes=CLASSES):
-    """
-    Return a classes x classes list of counts: row = true label index, column = predicted.  YASH WRITES THIS.
-    """
-    raise NotImplementedError('YASH: count each (true, predicted) pair.')
+    """Return a classes x classes list of counts: row = true label index, column = predicted."""
+    # Initialise every pair of classes at zero
+    counts = [[0] * classes for _ in range(classes)]
+
+    # Count each (true, predicted) pair
+    for actual, guess in zip(true, predicted):
+        counts[actual][guess] += 1
+
+    # Return the finished table
+    return counts
 
 
 def checkpoint(model, learning_rate, threshold, revision):

@@ -1,14 +1,9 @@
-"""
-Check the router head and Yash's training code.
-
-YASH: the tests marked expectedFailure fail while your parts in router/train.py raise
-NotImplementedError. When one reports "unexpected success", remove its decorator.
-"""
+"""Check the router head and its training code against small problems with known answers."""
 import importlib.util
 import unittest
 
-# PyTorch is only installed in the router environment, not in CI
-HAS_TORCH = importlib.util.find_spec('torch') is not None
+# PyTorch and scikit-learn are only installed in the router environment, not in CI
+HAS_TORCH = all(importlib.util.find_spec(name) is not None for name in ('torch', 'sklearn'))
 
 
 def toy_vectors(per_class, seed):
@@ -24,9 +19,9 @@ def toy_vectors(per_class, seed):
     return torch.nn.functional.normalize(centres[labels] + noise, dim=1), labels
 
 
-@unittest.skipUnless(HAS_TORCH, 'PyTorch is only installed in the router environment')
+@unittest.skipUnless(HAS_TORCH, 'PyTorch and scikit-learn are only installed in the router environment')
 class HeadTests(unittest.TestCase):
-    """Parts already provided: the layer, seeding and the checkpoint record."""
+    """Check the layer, seeding and the checkpoint record."""
 
     def test_head_has_2310_trainable_parameters(self):
         """Train only Linear(384, 6): 6 x 384 weights plus 6 biases."""
@@ -51,11 +46,10 @@ class HeadTests(unittest.TestCase):
         self.assertEqual(set(saved['state_dict']), {'linear.weight', 'linear.bias'})
 
 
-@unittest.skipUnless(HAS_TORCH, 'PyTorch is only installed in the router environment')
-class YashTrainingTests(unittest.TestCase):
-    """Yash's parts: Dataset, forward, training loop, scoring and the confusion matrix."""
+@unittest.skipUnless(HAS_TORCH, 'PyTorch and scikit-learn are only installed in the router environment')
+class TrainingTests(unittest.TestCase):
+    """Check the Dataset, forward pass, training loop, scoring and confusion matrix."""
 
-    @unittest.expectedFailure
     def test_dataset_returns_a_vector_and_a_label(self):
         """Return one 384-number vector and its label index."""
         import torch
@@ -66,14 +60,12 @@ class YashTrainingTests(unittest.TestCase):
         self.assertEqual(tuple(vector.shape), (384,))
         self.assertEqual(int(label), 2)
 
-    @unittest.expectedFailure
     def test_forward_returns_one_logit_per_class(self):
         """Map a batch of 8 vectors to 8 rows of 6 raw logits."""
         import torch
         from router.train import IntentHead
         self.assertEqual(tuple(IntentHead()(torch.randn(8, 384)).shape), (8, 6))
 
-    @unittest.expectedFailure
     def test_training_learns_a_separable_toy_problem(self):
         """Reach validation macro-F1 of at least 0.95 on six easy clusters, within 20 epochs."""
         import torch
@@ -92,7 +84,6 @@ class YashTrainingTests(unittest.TestCase):
         self.assertLessEqual(len(result['history']), 20)
         self.assertGreaterEqual(macro_f1(labels.tolist(), probabilities.argmax(dim=1).tolist()), 0.95)
 
-    @unittest.expectedFailure
     def test_score_runs_in_eval_mode_without_gradients(self):
         """Return probabilities that sum to one, with no gradient attached."""
         import torch
@@ -106,11 +97,48 @@ class YashTrainingTests(unittest.TestCase):
         self.assertEqual(tuple(probabilities.shape), (10, 6))
         self.assertTrue(torch.allclose(probabilities.sum(dim=1), torch.ones(10), atol=1e-5))
 
-    @unittest.expectedFailure
     def test_confusion_matrix_counts_each_pair(self):
         """Count true labels by row and predictions by column."""
         from router.train import confusion_matrix
         self.assertEqual(confusion_matrix([0, 0, 1], [0, 1, 1], classes=3), [[1, 1, 0], [0, 1, 0], [0, 0, 0]])
+
+    def test_keeps_the_best_validation_weights_and_stops_after_patience(self):
+        """Return the best epoch's weights rather than the last, and stop PATIENCE epochs after it."""
+        import copy
+        from unittest.mock import patch
+        import torch
+        from torch.utils.data import DataLoader
+        from router import train as training
+        labels, right, wrong = torch.arange(6), torch.eye(6), torch.eye(6)[[0, 1, 2, 0, 1, 2]]
+        seen = []
+
+        def scripted_score(model, loader, device='cpu'):
+            """Record each epoch's weights, and make only the second epoch score perfectly."""
+            seen.append(copy.deepcopy(model.state_dict()))
+            return (right if len(seen) == 2 else wrong), labels
+
+        vectors, targets = toy_vectors(5, seed=3)
+        loader = DataLoader(training.VectorDataset(vectors, targets.tolist()), batch_size=8)
+        with patch.object(training, 'score', scripted_score):
+            result = training.train_model(training.IntentHead(), loader, loader, learning_rate=0.01)
+        self.assertEqual(result['best_epoch'], 2)
+        self.assertEqual(len(result['history']), 2 + training.PATIENCE)
+        self.assertTrue(torch.equal(result['state_dict']['linear.weight'], seen[1]['linear.weight']))
+        self.assertFalse(torch.equal(result['state_dict']['linear.weight'], seen[-1]['linear.weight']))
+
+    def test_epoch_loss_is_averaged_over_every_message(self):
+        """Match the whole-dataset loss, even with a short last batch (the old BaseTrainer bug)."""
+        import torch
+        from torch.utils.data import DataLoader
+        from router.train import IntentHead, VectorDataset, seed_all, train_model
+        seed_all()
+        vectors, targets = toy_vectors(5, seed=4)
+        head = IntentHead()
+        # A learning rate of zero leaves the weights alone, so the loss can be worked out directly
+        expected = torch.nn.functional.cross_entropy(head.linear(vectors), targets).item()
+        loader = DataLoader(VectorDataset(vectors, targets.tolist()), batch_size=8)
+        result = train_model(head, loader, loader, learning_rate=0.0, max_epochs=1)
+        self.assertAlmostEqual(result['history'][0]['train_loss'], expected, places=5)
 
 
 if __name__ == '__main__':

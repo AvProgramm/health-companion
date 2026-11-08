@@ -39,7 +39,7 @@ def load_families(document=None):
         document = json.loads((DATA / 'families.json').read_text(encoding='utf-8'))
     families = document['families']
     for family in families:
-        # Ignore nothing: an unknown label or an empty message stops the run
+        # Refuse an unknown label or an empty message, because training on it would be silently wrong
         if family.get('label') not in LABELS:
             raise ValueError(f"Family {family.get('id')} has an unknown label {family.get('label')!r}.")
         if not family.get('utterances') or any(not isinstance(text, str) or not text.strip() for text in family['utterances']):

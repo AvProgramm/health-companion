@@ -9,6 +9,13 @@
       "url": "http://localhost:4173"
     },
     {
+      "name": "coach",
+      "runtimeExecutable": "services/coach/.venv/Scripts/python.exe",
+      "runtimeArgs": ["-m", "uvicorn", "coach.app:app", "--app-dir", "services/coach", "--host", "127.0.0.1", "--port", "8000", "--no-access-log"],
+      "port": 8000,
+      "url": "http://localhost:8000"
+    },
+    {
       "name": "web-preview-running",
       "port": 4173,
       "url": "http://localhost:4173"
