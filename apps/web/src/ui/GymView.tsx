@@ -9,6 +9,7 @@ import { describeSets, lastPerformed, type WorkoutEntry } from '../domain/traini
 import { listWorkouts } from '../storage/logsRepo';
 import { formatDiaryDate } from './format';
 import { PlanSession } from './PlanSession';
+import { TrainerCard } from './TrainerCard';
 import { errorText } from './useSave';
 
 // Enough history to see a trend on a phone screen without scrolling forever
@@ -84,6 +85,8 @@ export function GymView({ db }: { db: IDBDatabase }) {
         <h1 className="page-title">Your movement space.</h1></div></div>
         <p className="status">Choose your exercises. Make room for a session that fits today.</p>
       </header>
+
+      {library !== null && <TrainerCard entries={library.EXERCISE_ENTRIES} />}
 
       {library !== null && <PackPicker entries={library.EXERCISE_ENTRIES} chosen={choices} busy={!choicesReady || savingChoice} onAdd={card => persistChoice(card, false)} />}
 

@@ -8,6 +8,28 @@ class StrictModel(BaseModel):
     model_config = ConfigDict(extra='forbid', strict=True, allow_inf_nan=False)
 
 
+# The equipment and areas the Trainer card can send, matching the app's own lists
+Equipment = Literal['dumbbells', 'band', 'pull_up_bar', 'kettlebells', 'barbell', 'ez_curl_bar', 'cable', 'machine',
+                    'medicine_ball', 'exercise_ball', 'foam_roll']
+Area = Literal['push', 'pull', 'legs', 'core']
+
+
+class TrainerRequest(StrictModel):
+    """Accept only what the person typed or picked on the Trainer card."""
+    goal: str = Field(min_length=1, max_length=200)
+    minutes: int = Field(ge=1, le=600)
+    equipment: list[Equipment] = Field(max_length=11)
+    areas: list[Area] = Field(min_length=1, max_length=4)
+    level: Literal['beginner', 'intermediate', 'expert']
+
+
+class TrainerReply(StrictModel):
+    """Return a ranked proposal that the phone still has to check."""
+    exerciseIds: list[str] = Field(max_length=16)
+    reason: str = Field(min_length=1, max_length=300)
+    source: Literal['ai', 'library']
+
+
 class EstimateRequest(StrictModel):
     """Accept only the food name and portion text."""
     name: str = Field(min_length=1, max_length=80)
