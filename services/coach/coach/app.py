@@ -1,4 +1,5 @@
 """Serve estimate and coach requests on the laptop loopback interface."""
+from functools import lru_cache
 from pathlib import Path
 from dotenv import load_dotenv
 from fastapi import FastAPI, HTTPException, Request
@@ -7,9 +8,13 @@ from fastapi.responses import JSONResponse
 from starlette.middleware.trustedhost import TrustedHostMiddleware
 from .exercises import load_library
 from .llm import ask_groq
-from .models import EstimateRequest, Estimate, TrainerReply, TrainerRequest
+from .models import CoachReply, CoachRequest, EstimateRequest, Estimate, TrainerReply, TrainerRequest
 from .pipeline import estimate_food
-from .trainer import plan_session
+from .rag.answer import answer_question
+from .rag.cards import load_cards
+from .rag.retriever import Retriever
+from .rag.vectors import load_encoder
+from .trainer import evidence_tool, plan_session
 
 # Only the repository root .env is read; nothing is exposed through Vite.
 load_dotenv(Path(__file__).resolve().parents[3] / '.env')
@@ -25,6 +30,12 @@ LOCAL_ORIGINS = ('http://localhost:4173', 'http://127.0.0.1:4173', 'http://local
 async def invalid_request(_request, _error):
     """Return a generic validation error without echoing personal input."""
     return JSONResponse(status_code=422, content={'detail': 'Send only the fields this screen asks for.'})
+
+
+@lru_cache(maxsize=1)
+def knowledge():
+    """Return the retriever, built once on first use because it loads the encoder."""
+    return Retriever(load_cards(), load_encoder())
 
 
 def check_local(request):
@@ -53,4 +64,13 @@ async def estimate(request: Request, item: EstimateRequest):
 async def trainer(request: Request, item: TrainerRequest):
     """Return ranked exercises for the goal, as a proposal the phone still checks."""
     check_local(request)
-    return await plan_session(item, EXERCISES, ask_groq)
+    return await plan_session(item, EXERCISES, ask_groq, [evidence_tool(knowledge())])
+
+
+@app.post('/api/coach', response_model=CoachReply)
+async def coach(request: Request, item: CoachRequest):
+    """Return an answer checked against reviewed cards, or an honest reason for none."""
+    check_local(request)
+    if not item.question.strip():
+        raise HTTPException(422, 'Type a question first.')
+    return await answer_question(item.question.strip(), knowledge(), ask_groq)

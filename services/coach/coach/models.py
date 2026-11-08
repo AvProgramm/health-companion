@@ -27,7 +27,36 @@ class TrainerReply(StrictModel):
     """Return a ranked proposal that the phone still has to check."""
     exerciseIds: list[str] = Field(max_length=16)
     reason: str = Field(min_length=1, max_length=300)
-    source: Literal['ai', 'library']
+    source: Literal['ai', 'library', 'refused']
+
+
+class CoachRequest(StrictModel):
+    """Accept only the question the person typed."""
+    question: str = Field(min_length=1, max_length=300)
+
+
+class CoachClaim(StrictModel):
+    """Hold one checked sentence and the cards behind it."""
+    text: str = Field(min_length=1, max_length=300)
+    cites: list[int] = Field(min_length=1, max_length=3)
+
+
+class CoachSource(StrictModel):
+    """Identify one reviewed card, shown as plain text."""
+    number: int = Field(ge=1)
+    title: str
+    source: str
+    sourceDate: str
+    url: str
+    excerpt: str
+
+
+class CoachReply(StrictModel):
+    """Return a checked answer, the evidence itself, or an honest reason for neither."""
+    mode: Literal['answer', 'excerpts', 'no_evidence', 'refused']
+    message: str = Field(min_length=1, max_length=400)
+    claims: list[CoachClaim] = Field(max_length=4)
+    sources: list[CoachSource] = Field(max_length=3)
 
 
 class EstimateRequest(StrictModel):

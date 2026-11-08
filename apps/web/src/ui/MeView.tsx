@@ -4,6 +4,7 @@ import { exportDiary, restoreDiary, wipeDiary } from '../storage/backup/transfer
 import { validateBackup } from '../storage/backup/validate';
 import { countMeals } from '../storage/mealsRepo';
 import type { Durability } from '../storage/persistence';
+import { AskCoach } from './AskCoach';
 import { DURABILITY_TEXT } from './TodayView';
 import { errorText } from './useSave';
 
@@ -134,6 +135,8 @@ export function MeView({ db, durability, foodCount, hideNumbers, onHideNumbersCh
       {message !== null && (
         <p className={`notice notice-${message.kind}`} role={message.kind === 'error' ? 'alert' : 'status'}>{message.text}</p>
       )}
+
+      <AskCoach />
 
       <section className="card" aria-labelledby="storage-heading">
         <h2 id="storage-heading" className="heading">Storage</h2>

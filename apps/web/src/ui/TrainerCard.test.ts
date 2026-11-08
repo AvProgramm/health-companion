@@ -74,6 +74,15 @@ describe('Ask the Trainer', () => {
     expect(container.textContent).toContain('120 of 120 min');
   });
 
+  it('shows a refusal without any session', async () => {
+    vi.stubGlobal('fetch', answering({ exerciseIds: [], reason: 'Please call your local emergency number.', source: 'refused' }));
+    await type('#trainer-goal', 'Fictional goal');
+    await ask();
+    expect(container.textContent).toContain('Please call your local emergency number.');
+    expect(container.textContent).not.toContain('Picked');
+    expect(container.querySelector('.gym-plan-result')).toBeNull();
+  });
+
   it('labels a library fallback plainly', async () => {
     vi.stubGlobal('fetch', answering({ exerciseIds: LIBRARY.map(entry => entry.id), reason: 'The AI is busy right now.', source: 'library' }));
     await type('#trainer-goal', 'Fictional goal');

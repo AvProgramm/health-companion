@@ -70,12 +70,12 @@ export function TrainerCard({ entries }: { entries: readonly ExerciseEntry[] }) 
   }
 
   return (
-    <section className="card trainer-card" aria-labelledby="trainer-heading">
+    <section className="card ai-card" aria-labelledby="trainer-heading">
       <div className="card-head"><div><p className="eyebrow">AI TRAINER</p><h2 id="trainer-heading" className="heading">Ask the Trainer</h2></div><span className="badge"><Sparkle size={14} />Chooses from the library</span></div>
       <form className="form" onSubmit={handleSubmit}>
         <label className="field">
           <span className="label">What do you want from today?</span>
-          <textarea id="trainer-goal" className="input trainer-goal" maxLength={200} rows={2} value={goal} placeholder="I want to get healthier and build some muscle" onChange={event => setGoal(event.target.value)} />
+          <textarea id="trainer-goal" className="input ai-input" maxLength={200} rows={2} value={goal} placeholder="I want to get healthier and build some muscle" onChange={event => setGoal(event.target.value)} />
         </label>
         <label className="field">
           <span className="label">Minutes you have</span>
@@ -91,11 +91,11 @@ export function TrainerCard({ entries }: { entries: readonly ExerciseEntry[] }) 
       {busy && <div className="skeleton skeleton-card" role="status" aria-label="The Trainer is choosing exercises" />}
 
       {session !== null && <>
-        <div className="trainer-reply">
-          <span className={`badge ${session.reply.source === 'ai' ? 'badge-estimate' : 'badge-warn'}`}>{session.reply.source === 'ai' ? 'Picked by the AI' : 'Picked from the library'}</span>
+        <div className="ai-reply">
+          {session.reply.source !== 'refused' && <span className={`badge ${session.reply.source === 'ai' ? 'badge-estimate' : 'badge-warn'}`}>{session.reply.source === 'ai' ? 'Picked by the AI' : 'Picked from the library'}</span>}
           <p className="body">{session.reply.reason}</p>
         </div>
-        <PlanResultView result={session.result} minutesText={String(session.minutes)} areaCount={ALL_AREAS.length} />
+        {session.reply.source !== 'refused' && <PlanResultView result={session.result} minutesText={String(session.minutes)} areaCount={ALL_AREAS.length} />}
       </>}
     </section>
   );

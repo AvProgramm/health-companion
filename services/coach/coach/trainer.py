@@ -5,6 +5,7 @@ import httpx
 from .agent import Tool, run_coach
 from .exercises import search_exercises
 from .models import TrainerReply
+from .safety import check_safety
 
 # Enough candidates for variety, few enough to fit in one prompt
 SHORTLIST_SIZE = 40
@@ -14,6 +15,8 @@ MIN_PICKS = 6
 MAX_PICKS = 16
 # Three model calls have to fit inside the browser's wait
 COACH_DEADLINE = 30.0
+# The reviewed guidance a trainer has any business reading
+EVIDENCE_TOPICS = {'activity', 'diabetes'}
 
 # What the model is told; the hard limits are enforced in code, not by asking nicely
 SYSTEM = ('You are a careful gym trainer inside a health diary. Choose exercises only from the shortlist you are given, by id. '
@@ -53,13 +56,26 @@ def search_tool(library, request):
     return Tool('search_exercises', 'Search again for one or more of the chosen areas. Arguments: {"areas": ["legs"]}.', run)
 
 
-async def plan_session(request, library, ask):
+def evidence_tool(retriever):
+    """Return the tool that looks up reviewed guidance on activity."""
+    def run(arguments):
+        """Search the cards, returning only what the model needs to read."""
+        return [{'title': card['title'], 'text': card['text'], 'source': card['source']} for card in retriever.search(str(arguments.get('query', '')), topics=EVIDENCE_TOPICS)]
+    return Tool('search_evidence', 'Look up reviewed activity guidance. Arguments: {"query": "how often to train strength"}.', run)
+
+
+async def plan_session(request, library, ask, extra_tools=()):
     """
     Return the Trainer's ranked exercises for one request, or a safe fallback.
 
     The phone still checks every pick against the person's own rules and fits them to
     the time, so this reply is only ever a proposal.
     """
+    # Refuse first; a mention of the diary is fine here, since a goal can refer to past days
+    refusal = check_safety(request.goal)
+    if refusal is not None and refusal.kind != 'diary':
+        return TrainerReply(exerciseIds=[], reason=refusal.message, source='refused')
+
     # Filter first, so the model only ever sees exercises the person could do
     shortlist = search_exercises(library, request.areas, request.equipment, request.level, SHORTLIST_SIZE)
     if not shortlist:
@@ -68,7 +84,7 @@ async def plan_session(request, library, ask):
     # Ask the model, treating any provider failure as "use the fallback"
     message = json.dumps({'goal': request.goal, 'minutes': request.minutes, 'shortlist': [describe(entry) for entry in shortlist]})
     try:
-        final = await asyncio.wait_for(run_coach(SYSTEM, message, [search_tool(library, request)], ask), timeout=COACH_DEADLINE)
+        final = await asyncio.wait_for(run_coach(SYSTEM, message, [search_tool(library, request), *extra_tools], ask), timeout=COACH_DEADLINE)
     except (TimeoutError, httpx.HTTPError, ValueError, KeyError, IndexError, TypeError):
         final = None
 

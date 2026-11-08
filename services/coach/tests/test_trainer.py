@@ -6,8 +6,7 @@ import httpx
 from fastapi.testclient import TestClient
 from coach.app import app
 from coach.models import TrainerRequest
-from coach.trainer import MAX_PICKS, plan_session
-
+from coach.trainer import MAX_PICKS, evidence_tool, plan_session
 
 def fictional(number, equipment=(), category='legs'):
     """Return a fictional library entry with a numbered ID."""
@@ -140,6 +139,27 @@ class TrainerEndpointTests(unittest.TestCase):
         body = response.json()
         self.assertEqual(body['source'], 'library')
         self.assertGreater(len(body['exerciseIds']), 0)
+
+
+
+class TrainerSafetyTests(unittest.TestCase):
+    def test_an_unsafe_goal_reaches_no_model(self):
+        async def never(_messages):
+            raise AssertionError('The model must not be called.')
+
+        reply = asyncio.run(plan_session(TrainerRequest(goal='I have chest pain but want to run', minutes=30, equipment=[], areas=['legs'], level='beginner'), [], never))
+        self.assertEqual((reply.source, reply.exerciseIds), ('refused', []))
+
+    def test_the_evidence_tool_keeps_to_its_topics(self):
+        class FakeRetriever:
+            def search(self, query, topics):
+                self.seen = (query, topics)
+                return [{'title': 'Fictional', 'text': 'Fictional text.', 'source': 'Fictional source', 'url': 'not for the model'}]
+
+        retriever = FakeRetriever()
+        result = evidence_tool(retriever).run({'query': 'strength'})
+        self.assertEqual(retriever.seen, ('strength', {'activity', 'diabetes'}))
+        self.assertEqual(result, [{'title': 'Fictional', 'text': 'Fictional text.', 'source': 'Fictional source'}])
 
 
 if __name__ == '__main__':
