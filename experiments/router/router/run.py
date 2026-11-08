@@ -3,7 +3,7 @@ Run the router experiment one step at a time, writing every number to results/.
 
     python -m router.run baselines   majority, keyword and TF-IDF on validation
     python -m router.run embed       cache frozen MiniLM vectors for train and validation
-    python -m router.run head        train Yash's head at each learning rate, pick on validation
+    python -m router.run head        train the head at each learning rate, pick on validation
     python -m router.run final       the one sealed test run, then the ship decision
 """
 import argparse
@@ -71,7 +71,7 @@ def embed():
 
 
 def loaders(train, validation):
-    """Return training and validation loaders over cached vectors, using Yash's Dataset."""
+    """Return training and validation loaders over cached vectors, using the VectorDataset."""
     import torch
     from torch.utils.data import DataLoader
     from .encoder import cached_vectors
@@ -97,7 +97,7 @@ def head():
         result = train_model(model, train_loader, validation_loader, learning_rate)
         model.load_state_dict(result['state_dict'])
         probabilities, labels = score(model, validation_loader)
-        runs[learning_rate] = {'model': model, 'probabilities': probabilities, 'labels': labels, 'epochs': len(result['history']),
+        runs[learning_rate] = {'model': model, 'probabilities': probabilities, 'labels': labels, 'epochs': len(result['history']), 'best_epoch': result['best_epoch'], 'history': result['history'],
                                'seconds': time.perf_counter() - started, 'macro_f1': macro_f1(labels.tolist(), probabilities.argmax(dim=1).tolist())}
 
     # Keep the better learning rate on validation macro-F1; the smaller rate wins a tie
@@ -111,7 +111,7 @@ def head():
     save('validation-head.json', {
         'split': 'validation', 'chosen_learning_rate': best_rate, 'threshold': threshold,
         'trainable_parameters': sum(parameter.numel() for parameter in best['model'].parameters() if parameter.requires_grad),
-        'by_learning_rate': {str(rate): {'macro_f1': run['macro_f1'], 'epochs': run['epochs'], 'seconds': round(run['seconds'], 2)} for rate, run in runs.items()},
+        'by_learning_rate': {str(rate): {'macro_f1': run['macro_f1'], 'epochs': run['epochs'], 'best_epoch': run['best_epoch'], 'seconds': round(run['seconds'], 2), 'history': run['history']} for rate, run in runs.items()},
         **report([LABELS[index] for index in best['labels'].tolist()], [LABELS[index] for index in predicted], [value >= threshold for value in confidences]),
     })
 
