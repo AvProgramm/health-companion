@@ -1,3 +1,4 @@
+import { assertProfileSnapshot } from '../../domain/profile/profile';
 /**
  * Checking a backup file before anything is written.
  *
@@ -34,6 +35,7 @@ const STORE_CHECKS: readonly { store: StoreName; check: StoreCheck }[] = [
   { store: 'workouts', check: checkWorkouts },
   { store: 'sleep', check: checkSleep },
   { store: 'customCards', check: checkCustomCards },
+  { store: 'profile', check: checkProfile },
 ];
 
 /**
@@ -60,7 +62,7 @@ export function validateBackup(data: unknown): BackupCheck {
   }
 
   // Fill in lists an older backup did not have, without changing the parsed file
-  const backup = { ...data, workouts: data.workouts ?? [], sleep: data.sleep ?? [], customCards: data.customCards ?? [] } as unknown as DiaryBackup;
+  const backup = { ...data, workouts: data.workouts ?? [], sleep: data.sleep ?? [], customCards: data.customCards ?? [], profile: data.profile ?? [] } as unknown as DiaryBackup;
 
   // Run each store's checker, collecting at most MAX_ERRORS problems
   const errors: string[] = [];
@@ -251,4 +253,26 @@ function checkCustomCards(records: readonly unknown[], _references: References, 
     if (versions.some((version, index) => version !== index + 1)) report('An exercise choice has an incomplete version history.');
   }
   if (latestCustomCards(valid).filter(record => !record.deleted).length > MAX_CUSTOM_CARDS) report(`A backup can hold at most ${MAX_CUSTOM_CARDS} active added exercises.`);
+}
+
+
+/** Check profile identity, every stored field, operation uniqueness and complete history. */
+function checkProfile(records: readonly unknown[], _references: References, report: Report): void {
+  const versions = new Set<number>();
+  const operations = new Set<string>();
+  for (const record of records) {
+    try {
+      assertProfileSnapshot(record);
+      // Ignore a duplicated key because restore cannot append it without losing a snapshot.
+      if (versions.has(record.version) || operations.has(record.operationKey)) throw new Error('A profile version or operation is duplicated.');
+      versions.add(record.version);
+      operations.add(record.operationKey);
+    } catch (problem) {
+      report(problem instanceof Error ? problem.message : 'A profile snapshot is invalid.');
+    }
+  }
+  // Require every previous version so the restored record has a complete immutable history.
+  if ([...versions].sort((left, right) => left - right).some((version, index) => version !== index + 1)) {
+    report('The profile has an incomplete version history.');
+  }
 }

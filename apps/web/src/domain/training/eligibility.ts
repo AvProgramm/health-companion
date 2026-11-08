@@ -1,3 +1,4 @@
+import type { BodyArea } from '../profile/profile';
 /**
  * The planner's hard filters: what can never be in today's plan, and why.
  *
@@ -12,6 +13,8 @@ import type { Capability, Category, Equipment, MovementCard } from './catalogue'
  */
 export interface PlanRequest {
   minutes: number;
+  avoidAreas?: readonly BodyArea[];
+  seatedOnly?: boolean;
   equipment: readonly Equipment[];
   unableTo: readonly Capability[];
   neverSuggest: readonly string[];
@@ -38,6 +41,19 @@ export function ineligibleReason(card: MovementCard, request: PlanRequest): stri
   // Never suggest a card the person has ruled out
   if (request.neverSuggest.includes(card.id)) {
     return 'you asked never to suggest it';
+  }
+
+  // Ignore unknown loads because an avoided area cannot be checked from a missing fact.
+  if ((request.avoidAreas?.length ?? 0) > 0) {
+    if (card.loads == null) return 'its loaded areas are unknown';
+    const avoided = card.loads.find(area => request.avoidAreas!.includes(area));
+    if (avoided !== undefined) return `it loads your ${avoided}`;
+  }
+
+  // Ignore a non-seated or unknown position because seated-only requires every position to be seated.
+  if (request.seatedOnly) {
+    if (card.positions == null || card.positions.length === 0) return 'its required positions are unknown';
+    if (card.positions.some(position => position !== 'seated')) return 'it needs a position other than seated';
   }
 
   // Ignore a card that needs something the person cannot do

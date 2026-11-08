@@ -1,3 +1,5 @@
+import type { BodyArea, Position } from '../profile/profile';
+
 /**
  * The small, reviewed set of exercises the planner may suggest.
  *
@@ -25,6 +27,9 @@ export interface MovementCard {
   // Abilities the exercise needs; someone who cannot do one never gets the card
   requires: readonly Capability[];
   cue: string;
+  // Missing facts remain unknown in old snapshots and cannot pass a relevant adaptation filter.
+  loads?: readonly BodyArea[] | null;
+  positions?: readonly Position[] | null;
   primaryMuscles?: readonly string[];
   imagePath?: string | null;
 }
