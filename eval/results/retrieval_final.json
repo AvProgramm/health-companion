@@ -1,0 +1,47 @@
+{
+  "questions": 47,
+  "cards": 36,
+  "similarity_threshold": 0.33624608622494756,
+  "abstention": {
+    "answered_when_it_should": 0.9743589743589743,
+    "abstained_when_it_should": 0.75
+  },
+  "designs": {
+    "words / whole card": {
+      "recall_at_1": 0.782051282051282,
+      "recall_at_3": 0.9102564102564102,
+      "mrr": 0.8707264957264957,
+      "context_precision_at_3": 0.8547008547008547
+    },
+    "meaning / whole card": {
+      "recall_at_1": 0.8974358974358975,
+      "recall_at_3": 0.9743589743589743,
+      "mrr": 0.9523809523809523,
+      "context_precision_at_3": 0.9487179487179487
+    },
+    "fused / whole card": {
+      "recall_at_1": 0.8717948717948718,
+      "recall_at_3": 0.9871794871794872,
+      "mrr": 0.9444444444444444,
+      "context_precision_at_3": 0.9444444444444444
+    },
+    "words / windows": {
+      "recall_at_1": 0.782051282051282,
+      "recall_at_3": 0.9102564102564102,
+      "mrr": 0.8707264957264957,
+      "context_precision_at_3": 0.8504273504273504
+    },
+    "meaning / windows": {
+      "recall_at_1": 0.8974358974358975,
+      "recall_at_3": 0.9743589743589743,
+      "mrr": 0.9519230769230769,
+      "context_precision_at_3": 0.9487179487179487
+    },
+    "fused / windows": {
+      "recall_at_1": 0.8717948717948718,
+      "recall_at_3": 0.9615384615384616,
+      "mrr": 0.9423076923076923,
+      "context_precision_at_3": 0.9358974358974359
+    }
+  }
+}

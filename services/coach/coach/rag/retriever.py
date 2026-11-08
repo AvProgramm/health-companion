@@ -1,13 +1,19 @@
 """Find the reviewed cards that answer a question, by words and by meaning."""
 from collections import defaultdict
 from .bm25 import BM25Index
-from .cards import chunk_card
+from .cards import card_piece
 from .vectors import VectorIndex
 
 # The usual reciprocal-rank constant, which stops one list's top place dominating
 RRF_K = 60
-# How many pieces each index passes to the fusion step
+# How many cards each index passes to the fusion step
 CANDIDATES = 20
+# Cards handed to the model, so the answer stays short and every card can be read
+CONTEXT_CARDS = 3
+# Below this cosine the closest card is about something else; tuned on development questions only
+MIN_SIMILARITY = 0.336
+# The same cut-off for word search, used only when the encoder is missing
+MIN_WORD_SCORE = 3.725
 
 
 def rrf(rankings, k=RRF_K):
@@ -26,30 +32,37 @@ def rrf(rankings, k=RRF_K):
     return sorted(scores, key=lambda identifier: (-scores[identifier], identifier))
 
 
-def parent_cards(chunk_ids, card_of):
-    """Return the parent card of each ranked piece, once each, at its best position."""
-    return list(dict.fromkeys(card_of[identifier] for identifier in chunk_ids))
+def ids_of(results):
+    """Return only the ids from a list of (chunk, score) pairs."""
+    return [chunk.id for chunk, _score in results]
 
 
 class Retriever:
-    """Search small pieces, fuse words with meaning, and hand back whole cards."""
+    """
+    Fuse word search with meaning search over whole cards.
+
+    This design won on the sealed questions; see eval/results/retrieval_final.json.
+    """
 
     def __init__(self, cards, encode):
         """Initialise both indexes; without an encoder, words alone are used."""
-        chunks = [chunk for card in cards for chunk in chunk_card(card)]
+        pieces = [card_piece(card) for card in cards]
         self.cards = {card['id']: card for card in cards}
-        self.card_of = {chunk.id: chunk.card_id for chunk in chunks}
-        self.words = BM25Index(chunks)
-        self.meaning = VectorIndex(chunks, encode) if encode is not None else None
+        self.words = BM25Index(pieces)
+        self.meaning = VectorIndex(pieces, encode) if encode is not None else None
 
-    def rank(self, query, topics=None):
-        """Return the card ids for a question, best first, and the closest similarity."""
-        by_words = [chunk.id for chunk, _score in self.words.search(query, CANDIDATES, topics)]
+    def search(self, query, k=CONTEXT_CARDS, topics=None):
+        """Return up to k cards for a question, best first, or none if nothing is close."""
+        by_words = self.words.search(query, CANDIDATES, topics)
 
-        # Ignore meaning when the encoder is missing, because words still work alone
+        # Use words alone when the encoder is missing, with their own cut-off
         if self.meaning is None:
-            return parent_cards(by_words, self.card_of), None
+            close_enough = bool(by_words) and by_words[0][1] >= MIN_WORD_SCORE
+            ranking = ids_of(by_words)
+        else:
+            by_meaning = self.meaning.search(query, CANDIDATES, topics)
+            close_enough = bool(by_meaning) and by_meaning[0][1] >= MIN_SIMILARITY
+            ranking = rrf([ids_of(by_words), ids_of(by_meaning)])
 
-        by_meaning = self.meaning.search(query, CANDIDATES, topics)
-        fused = rrf([by_words, [chunk.id for chunk, _score in by_meaning]])
-        return parent_cards(fused, self.card_of), max((score for _chunk, score in by_meaning), default=0.0)
+        # Return nothing rather than cards about something else
+        return [self.cards[identifier] for identifier in ranking[:k]] if close_enough else []

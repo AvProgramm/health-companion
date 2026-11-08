@@ -12,13 +12,11 @@ REQUIRED_FIELDS = ('id', 'title', 'topic', 'tags', 'text', 'source', 'url', 'sou
 TOPICS = ('nutrition', 'activity', 'sleep', 'diabetes', 'blood_pressure')
 # The date printed on the source page, to the day where the page gives one
 SOURCE_DATE = re.compile(r'\d{4}-\d{2}(-\d{2})?')
-# Sentences in each piece: small enough to match one idea, large enough to read on its own
-WINDOW_SIZE = 2
 
 
 @dataclass(frozen=True)
 class Chunk:
-    """One searchable piece of a card, which always knows its parent."""
+    """One searchable piece of text, which always knows its parent card."""
     id: str
     card_id: str
     topic: str
@@ -58,22 +56,6 @@ def load_cards(path=CARDS_FILE):
     return cards
 
 
-def split_sentences(text):
-    """Return the sentences of a text, keeping a decimal such as 2.5 whole."""
-    return [sentence.strip() for sentence in re.split(r'(?<=[.!?])\s+', text) if sentence.strip()]
-
-
-def chunk_card(card):
-    """
-    Return overlapping pieces of one card, each headed with the card's title and tags.
-
-    Searching small pieces matches one idea at a time, while the heading keeps a piece
-    meaningful on its own. The whole card is what gets read, so nothing is cut off.
-    """
-    sentences = split_sentences(card['text'])
-    heading = f"{card['title']}. {', '.join(card['tags'])}."
-
-    # Stop when the window reaches the end, so the last sentence isn't repeated alone
-    last_start = max(len(sentences) - WINDOW_SIZE, 0)
-    return [Chunk(f"{card['id']}#{start}", card['id'], card['topic'], f"{heading} {' '.join(sentences[start:start + WINDOW_SIZE])}")
-            for start in range(last_start + 1)]
+def card_piece(card):
+    """Return the searchable form of a card: its title and tags, then its text."""
+    return Chunk(card['id'], card['id'], card['topic'], f"{card['title']}. {', '.join(card['tags'])}. {card['text']}")

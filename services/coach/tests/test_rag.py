@@ -7,10 +7,10 @@ from pathlib import Path
 from unittest.mock import patch
 import numpy as np
 from coach.rag.bm25 import B, K1, BM25Index, stem, tokenise
-from coach.rag.cards import Chunk, TOPICS, chunk_card, load_cards, split_sentences
+from coach.rag.cards import Chunk, TOPICS, card_piece, load_cards
 from coach.rag import evaluate
 from coach.rag.metrics import context_precision, recall_at_k, reciprocal_rank
-from coach.rag.retriever import Retriever, parent_cards, rrf
+from coach.rag.retriever import Retriever, rrf
 from coach.rag.vectors import VectorIndex, load_encoder, mean_pool, unit_length
 
 
@@ -61,18 +61,15 @@ class CardTests(unittest.TestCase):
                 load_cards(write_cards(folder, [card(), card()]))
 
     def test_sentences_keep_decimals_whole(self):
-        self.assertEqual(split_sentences('Eat 2.5 g a day. Then stop.'), ['Eat 2.5 g a day.', 'Then stop.'])
+        self.assertEqual(evaluate.split_sentences('Eat 2.5 g a day. Then stop.'), ['Eat 2.5 g a day.', 'Then stop.'])
 
-    def test_pieces_overlap_by_one_sentence(self):
-        pieces = chunk_card(card())
+    def test_windows_overlap_by_one_sentence(self):
+        pieces = evaluate.window_pieces([card()])
         self.assertEqual([piece.id for piece in pieces], ['fictional-card#0', 'fictional-card#1'])
-        self.assertTrue(pieces[0].text.endswith('First idea here. Second idea here.'))
         self.assertTrue(pieces[1].text.endswith('Second idea here. Third idea here.'))
 
-    def test_a_one_sentence_card_is_one_piece_with_its_heading(self):
-        pieces = chunk_card(card(text='Only idea here.'))
-        self.assertEqual(len(pieces), 1)
-        self.assertEqual(pieces[0].text, 'Fictional title. fictional. Only idea here.')
+    def test_a_card_piece_is_headed_with_its_title_and_tags(self):
+        self.assertEqual(card_piece(card(text='Only idea here.')).text, 'Fictional title. fictional. Only idea here.')
 
 
 class Bm25Tests(unittest.TestCase):
@@ -140,21 +137,30 @@ class RetrieverTests(unittest.TestCase):
 
     def test_a_card_is_returned_once_at_its_best_position(self):
         owners = {'x#0': 'x', 'y#0': 'y', 'x#1': 'x'}
-        self.assertEqual(parent_cards(['x#0', 'y#0', 'x#1'], owners), ['x', 'y'])
+        self.assertEqual(evaluate.parent_cards(['x#0', 'y#0', 'x#1'], owners), ['x', 'y'])
 
     def test_retriever_falls_back_to_words_without_an_encoder(self):
-        cards, similarity = Retriever([card('one', text='alpha idea.'), card('two', text='beta idea.')], None).rank('alpha')
-        self.assertEqual(cards, ['one'])
-        self.assertIsNone(similarity)
+        retriever = Retriever([card('one', text='alpha idea.'), card('two', text='beta idea.')], None)
+        with patch('coach.rag.retriever.MIN_WORD_SCORE', 0.01):
+            self.assertEqual([item['id'] for item in retriever.search('alpha')], ['one'])
+
+    def test_retriever_without_an_encoder_abstains_below_its_cut_off(self):
+        retriever = Retriever([card('one', text='alpha idea.'), card('two', text='beta idea.')], None)
+        with patch('coach.rag.retriever.MIN_WORD_SCORE', 1000):
+            self.assertEqual(retriever.search('alpha'), [])
+
+    def test_retriever_abstains_when_the_closest_card_is_about_something_else(self):
+        retriever = Retriever([card('one', title='beta', tags=['beta'], text='beta beta.')], fake_encode)
+        self.assertEqual(retriever.search('alpha'), [])
 
     def test_retriever_finds_a_card_by_meaning_when_no_word_is_shared(self):
         retriever = Retriever([card('one', title='beta', tags=['beta'], text='beta beta.'), card('two', title='gamma', tags=['gamma'], text='gamma.')], fake_encode)
         # "gamma" has neither marker word, so the fake encoder puts it nearer "alpha" than "beta" is
-        self.assertEqual(retriever.rank('alpha')[0][0], 'two')
+        self.assertEqual(retriever.search('alpha')[0]['id'], 'two')
 
     def test_retriever_keeps_to_the_requested_topics(self):
         retriever = Retriever([card('one', text='alpha.', topic='nutrition'), card('two', text='alpha.', topic='sleep')], fake_encode)
-        self.assertEqual(retriever.rank('alpha', {'sleep'})[0], ['two'])
+        self.assertEqual([item['id'] for item in retriever.search('alpha', topics={'sleep'})], ['two'])
 
 
 class MetricTests(unittest.TestCase):

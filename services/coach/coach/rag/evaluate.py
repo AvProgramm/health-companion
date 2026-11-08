@@ -12,36 +12,48 @@ single search ships. Query rewriting and reranking are not built: development re
 is 0.986, which leaves them nothing to improve on this set of cards.
 """
 import json
+import re
 import sys
 from pathlib import Path
 from statistics import mean
 from .bm25 import BM25Index
-from .cards import Chunk, chunk_card, load_cards
+from .cards import Chunk, card_piece, load_cards
 from .metrics import context_precision, recall_at_k, reciprocal_rank
-from .retriever import CANDIDATES, parent_cards, rrf
+from .retriever import CANDIDATES, CONTEXT_CARDS, ids_of, rrf
 from .vectors import VectorIndex, load_encoder
 
 # The repository's evaluation folder
 EVAL = Path(__file__).resolve().parents[4] / 'eval'
 # The record of the one sealed run; while this exists the sealed set cannot be run again
 SEALED_RESULT = EVAL / 'results' / 'retrieval_final.json'
-# Cards handed to the model, so the answer stays short and every card can be read
-CONTEXT_CARDS = 3
+# Sentences in each window of the design that lost: overlapping pieces of each card
+WINDOW_SIZE = 2
 
 
 def whole_card_pieces(cards):
-    """Return one piece per card, the simpler design that smaller windows must beat."""
-    return [Chunk(card['id'], card['id'], card['topic'], f"{card['title']}. {', '.join(card['tags'])}. {card['text']}") for card in cards]
+    """Return one piece per card, the design that shipped."""
+    return [card_piece(card) for card in cards]
+
+
+def split_sentences(text):
+    """Return the sentences of a text, keeping a decimal such as 2.5 whole."""
+    return [sentence.strip() for sentence in re.split(r'(?<=[.!?])\s+', text) if sentence.strip()]
 
 
 def window_pieces(cards):
-    """Return the overlapping sentence windows of every card."""
-    return [chunk for card in cards for chunk in chunk_card(card)]
+    """Return overlapping sentence windows of every card, each headed with its title and tags."""
+    pieces = []
+    for card in cards:
+        sentences = split_sentences(card['text'])
+        heading = f"{card['title']}. {', '.join(card['tags'])}."
+        for start in range(max(len(sentences) - WINDOW_SIZE, 0) + 1):
+            pieces.append(Chunk(f"{card['id']}#{start}", card['id'], card['topic'], f"{heading} {' '.join(sentences[start:start + WINDOW_SIZE])}"))
+    return pieces
 
 
-def ids_of(results):
-    """Return only the piece ids from a list of (chunk, score) pairs."""
-    return [chunk.id for chunk, _score in results]
+def parent_cards(chunk_ids, card_of):
+    """Return the parent card of each ranked piece, once each, at its best position."""
+    return list(dict.fromkeys(card_of[identifier] for identifier in chunk_ids))
 
 
 def designs_over(chunks, encode, label):
