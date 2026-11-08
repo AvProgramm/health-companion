@@ -15,3 +15,5 @@ Run `npm run check` before and after every change; Claude Code hooks do not run 
 Keep domain logic pure, unknown nutrients null, and all estimates in drafts until confirmation. Only food name and portion text may leave the device. Keep API keys in the laptop `.env`, never Vite variables. Preserve manual entry and the offline diary. Use fictional fixtures only.
 
 Yash owns `compareCandidates` and the PyTorch training loop. Both exist now; change them only with his approval.
+
+Unfinished Milestone 5 work: read `docs/handoff/codex-m5.md` first.

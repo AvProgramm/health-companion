@@ -7,7 +7,7 @@ A free, local-first diary for balancing food, exercise and sleep. It remembers w
   - Diary in IndexedDB.
   - Hand-written service worker (`src/sw/service-worker.js`, filled in by the build).
   - No backend for the diary.
-- `services/coach`: optional FastAPI nutrition estimates on 127.0.0.1:8000, proxied as `/api`. USDA/Open Food Facts first, Tavily public nutrition retrieval on a miss, then Groq with Hugging Face hosted inference as a final optional fallback. BM25 retrieval and MCP stdio tools remain planned; the diary never depends on this service.
+- `services/coach`: optional FastAPI nutrition estimates on 127.0.0.1:8000, proxied as `/api`. USDA/Open Food Facts first, Tavily public nutrition retrieval on a miss, then Groq with Hugging Face hosted inference as a final optional fallback. It also serves the AI Trainer (`trainer.py`, bounded agent in `agent.py`), the grounded Coach (`rag/`, `safety.py`: fused BM25 and MiniLM over reviewed cards, sealed result in `eval/results/retrieval_final.json`) and an MCP stdio server (`mcp_server.py`); the diary never depends on this service.
   - Model output is never trusted for arithmetic or certainty: a model estimate needs a real low-high range, its energy must agree with 4 × protein + 4 × carbohydrate + 9 × fat within 25%, and a count of servings is asked as one serving and multiplied in code (`model_client.py`). Sources are shown as plain text, not links.
 - `experiments/router` (M4, FIT3181, finished 8 Nov): fictional family-split data, baselines, frozen MiniLM encoder, `Linear(384, 6)` head and runner. The sealed test ran once and the head did not beat the keyword rules, so it does **not** ship; `results/final.json` is the record and `run final` refuses a second run. Its own `.venv` reuses `fit3181` packages read-only. Explain-back: `docs/milestones/m4-walkthrough.md`.
 
@@ -47,7 +47,7 @@ Organised by feature, one reason to change per module. Domain never imports stor
 2. **Snapshots are immutable.** Corrections, undo and deletes add a revision; nothing is edited in place.
 3. **One write = one IndexedDB transaction.** Every write carries an operation key (replay on retry) and an expected revision (conflict on a stale screen).
 4. **Nothing saves without the user confirming.** The parser, and any future AI, only fill drafts.
-5. **No diary history leaves the device.** Optional nutrition lookup may send only the selected food name and portion text. No accounts, telemetry or other personal-data uploads. Fixtures are fictional only.
+5. **No diary history leaves the device.** Optional services may send only what the person typed or picked for that request: food name and portion text for a lookup; goal, minutes, kit, areas and level for the Trainer; the question for the Coach. No accounts, telemetry or other personal-data uploads. Fixtures are fictional only.
 6. **Round for display only** (`ui/format.ts`).
 
 ## Working rules
@@ -60,3 +60,5 @@ Organised by feature, one reason to change per module. Domain never imports stor
 - Push to GitHub at every green checkpoint, roughly every 5–6 minutes of work.
 
 Current repeated-round planner and wrap-up: read `docs/handoff/claude-code.md` and `docs/milestones/m4-repeated-rounds-walkthrough.md`. Repetition is explicitly selectable; the earlier distinct-only duration notes are historical.
+
+Unfinished Milestone 5 work and its rules: `docs/handoff/codex-m5.md`.
