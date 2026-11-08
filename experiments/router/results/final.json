@@ -1,0 +1,211 @@
+{
+  "split": "test",
+  "labels": [
+    "meal",
+    "correction",
+    "workout",
+    "sleep",
+    "daily_summary",
+    "other"
+  ],
+  "keyword": {
+    "messages": 72,
+    "accuracy": 0.7361111111111112,
+    "macro_f1": 0.7348632101061768,
+    "recall_per_class": {
+      "meal": 0.75,
+      "correction": 0.75,
+      "workout": 0.3333333333333333,
+      "sleep": 0.8333333333333334,
+      "daily_summary": 0.9166666666666666,
+      "other": 0.8333333333333334
+    },
+    "coverage": 0.6944444444444444,
+    "error_among_accepted": 0.14,
+    "critical_errors": 1
+  },
+  "tfidf": {
+    "C": 1.0,
+    "threshold": 0.65,
+    "messages": 72,
+    "accuracy": 0.7222222222222222,
+    "macro_f1": 0.7232458362893146,
+    "recall_per_class": {
+      "meal": 0.75,
+      "correction": 0.75,
+      "workout": 0.75,
+      "sleep": 0.5833333333333334,
+      "daily_summary": 0.8333333333333334,
+      "other": 0.6666666666666666
+    },
+    "coverage": 0.125,
+    "error_among_accepted": 0.1111111111111111,
+    "critical_errors": 0
+  },
+  "head": {
+    "learning_rate": 0.01,
+    "threshold": 0.65,
+    "messages": 72,
+    "accuracy": 0.7361111111111112,
+    "macro_f1": 0.7211383624427102,
+    "recall_per_class": {
+      "meal": 0.8333333333333334,
+      "correction": 0.5833333333333334,
+      "workout": 0.8333333333333334,
+      "sleep": 0.9166666666666666,
+      "daily_summary": 0.9166666666666666,
+      "other": 0.3333333333333333
+    },
+    "coverage": 0.25,
+    "error_among_accepted": 0.2222222222222222,
+    "critical_errors": 0,
+    "confusion_matrix": [
+      [
+        10,
+        0,
+        0,
+        0,
+        0,
+        2
+      ],
+      [
+        1,
+        7,
+        0,
+        4,
+        0,
+        0
+      ],
+      [
+        0,
+        0,
+        10,
+        1,
+        1,
+        0
+      ],
+      [
+        1,
+        0,
+        0,
+        11,
+        0,
+        0
+      ],
+      [
+        0,
+        0,
+        1,
+        0,
+        11,
+        0
+      ],
+      [
+        4,
+        2,
+        0,
+        0,
+        2,
+        4
+      ]
+    ]
+  },
+  "failures": [
+    {
+      "text": "double beef burger no fries",
+      "label": "meal",
+      "head": "other"
+    },
+    {
+      "text": "ate a burger + small fries at the mall",
+      "label": "meal",
+      "head": "other"
+    },
+    {
+      "text": "remove the rice from lunch",
+      "label": "correction",
+      "head": "meal"
+    },
+    {
+      "text": "I woke at 7 not 6:30",
+      "label": "correction",
+      "head": "sleep"
+    },
+    {
+      "text": "bedtime was 11pm, fix it",
+      "label": "correction",
+      "head": "sleep"
+    },
+    {
+      "text": "change last night's sleep to 7 hours",
+      "label": "correction",
+      "head": "sleep"
+    },
+    {
+      "text": "slept at 12:30 actually, not 12",
+      "label": "correction",
+      "head": "sleep"
+    },
+    {
+      "text": "45 min walk after dinner",
+      "label": "workout",
+      "head": "daily_summary"
+    },
+    {
+      "text": "walkd to the station and back, 30 min",
+      "label": "workout",
+      "head": "sleep"
+    },
+    {
+      "text": "afternoon siesta 1 hour",
+      "label": "sleep",
+      "head": "meal"
+    },
+    {
+      "text": "last squat session?",
+      "label": "daily_summary",
+      "head": "workout"
+    },
+    {
+      "text": "you're funny",
+      "label": "other",
+      "head": "correction"
+    },
+    {
+      "text": "add milk to my shopping list",
+      "label": "other",
+      "head": "meal"
+    },
+    {
+      "text": "where can I buy whey",
+      "label": "other",
+      "head": "meal"
+    },
+    {
+      "text": "cheapest protein bar",
+      "label": "other",
+      "head": "meal"
+    },
+    {
+      "text": "grocery list for the week",
+      "label": "other",
+      "head": "daily_summary"
+    },
+    {
+      "text": "who made this app",
+      "label": "other",
+      "head": "correction"
+    },
+    {
+      "text": "is my data private",
+      "label": "other",
+      "head": "daily_summary"
+    },
+    {
+      "text": "how does this app work",
+      "label": "other",
+      "head": "meal"
+    }
+  ],
+  "ships": false
+}

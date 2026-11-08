@@ -12,7 +12,7 @@
 - `parse_usda` reads `servingSizeUnit`, and a record served in millilitres is per 100 mL.
 - USDA's lab-analysed (Foundation) records publish total sugar under ID 1063, so that ID is now read too. The first value listed wins, so a second ID can't overwrite it.
 
-**Checked live:** "milk, 250 ml" now comes from USDA at 146 kcal, with every nutrient filled. "Milk, 200 g" still refuses per-100 mL records. Restart the coach service to load this fix.
+**Checked live:** "milk, 250 ml" now comes from USDA at 146 kcal, with every nutrient filled except added sugar, which USDA doesn't publish for these records and which stays Unknown. "Milk, 200 g" still refuses per-100 mL records. Restart the coach service to load this fix.
 
 ## 2. Exercise facts can't be edited
 
@@ -76,10 +76,5 @@ A sweep of every target from 0 to 150 minutes, in four real setups, found two bu
   - Ready-made days update on every choice.
   - The plan form gave exactly the hand-worked sessions above.
   - No horizontal overflow at 375 px.
-- **Not verified:** the phone, and the restarted coach service through the app. The USDA fix was checked by calling the service code directly.
-
-## Explain-back questions
-
-- Why can't "body only" be trusted to mean no equipment, and what evidence does the importer use instead?
-- Why is "What to train" a hard rule and not a ranking term? What went wrong when it was a ranking term?
-- The remainder search proves the total. Why is a second, bounded search needed to choose which blocks repeat?
+- **Browser pane, app → coach → USDA (8 Nov):** "250 ml milk" gave a Database estimate of ≈146.0 kcal (127.5–155.0), nothing saved.
+- **Not verified:** the phone.

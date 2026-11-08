@@ -7,6 +7,7 @@ Read `CLAUDE.md` first; its invariants and rules apply to you too, along with `.
   - **M1:** offline save, correct and reopen on the phone.
   - **M2:** a usable diary (parser, drafts, corrections, meal sheet, foods, backup and restore, hide numbers, hook and CI).
   - **M3:** training, sleep, the Gym tab, schema v3, and the feature-folder restructure.
+  - **M4 (8 Nov):** planner, exercise library, ready-made days and intent router. The router was evaluated once on sealed data and does not ship. The phone test of the Gym features is still pending. See `docs/milestones/m4-walkthrough.md`.
   - **M3a implementation:** database-first nutrition estimates, Groq fallback, ranges/provenance, confirmation, manual/unknown fallback, tests and CI. Live USDA and Tavily-assisted Groq calls through the preview pass (7 Nov). The responsive UI follow-up is implemented and checked at 320/390/1440 px. The Hugging Face fallback adapter is tested, but its live endpoint returns HTTP 402. Physical-phone acceptance is still pending; see `docs/test-log.md`.
 - **Last commit:** see `git log -1`. Walkthroughs are in `docs/milestones/`.
 - **Phone setup and gates:** `docs/test-log.md` (USB forwarding `4173 → 127.0.0.1:4173`, then reload twice).
@@ -62,7 +63,7 @@ Goal: when the composer meets an unknown food ("nasi lemak", "2 weetabix"), the 
   - Frozen `sentence-transformers/all-MiniLM-L6-v2` (pinned revision), mean pooling with the mask, L2 normalised, then `Linear(384, 6)`: 2,310 trainable parameters.
   - **Yash writes the training loop**, reusing his FIT3181 `train_model`/`score`/`seed_all(34871500)` habits. Avoid the template's `BaseTrainer.evaluate` loss bug.
   - It ships only if it beats the baseline on held-out macro-F1. It only preselects a draft type and never saves.
-  - **Status (7 Nov, Claude Code):** data, split, baselines, encoder, metrics and runner are built and tested; validation baselines are recorded. MiniLM is downloaded and pinned, and the vectors are cached; Yash's `train.py` parts remain. See `docs/milestones/m4-router-walkthrough.md`.
+  - **Status (8 Nov, Claude Code):** complete. Yash asked Claude to write the training loop in his style and cross-checks it. Sealed test macro-F1: head 0.721, keyword 0.735, TF-IDF 0.723, so the router does not ship. See `docs/milestones/m4-walkthrough.md`.
 
 ### M5: coach (RAG + MCP) — the full data flow is in the approved plan
 - **Service:** FastAPI on `127.0.0.1:8000`, proxied as `/api`.
