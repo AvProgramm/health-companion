@@ -62,3 +62,10 @@ test('needs jumping for a jump in the name or a plyometric leg exercise', () => 
   const push = convertExercise({ id: 'Plyo_Push-up', name: 'Plyo Push-up', force: 'push', equipment: 'body only', category: 'plyometrics', primaryMuscles: ['chest'], instructions: [] });
   assert.deepEqual(push.requires, []);
 });
+
+test('keeps the source kind and mechanic, so the Trainer can leave out stretches', () => {
+  const card = convertExercise({ id: 'Fictional_Stretch', name: 'Fictional stretch', force: 'pull', equipment: 'body only', category: 'stretching', mechanic: null, primaryMuscles: ['hamstrings'], instructions: ['A fictional cue.'] });
+  assert.equal(card.kind, 'stretching');
+  assert.equal(card.mechanic, null);
+  assert.equal(convertExercise({ id: 'Fictional_Squat', name: 'Fictional squat', force: 'push', equipment: 'barbell', category: 'strength', mechanic: 'compound', primaryMuscles: ['quadriceps'], instructions: [] }).mechanic, 'compound');
+});

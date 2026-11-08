@@ -47,7 +47,9 @@ export function convertExercise(source) {
   return { id: `free-exercise-db:${source.id}`, name: source.name, category, equipment, untracked,
     requires: requirements(source, category, equipment ?? []), minutes: DEFAULT_MINUTES, cue,
     primaryMuscles: muscles, imagePath: null, sourceEquipment: typeof source.equipment === 'string' ? source.equipment : null,
-    level: LEVELS.includes(source.level) ? source.level : null };
+    level: LEVELS.includes(source.level) ? source.level : null,
+    kind: typeof source.category === 'string' ? source.category : null,
+    mechanic: typeof source.mechanic === 'string' ? source.mechanic : null };
 }
 
 /**
