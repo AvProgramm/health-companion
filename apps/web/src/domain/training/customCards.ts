@@ -1,3 +1,4 @@
+import { BODY_AREAS, POSITIONS } from '../profile/profile';
 import type { Capability, Category, Equipment, MovementCard } from './catalogue';
 
 // Twenty-four choices plus eight starter cards bound the pool searched on the phone.
@@ -47,6 +48,10 @@ export function assertMovementCard(value: unknown): asserts value is MovementCar
   }
   if (value.primaryMuscles !== undefined && (!Array.isArray(value.primaryMuscles) || value.primaryMuscles.some(item => typeof item !== 'string' || item.length > 80))) {
     throw new Error('Keep muscle names as text from the exercise source.');
+  }
+  // Ignore malformed optional tags because old unknown facts may remain null but invented facts cannot pass restore.
+  if ((value.loads != null && !choiceList(value.loads, BODY_AREAS)) || (value.positions != null && !choiceList(value.positions, POSITIONS))) {
+    throw new Error('Keep load and position tags as listed, reviewed movement facts.');
   }
   if (value.imagePath !== undefined && value.imagePath !== null) {
     throw new Error('Use the bundled muscle illustration for this exercise.');

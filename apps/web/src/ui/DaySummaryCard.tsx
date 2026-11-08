@@ -1,3 +1,4 @@
+import { nutrientOrder } from '../domain/nutrition/presentation';
 import type { DaySummary } from '../domain/nutrition/day';
 import type { NutrientKey } from '../domain/nutrition/types';
 import { NUTRIENT_LABELS } from './format';
@@ -6,6 +7,7 @@ import { NUTRIENT_LABELS } from './format';
 const SHOWN: readonly NutrientKey[] = ['kcal', 'protein_g', 'carbs_g', 'fibre_g', 'fat_g', 'total_sugar_g', 'added_sugar_g', 'sodium_mg'];
 
 interface DaySummaryCardProps {
+  diabetes?: boolean;
   summary: DaySummary;
   dateLabel: string;
   hideNumbers: boolean;
@@ -14,7 +16,7 @@ interface DaySummaryCardProps {
 /**
  * The day's totals, keeping "nothing logged" apart from zero and unknowns apart from known values.
  */
-export function DaySummaryCard({ summary, dateLabel, hideNumbers }: DaySummaryCardProps) {
+export function DaySummaryCard({ diabetes = false, summary, dateLabel, hideNumbers }: DaySummaryCardProps) {
   // An empty day is "nothing logged", never "0 kcal"
   if (summary.coverage === 'no_entries') {
     return (
@@ -38,7 +40,7 @@ export function DaySummaryCard({ summary, dateLabel, hideNumbers }: DaySummaryCa
         <p className="hint">Numbers are hidden. You can show them again in Me.</p>
       ) : (
         <dl className="readout numbers">
-          {SHOWN.map((key) => (
+          {nutrientOrder(SHOWN, diabetes).map((key) => (
             <div key={key} className={key === 'kcal' ? 'energy-readout' : 'nutrient-readout'}>
               <dt>{NUTRIENT_LABELS[key].label}</dt>
               <dd>

@@ -69,3 +69,17 @@ describe('planFromProposal', () => {
     expect(planFromProposal(reply(99), LIBRARY, REQUEST).status).toBe('none');
   });
 });
+
+
+it('applies the local injury filter to a high-ranked model proposal', () => {
+  const library = [entry(0, { loads: ['knees'], positions: ['standing'] }), entry(1, { loads: ['shoulders'], positions: ['seated'] })];
+  const result = planFromProposal(reply(0, 1), library, { ...REQUEST, avoidAreas: ['knees'] });
+  expect(result.status === 'plan' && result.plan.cards.map(card => card.id)).toEqual(reply(1).exerciseIds);
+});
+
+it('uses a local seated fallback without loosening profile rules, but never overrides a refusal', () => {
+  const request = { ...REQUEST, seatedOnly: true };
+  const result = planFromProposal(reply(0), LIBRARY, request);
+  expect(result.status === 'plan' && result.plan.cards.every(card => card.positions?.every(position => position === 'seated'))).toBe(true);
+  expect(planFromProposal({ source: 'refused', reason: 'Fictional refusal.', exerciseIds: [] }, LIBRARY, request).status).toBe('none');
+});

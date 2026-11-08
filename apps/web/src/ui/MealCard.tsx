@@ -2,9 +2,10 @@ import { foodKey } from '../domain/nutrition/aggregate';
 import { scaleNutrient } from '../domain/nutrition/scale';
 import type { FoodVersion } from '../domain/nutrition/types';
 import type { SavedMeal } from '../storage/mealsRepo';
-import { SOURCE_LABELS, describeSource, formatEaten, formatQuantity, formatTime, formatValue, mealTitle } from './format';
+import { NUTRIENT_LABELS, SOURCE_LABELS, describeSource, formatEaten, formatQuantity, formatTime, formatValue, mealTitle } from './format';
 
 interface MealCardProps {
+  diabetes?: boolean;
   meal: SavedMeal;
   foods: ReadonlyMap<string, FoodVersion>;
   hideNumbers: boolean;
@@ -14,7 +15,7 @@ interface MealCardProps {
 /**
  * One saved meal in the day's timeline, with each item's amount, source and numbers.
  */
-export function MealCard({ meal, foods, hideNumbers, onOpen }: MealCardProps) {
+export function MealCard({ diabetes = false, meal, foods, hideNumbers, onOpen }: MealCardProps) {
   const { header, latest } = meal;
   const title = `${mealTitle(header.createdAt)} · ${formatTime(header.createdAt)}`;
 
@@ -67,6 +68,7 @@ export function MealCard({ meal, foods, hideNumbers, onOpen }: MealCardProps) {
                 <span className="badge">{SOURCE_LABELS[food.source.kind]}</span>
                 {!hideNumbers && (
                   <span className="numbers">
+                    {diabetes && <span className="diabetes-readout">{(['carbs_g', 'added_sugar_g', 'fibre_g'] as const).map(key => <span key={key}>{NUTRIENT_LABELS[key].label}: {formatValue(scaleNutrient(food.nutrients[key] ?? null, food.basis, component.served, component.eatenFraction), NUTRIENT_LABELS[key].unit)} · </span>)}</span>}
                     {formatValue(kcal, 'kcal')} · {protein === null ? 'protein unknown' : `${protein.toFixed(1)} g protein`}
                   </span>
                 )}

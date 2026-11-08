@@ -1,4 +1,5 @@
-import { useState, type FormEvent } from 'react';
+import { EMPTY_PROFILE, type Profile } from '../domain/profile/profile';
+import { useEffect, useRef, useState, type FormEvent } from 'react';
 import { Sparkle } from '@phosphor-icons/react';
 import { requestTrainerPlan } from '../api/trainer';
 import type { Category } from '../domain/training/catalogue';
@@ -28,7 +29,7 @@ interface TrainerSession {
  * Only what is typed or picked here is sent. The reply is a proposal, and the same
  * rules and planner as every other session decide what goes in it.
  */
-export function TrainerCard({ entries }: { entries: readonly ExerciseEntry[] }) {
+export function TrainerCard({ entries, profile = EMPTY_PROFILE }: { entries: readonly ExerciseEntry[]; profile?: Profile }) {
   const [goal, setGoal] = useState('');
   const [minutesText, setMinutesText] = useState('45');
   const [setting, setSetting] = useState<Setting>('bodyweight');
@@ -36,6 +37,11 @@ export function TrainerCard({ entries }: { entries: readonly ExerciseEntry[] }) 
   const [session, setSession] = useState<TrainerSession | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+
+  // Invalidate an in-flight answer whenever the local profile changes.
+  const generation = useRef(0);
+  useEffect(() => { generation.current += 1; setSession(null); setBusy(false); }, [profile]);
+  useEffect(() => () => { generation.current += 1; }, []);
 
   /** Ask the Trainer, then run its proposal through the checks on this device. */
   async function handleSubmit(event: FormEvent) {
@@ -55,17 +61,20 @@ export function TrainerCard({ entries }: { entries: readonly ExerciseEntry[] }) 
       return;
     }
 
+    const currentGeneration = ++generation.current;
     setBusy(true);
     setSession(null);
     try {
       // Send only the card's fields, then check the proposal here
       const equipment = SETTINGS[setting].equipment;
       const reply = await requestTrainerPlan({ goal: goal.trim(), minutes, equipment, areas: ALL_AREAS, level: DIFFICULTIES[difficulty].levels[0]! });
-      setSession({ reply, minutes, result: planFromProposal(reply, entries, { minutes, equipment, unableTo: [], neverSuggest: [], categories: ALL_AREAS }) });
+      // Ignore a late reply because it was requested under an older local profile.
+      if (generation.current !== currentGeneration) return;
+      setSession({ reply, minutes, result: planFromProposal(reply, entries, { minutes, equipment, unableTo: profile.unableTo, avoidAreas: profile.avoidAreas, seatedOnly: profile.seatedOnly, neverSuggest: [], categories: ALL_AREAS }) });
     } catch (problem) {
-      setError(errorText(problem));
+      if (generation.current === currentGeneration) setError(errorText(problem));
     } finally {
-      setBusy(false);
+      if (generation.current === currentGeneration) setBusy(false);
     }
   }
 
@@ -84,7 +93,7 @@ export function TrainerCard({ entries }: { entries: readonly ExerciseEntry[] }) 
         <OptionGroup legend="Where" name="trainer-setting" options={Object.entries(SETTINGS).map(([value, place]) => [value as Setting, place.label])} value={setting} onChange={setSetting} />
         <OptionGroup legend="How hard" name="trainer-difficulty" options={Object.entries(DIFFICULTIES).map(([value, rule]) => [value as Difficulty, rule.label])} value={difficulty} onChange={setDifficulty} />
         <button type="submit" className="button" disabled={busy}>{busy ? 'Choosing exercises…' : 'Ask the Trainer'}</button>
-        <p className="hint">Sends only what's on this card. Your diary stays on this device.</p>
+        <p className="hint">Sends only what's on this card. Your saved profile and diary stay on this device; the device adapts the reply afterwards.</p>
       </form>
 
       {error !== null && <p className="notice notice-error" role="alert">{error}</p>}
@@ -94,6 +103,7 @@ export function TrainerCard({ entries }: { entries: readonly ExerciseEntry[] }) 
         <div className="ai-reply">
           {session.reply.source !== 'refused' && <span className={`badge ${session.reply.source === 'ai' ? 'badge-estimate' : 'badge-warn'}`}>{session.reply.source === 'ai' ? 'Picked by the AI' : 'Picked from the library'}</span>}
           <p className="body">{session.reply.reason}</p>
+          {(profile.seatedOnly || profile.avoidAreas.length > 0 || profile.unableTo.length > 0) && <p className="hint">Adapted on this device. Reviewed local seated cards may replace a proposal that has no eligible seated exercise.</p>}
         </div>
         {session.reply.source !== 'refused' && <PlanResultView result={session.result} minutesText={String(session.minutes)} areaCount={ALL_AREAS.length} />}
       </>}

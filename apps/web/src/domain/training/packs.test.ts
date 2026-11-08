@@ -90,3 +90,14 @@ describe('buildPack', () => {
     expect(names('full_body', 'hard', 'gym')).toEqual(names('full_body', 'hard', 'gym'));
   });
 });
+
+
+it('never relaxes saved adaptations to fill a ready-made day', () => {
+  for (const packId of PACK_IDS) for (const difficulty of DIFFICULTY_IDS) for (const setting of SETTING_IDS) {
+    const session = buildPack(packId, difficulty, setting, EXERCISE_ENTRIES, {
+      seatedOnly: true, avoidAreas: ['shoulders'], unableTo: ['jumping', 'pull_up'], diabetes: false,
+    });
+    expect(session.exercises.every(({ entry }) => entry.positions?.length === 1 && entry.positions[0] === 'seated'
+      && entry.loads != null && !entry.loads.includes('shoulders') && entry.requires.length === 0)).toBe(true);
+  }
+});

@@ -50,6 +50,7 @@ interface TodayViewProps {
   foods: ReadonlyMap<string, FoodVersion>;
   currentFoods: readonly FoodVersion[];
   hideNumbers: boolean;
+  diabetes?: boolean;
   durability: Durability;
   onSaveFood: (food: FoodVersion) => Promise<void>;
 }
@@ -60,7 +61,7 @@ interface TodayViewProps {
  * Typed text goes through the grammar parser only. Nothing is saved until the
  * user confirms a draft or a correction.
  */
-export function TodayView({ db, foods, currentFoods, hideNumbers, durability, onSaveFood }: TodayViewProps) {
+export function TodayView({ db, foods, currentFoods, hideNumbers, durability, diabetes = false, onSaveFood }: TodayViewProps) {
   const today = useToday();
   const [date, setDate] = useState(today);
 
@@ -361,7 +362,7 @@ export function TodayView({ db, foods, currentFoods, hideNumbers, durability, on
           <SleepCard key={entry.id} db={db} entry={entry} onChanged={reloadDay} />
         ))}
         {meals.map((meal) => (
-          <MealCard key={meal.header.mealId} meal={meal} foods={foods} hideNumbers={hideNumbers} onOpen={() => setOpenMealId(meal.header.mealId)} />
+          <MealCard diabetes={diabetes} key={meal.header.mealId} meal={meal} foods={foods} hideNumbers={hideNumbers} onOpen={() => setOpenMealId(meal.header.mealId)} />
         ))}
         {workouts.map((entry) => (
           <WorkoutCard key={entry.id} db={db} entry={entry} onChanged={reloadDay} />
@@ -370,7 +371,7 @@ export function TodayView({ db, foods, currentFoods, hideNumbers, durability, on
 
       </div>
       <aside className="day-sidebar" aria-label="Daily overview">
-        <DaySummaryCard summary={summary} dateLabel={dateLabel} hideNumbers={hideNumbers} />
+        <DaySummaryCard diabetes={diabetes} summary={summary} dateLabel={dateLabel} hideNumbers={hideNumbers} />
         <div className="device-note"><ShieldCheck size={22} /><div><strong>Made for your everyday</strong><details><summary>Saved on this device</summary><p>{DURABILITY_TEXT[durability]}</p></details></div></div>
       </aside>
       </div>

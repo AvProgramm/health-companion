@@ -3,6 +3,9 @@ import { readFileSync, mkdirSync, writeFileSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 
+// Keep only explicitly reviewed adaptation facts; source names alone do not establish them.
+const ADAPTATIONS = JSON.parse(readFileSync(new URL('../data/exercises/adaptations.json', import.meta.url), 'utf8')).exercises;
+
 // Pin the source revision so rebuilding never performs a live lookup or changes the catalogue.
 const REVISION = 'f00c92c7dcf1216a928a52c3706c7ce8e2f71ed5';
 // Verify the vendored bytes before converting third-party data.
@@ -45,6 +48,7 @@ export function convertExercise(source) {
   const cue = source.instructions.filter(value => typeof value === 'string').join(' ');
   const { equipment, untracked } = mapEquipment(source.equipment, cue);
   return { id: `free-exercise-db:${source.id}`, name: source.name, category, equipment, untracked,
+    loads: ADAPTATIONS[source.id]?.loads ?? null, positions: ADAPTATIONS[source.id]?.positions ?? null,
     requires: requirements(source, category, equipment ?? []), minutes: DEFAULT_MINUTES, cue,
     primaryMuscles: muscles, imagePath: null, sourceEquipment: typeof source.equipment === 'string' ? source.equipment : null,
     level: LEVELS.includes(source.level) ? source.level : null,

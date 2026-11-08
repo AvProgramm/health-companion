@@ -4,12 +4,16 @@ import { exportDiary, restoreDiary, wipeDiary } from '../storage/backup/transfer
 import { validateBackup } from '../storage/backup/validate';
 import { countMeals } from '../storage/mealsRepo';
 import type { Durability } from '../storage/persistence';
+import type { Profile, ProfileSnapshot } from '../domain/profile/profile';
+import { ProfileEditor } from './ProfileEditor';
 import { AskCoach } from './AskCoach';
 import { DURABILITY_TEXT } from './TodayView';
 import { errorText } from './useSave';
 
 interface MeViewProps {
   db: IDBDatabase;
+  profileSnapshot: ProfileSnapshot | null;
+  onSaveProfile: (value: Profile, operationKey: string, expectedVersion: number) => Promise<void>;
   durability: Durability;
   foodCount: number;
   hideNumbers: boolean;
@@ -22,7 +26,7 @@ type Message = { kind: 'saved' | 'error'; text: string };
 /**
  * Me: storage status, backup and restore, display settings and erase.
  */
-export function MeView({ db, durability, foodCount, hideNumbers, onHideNumbersChange, onDiaryReplaced }: MeViewProps) {
+export function MeView({ db, profileSnapshot, onSaveProfile, durability, foodCount, hideNumbers, onHideNumbersChange, onDiaryReplaced }: MeViewProps) {
   const [mealCount, setMealCount] = useState<number | null>(null);
   const [usage, setUsage] = useState<string | null>(null);
   const [pending, setPending] = useState<Extract<BackupCheck, { ok: true }> | null>(null);
@@ -136,6 +140,7 @@ export function MeView({ db, durability, foodCount, hideNumbers, onHideNumbersCh
         <p className={`notice notice-${message.kind}`} role={message.kind === 'error' ? 'alert' : 'status'}>{message.text}</p>
       )}
 
+      <ProfileEditor snapshot={profileSnapshot} onSave={onSaveProfile} />
       <AskCoach />
 
       <section className="card" aria-labelledby="storage-heading">
@@ -161,7 +166,7 @@ export function MeView({ db, durability, foodCount, hideNumbers, onHideNumbersCh
         {pending !== null && (
           <div className="confirm">
             <p className="body">
-              This backup from {new Date(pending.backup.exportedAt).toLocaleString('en-AU')} has {pending.counts.meals} meals ({pending.counts.revisions} revisions) and {pending.counts.foods} food versions, plus {pending.counts.customCards} exercise-choice snapshots.
+              This backup from {new Date(pending.backup.exportedAt).toLocaleString('en-AU')} has {pending.counts.meals} meals ({pending.counts.revisions} revisions) and {pending.counts.foods} food versions, plus {pending.counts.customCards} exercise-choice snapshots and {pending.counts.profile} profile versions.
               Restoring replaces the {mealCount ?? 'current'} meals on this device.
             </p>
             <div className="row">

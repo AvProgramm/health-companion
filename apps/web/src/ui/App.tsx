@@ -1,5 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { House, Barbell, BowlFood, UserCircle, Leaf, ShieldCheck } from '@phosphor-icons/react';
+import { EMPTY_PROFILE, type Profile, type ProfileSnapshot } from '../domain/profile/profile';
+import { readProfile, saveProfile } from '../storage/profileRepo';
 import { foodKey } from '../domain/nutrition/aggregate';
 import { latestVersions } from '../domain/nutrition/foods';
 import type { FoodVersion } from '../domain/nutrition/types';
@@ -26,6 +28,8 @@ const TABS: readonly { id: Tab; label: string }[] = [
  */
 export function App() {
   const [db, setDb] = useState<IDBDatabase | null>(null);
+  const [savedProfile, setSavedProfile] = useState<ProfileSnapshot | null>(null);
+  const profile = savedProfile?.value ?? EMPTY_PROFILE;
   const [allFoods, setAllFoods] = useState<FoodVersion[]>([]);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [tab, setTab] = useState<Tab>('today');
@@ -45,13 +49,14 @@ export function App() {
     async function load() {
       try {
         const opened = await openDiary();
-        const saved = await listFoods(opened);
+        const [saved, loadedProfile] = await Promise.all([listFoods(opened), readProfile(opened)]);
         if (cancelled) {
           opened.close();
           return;
         }
         setDb(opened);
         setAllFoods(saved);
+        setSavedProfile(loadedProfile);
         const current = await readDurability();
         setDurability(current === 'best-effort' ? await requestDurability() : current);
       } catch (problem) {
@@ -87,7 +92,24 @@ export function App() {
       return;
     }
     setAllFoods(await listFoods(db));
+    setSavedProfile(await readProfile(db));
     setDiaryVersion((version) => version + 1);
+  }, [db]);
+
+  /** Confirm one local profile edit and reload the actual latest version, including retry or conflict. */
+  const handleSaveProfile = useCallback(async (value: Profile, operationKey: string, expectedVersion: number) => {
+    if (db === null) throw new Error('Wait for the diary to open before saving adaptations.');
+    const result = await saveProfile(db, { id: 'local', version: expectedVersion + 1, operationKey, savedAt: new Date().toISOString(), value }, expectedVersion);
+    setSavedProfile(await readProfile(db));
+    if (result.status === 'conflict') throw new Error('Adaptations changed in another screen. Review the reloaded profile and save again.');
+  }, [db]);
+
+  // Refresh after another tab changes the profile; remount plan screens by saved revision below.
+  useEffect(() => {
+    if (db === null) return;
+    const reload = () => { readProfile(db).then(latest => setSavedProfile(previous => previous?.version === latest?.version ? previous : latest), problem => setLoadError(problem instanceof Error ? problem.message : String(problem))); };
+    window.addEventListener('focus', reload);
+    return () => window.removeEventListener('focus', reload);
   }, [db]);
 
   if (loadError !== null) {
@@ -119,15 +141,17 @@ export function App() {
       </header>
       <main id="main-content" className="page">
         {tab === 'today' && (
-          <TodayView key={diaryVersion} db={db} foods={foods} currentFoods={currentFoods} hideNumbers={hideNumbers} durability={durability} onSaveFood={handleSaveFood} />
+          <TodayView key={diaryVersion} db={db} foods={foods} currentFoods={currentFoods} hideNumbers={hideNumbers} durability={durability} diabetes={profile.diabetes} onSaveFood={handleSaveFood} />
         )}
-        {tab === 'gym' && <GymView key={diaryVersion} db={db} />}
+        {tab === 'gym' && <GymView key={`${diaryVersion}:${savedProfile?.version ?? 0}`} db={db} profile={profile} />}
         {tab === 'foods' && <FoodsView currentFoods={currentFoods} hideNumbers={hideNumbers} onSaveFood={handleSaveFood} />}
         {tab === 'me' && (
           <MeView
             db={db}
             durability={durability}
             foodCount={currentFoods.length}
+            profileSnapshot={savedProfile}
+            onSaveProfile={handleSaveProfile}
             hideNumbers={hideNumbers}
             onHideNumbersChange={(hide) => {
               setHideNumbers(hide);

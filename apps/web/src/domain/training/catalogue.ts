@@ -1,3 +1,4 @@
+import reviewed from '../../../../../data/exercises/adaptations.json';
 import type { BodyArea, Position } from '../profile/profile';
 
 /**
@@ -34,7 +35,7 @@ export interface MovementCard {
   imagePath?: string | null;
 }
 
-export const MOVEMENT_CARDS: readonly MovementCard[] = [
+const STARTER_CARDS: readonly MovementCard[] = [
   { id: 'band_pull_apart', name: 'Band pull-apart', category: 'pull', minutes: 5, equipment: ['band'], requires: [], cue: '3 × 15, squeeze the shoulder blades together.' },
   { id: 'db_floor_press', name: 'Dumbbell floor press', category: 'push', minutes: 8, equipment: ['dumbbells'], requires: [], cue: '3 × 10, elbows about 45° from the body.' },
   { id: 'db_row', name: 'One-arm dumbbell row', category: 'pull', minutes: 8, equipment: ['dumbbells'], requires: [], cue: '3 × 10 each side, pull the elbow towards the hip.' },
@@ -44,3 +45,9 @@ export const MOVEMENT_CARDS: readonly MovementCard[] = [
   { id: 'pull_up', name: 'Pull-up', category: 'pull', minutes: 8, equipment: ['pull_up_bar'], requires: ['pull_up'], cue: '3 × as many as you can with good form.' },
   { id: 'push_up', name: 'Push-up', category: 'push', minutes: 6, equipment: [], requires: [], cue: '3 × 10, knees down if needed.' },
 ];
+
+
+// Use reviewed tags for starter movements; never manufacture empty facts for an unlisted card.
+const STARTER_ADAPTATIONS = reviewed.starters as unknown as Record<string, Pick<MovementCard, 'loads' | 'positions'>>;
+// Keep the reviewed source facts beside each starter card, without changing older saved choices.
+export const MOVEMENT_CARDS: readonly MovementCard[] = STARTER_CARDS.map(card => ({ ...card, ...STARTER_ADAPTATIONS[card.id] }));

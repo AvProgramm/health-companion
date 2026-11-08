@@ -6,6 +6,8 @@
  * else decide what actually goes in the session.
  */
 import type { MovementCard } from './catalogue';
+import { splitCards } from './eligibility';
+import { SEATED_CARDS } from './seated';
 import type { PlanRequest } from './eligibility';
 import { reviewExercise, type ExerciseEntry } from './exerciseSearch';
 import { bestPlan, type PlanResult } from './planner';
@@ -56,7 +58,11 @@ export function proposalCards(ids: readonly string[], entries: readonly Exercise
  * picks. Repeat rounds stay on, so a long session repeats a varied set of exercises.
  */
 export function planFromProposal(reply: TrainerReply, entries: readonly ExerciseEntry[], request: Omit<PlanRequest, 'preferences'>): PlanResult {
-  const cards = proposalCards(reply.exerciseIds, entries);
+  let cards = reply.source === 'refused' ? [] : proposalCards(reply.exerciseIds, entries);
+  // Use reviewed local seated cards only when the proposal has no eligible seated movement; never override a refusal.
+  if (reply.source !== 'refused' && request.seatedOnly && splitCards({ ...request, preferences: {} }, cards).eligible.length === 0) {
+    cards = [...SEATED_CARDS];
+  }
   const preferences = Object.fromEntries(cards.map((card, index) => [card.id, cards.length - index]));
   return bestPlan({ ...request, preferences }, cards, true);
 }

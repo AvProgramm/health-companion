@@ -1,0 +1,290 @@
+{
+  "reviewedAt": "2026-11-08",
+  "scope": "Conservative project movement annotations from the pinned instructions; not clinical clearance. Unlisted movements stay unknown. Standing includes hanging; seated-only requires seated exclusively.",
+  "starters": {
+    "band_pull_apart": {
+      "loads": [
+        "neck",
+        "shoulders",
+        "elbows",
+        "wrists",
+        "back"
+      ],
+      "positions": [
+        "standing"
+      ]
+    },
+    "db_floor_press": {
+      "loads": [
+        "neck",
+        "shoulders",
+        "elbows",
+        "wrists",
+        "back"
+      ],
+      "positions": [
+        "floor"
+      ]
+    },
+    "db_row": {
+      "loads": [
+        "neck",
+        "shoulders",
+        "elbows",
+        "wrists",
+        "back",
+        "hips",
+        "knees",
+        "ankles"
+      ],
+      "positions": [
+        "standing"
+      ]
+    },
+    "goblet_squat": {
+      "loads": [
+        "neck",
+        "shoulders",
+        "elbows",
+        "wrists",
+        "back",
+        "hips",
+        "knees",
+        "ankles"
+      ],
+      "positions": [
+        "standing"
+      ]
+    },
+    "jump_squat": {
+      "loads": [
+        "neck",
+        "back",
+        "hips",
+        "knees",
+        "ankles"
+      ],
+      "positions": [
+        "standing"
+      ]
+    },
+    "plank": {
+      "loads": [
+        "neck",
+        "shoulders",
+        "elbows",
+        "wrists",
+        "back",
+        "hips",
+        "knees",
+        "ankles"
+      ],
+      "positions": [
+        "floor"
+      ]
+    },
+    "pull_up": {
+      "loads": [
+        "neck",
+        "shoulders",
+        "elbows",
+        "wrists",
+        "back"
+      ],
+      "positions": [
+        "standing"
+      ]
+    },
+    "push_up": {
+      "loads": [
+        "neck",
+        "shoulders",
+        "elbows",
+        "wrists",
+        "back",
+        "hips",
+        "knees",
+        "ankles"
+      ],
+      "positions": [
+        "floor"
+      ]
+    }
+  },
+  "exercises": {
+    "Band_Pull_Apart": {
+      "loads": [
+        "neck",
+        "shoulders",
+        "elbows",
+        "wrists",
+        "back"
+      ],
+      "positions": [
+        "standing"
+      ]
+    },
+    "Dumbbell_Floor_Press": {
+      "loads": [
+        "neck",
+        "shoulders",
+        "elbows",
+        "wrists",
+        "back"
+      ],
+      "positions": [
+        "floor"
+      ]
+    },
+    "Bent_Over_Two-Dumbbell_Row": {
+      "loads": [
+        "neck",
+        "shoulders",
+        "elbows",
+        "wrists",
+        "back",
+        "hips",
+        "knees",
+        "ankles"
+      ],
+      "positions": [
+        "standing"
+      ]
+    },
+    "Goblet_Squat": {
+      "loads": [
+        "neck",
+        "shoulders",
+        "elbows",
+        "wrists",
+        "back",
+        "hips",
+        "knees",
+        "ankles"
+      ],
+      "positions": [
+        "standing"
+      ]
+    },
+    "Bodyweight_Squat": {
+      "loads": [
+        "neck",
+        "back",
+        "hips",
+        "knees",
+        "ankles"
+      ],
+      "positions": [
+        "standing"
+      ]
+    },
+    "Freehand_Jump_Squat": {
+      "loads": [
+        "neck",
+        "back",
+        "hips",
+        "knees",
+        "ankles"
+      ],
+      "positions": [
+        "standing"
+      ]
+    },
+    "Plank": {
+      "loads": [
+        "neck",
+        "shoulders",
+        "elbows",
+        "wrists",
+        "back",
+        "hips",
+        "knees",
+        "ankles"
+      ],
+      "positions": [
+        "floor"
+      ]
+    },
+    "Pushups": {
+      "loads": [
+        "neck",
+        "shoulders",
+        "elbows",
+        "wrists",
+        "back",
+        "hips",
+        "knees",
+        "ankles"
+      ],
+      "positions": [
+        "floor"
+      ]
+    },
+    "Dead_Bug": {
+      "loads": [
+        "neck",
+        "shoulders",
+        "elbows",
+        "wrists",
+        "back",
+        "hips",
+        "knees",
+        "ankles"
+      ],
+      "positions": [
+        "floor"
+      ]
+    },
+    "Cross-Body_Crunch": {
+      "loads": [
+        "neck",
+        "shoulders",
+        "elbows",
+        "wrists",
+        "back",
+        "hips",
+        "knees",
+        "ankles"
+      ],
+      "positions": [
+        "floor"
+      ]
+    },
+    "Seated_Dumbbell_Press": {
+      "loads": [
+        "neck",
+        "shoulders",
+        "elbows",
+        "wrists",
+        "back"
+      ],
+      "positions": [
+        "seated"
+      ]
+    },
+    "Seated_Dumbbell_Inner_Biceps_Curl": {
+      "loads": [
+        "neck",
+        "shoulders",
+        "elbows",
+        "wrists",
+        "back"
+      ],
+      "positions": [
+        "seated"
+      ]
+    },
+    "Seated_Dumbbell_Palms-Up_Wrist_Curl": {
+      "loads": [
+        "neck",
+        "shoulders",
+        "elbows",
+        "wrists",
+        "back"
+      ],
+      "positions": [
+        "seated"
+      ]
+    }
+  }
+}

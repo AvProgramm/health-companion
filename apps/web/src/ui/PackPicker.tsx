@@ -1,3 +1,4 @@
+import { EMPTY_PROFILE, type Profile } from '../domain/profile/profile';
 import { useMemo, useState } from 'react';
 import { CheckCircle, Lightning } from '@phosphor-icons/react';
 import type { MovementCard } from '../domain/training/catalogue';
@@ -10,6 +11,7 @@ import { MuscleMap } from './MuscleMap';
 import { OptionGroup } from './OptionGroup';
 
 interface PackPickerProps {
+  profile?: Profile;
   entries: readonly ExerciseEntry[];
   chosen: readonly CustomCardSelection[];
   busy: boolean;
@@ -22,13 +24,13 @@ interface PackPickerProps {
  * The session is a suggestion built from reviewed library exercises; adding one to
  * the planner still goes through the review sheet and an explicit confirmation.
  */
-export function PackPicker({ entries, chosen, busy, onAdd }: PackPickerProps) {
+export function PackPicker({ profile = EMPTY_PROFILE, entries, chosen, busy, onAdd }: PackPickerProps) {
   // Start with a short full-body day that needs no equipment
   const [packId, setPackId] = useState('full_body');
   const [difficulty, setDifficulty] = useState<Difficulty>('easy');
   const [setting, setSetting] = useState<Setting>('bodyweight');
   const [reviewing, setReviewing] = useState<ExerciseEntry | null>(null);
-  const session = useMemo(() => buildPack(packId, difficulty, setting, entries), [packId, difficulty, setting, entries]);
+  const session = useMemo(() => buildPack(packId, difficulty, setting, entries, profile), [packId, difficulty, setting, entries, profile]);
   const pack = PACKS.find(item => item.id === packId)!;
 
   // Show which exercises are already in the planner pool, and whether it has room
@@ -48,7 +50,7 @@ export function PackPicker({ entries, chosen, busy, onAdd }: PackPickerProps) {
       <p className="hint">{session.exercises.length} exercises · {DIFFICULTIES[difficulty].sets} sets each · {SETTINGS[setting].label}</p>
     </div>
     {session.exercises.length === 0
-      ? <p className="notice">Nothing in {pack.name} fits {SETTINGS[setting].label} at this level. Try Home kit or Gym.</p>
+      ? <p className="notice">{profile.seatedOnly || profile.avoidAreas.length > 0 || profile.unableTo.length > 0 ? `Nothing in ${pack.name} fits your saved adaptations and current settings. Try another day or Plan a session; the filters stay active.` : `Nothing in ${pack.name} fits ${SETTINGS[setting].label} at this level. Try Home kit or Gym.`}</p>
       : session.missing > 0 && <p className="hint">Only {session.exercises.length} exercises in {pack.name} fit {SETTINGS[setting].label} at this level, so the day is shorter.</p>}
 
     <ol className="items pack-exercises">{session.exercises.map(({ entry, sets, minutes }) => <li key={entry.id} className="planned-exercise">

@@ -1,3 +1,4 @@
+import { EMPTY_PROFILE, type Profile } from '../domain/profile/profile';
 import { useEffect, useState, type FormEvent } from 'react';
 import { type Category, type MovementCard, type Equipment } from '../domain/training/catalogue';
 import { bestPlan, type PlanResult } from '../domain/training/planner';
@@ -12,7 +13,7 @@ const EQUIPMENT_CHOICES = Object.entries(EQUIPMENT_LABELS) as [Equipment, string
  *
  * The plan is only a suggestion; logging what was actually done stays on Today.
  */
-export function PlanSession({ cards }: { cards: readonly MovementCard[] }) {
+export function PlanSession({ cards, profile = EMPTY_PROFILE }: { cards: readonly MovementCard[]; profile?: Profile }) {
   const [minutesText, setMinutesText] = useState('20');
   // Start with a bodyweight session; choosing an exercise does not establish equipment ownership.
   const [equipmentMode, setEquipmentMode] = useState<'without' | 'with'>('without');
@@ -30,7 +31,7 @@ export function PlanSession({ cards }: { cards: readonly MovementCard[] }) {
 
 
   // Ignore a stale result because the set of chosen exercises has changed.
-  useEffect(() => setResult(null), [cards]);
+  useEffect(() => setResult(null), [cards, profile]);
 
   /**
    * Run the planner on the form's values.
@@ -59,7 +60,7 @@ export function PlanSession({ cards }: { cards: readonly MovementCard[] }) {
     }
 
     // Pass the chosen kit through the existing hard filters; no capability profile is inferred here.
-    setResult(bestPlan({ minutes, equipment: equipmentMode === 'without' ? [] : equipment, unableTo: [], neverSuggest: [], categories, preferences: {} }, cards, repeatRounds));
+    setResult(bestPlan({ minutes, equipment: equipmentMode === 'without' ? [] : equipment, unableTo: profile.unableTo, avoidAreas: profile.avoidAreas, seatedOnly: profile.seatedOnly, neverSuggest: [], categories, preferences: {} }, cards, repeatRounds));
   }
 
   return (

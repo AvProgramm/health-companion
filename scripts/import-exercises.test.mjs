@@ -69,3 +69,13 @@ test('keeps the source kind and mechanic, so the Trainer can leave out stretches
   assert.equal(card.mechanic, null);
   assert.equal(convertExercise({ id: 'Fictional_Squat', name: 'Fictional squat', force: 'push', equipment: 'barbell', category: 'strength', mechanic: 'compound', primaryMuscles: ['quadriceps'], instructions: [] }).mechanic, 'compound');
 });
+
+
+test('keeps unreviewed adaptation facts unknown and copies only explicit reviewed tags', () => {
+  const unknown = convertExercise({ id: 'Fictional_Seated', name: 'Seated fictional', force: 'push', equipment: 'body only', primaryMuscles: ['chest'], instructions: ['Sit down.'] });
+  assert.equal(unknown.loads, null);
+  assert.equal(unknown.positions, null);
+  const known = convertExercise({ id: 'Pushups', name: 'Pushups', force: 'push', equipment: 'body only', primaryMuscles: ['chest'], instructions: ['Fictional cue.'] });
+  assert.deepEqual(known.positions, ['floor']);
+  assert.ok(known.loads.includes('wrists'));
+});

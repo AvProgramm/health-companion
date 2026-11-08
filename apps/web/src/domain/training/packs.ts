@@ -6,6 +6,8 @@
  * filtered by the source's own level and the equipment the setting has. The home lists
  * leave out dumbbell exercises that need a bench, because the source does not say so.
  */
+import { EMPTY_PROFILE, type Profile } from '../profile/profile';
+import { ineligibleReason } from './eligibility';
 import type { Category, Equipment } from './catalogue';
 import { EXERCISE_EQUIPMENT } from './customCards';
 import { whyNotAddable, type ExerciseEntry, type ExerciseLevel } from './exerciseSearch';
@@ -125,7 +127,7 @@ function spread<T>(items: readonly T[], count: number, key: (item: T) => string)
  * the difficulty's levels include; put the preferred level first, keeping the reviewed order
  * within a level; then spread over different muscles (or areas, for a full-body day).
  */
-export function buildPack(packId: string, difficulty: Difficulty, setting: Setting, entries: readonly ExerciseEntry[]): PackSession {
+export function buildPack(packId: string, difficulty: Difficulty, setting: Setting, entries: readonly ExerciseEntry[], profile: Profile = EMPTY_PROFILE): PackSession {
   const pack = PACKS.find(item => item.id === packId);
   if (pack === undefined) {
     throw new Error('Choose one of the listed training days.');
@@ -136,7 +138,9 @@ export function buildPack(packId: string, difficulty: Difficulty, setting: Setti
 
   // Keep listed exercises that can be planned, fit the setting and suit the difficulty
   const fitting = pack.exerciseIds.map(id => byId.get(id)).filter((entry): entry is ExerciseEntry => entry !== undefined
-    && whyNotAddable(entry) === null && entry.equipment!.every(item => equipment.includes(item)) && rule.levels.includes(packLevel(entry)));
+    && whyNotAddable(entry) === null && entry.equipment!.every(item => equipment.includes(item)) && rule.levels.includes(packLevel(entry))
+    && ineligibleReason({ ...entry, category: entry.category!, equipment: entry.equipment!, minutes: rule.minutesPerExercise }, { minutes: 60, equipment, categories: pack.categories,
+      unableTo: profile.unableTo, avoidAreas: profile.avoidAreas, seatedOnly: profile.seatedOnly, neverSuggest: [], preferences: {} }) === null);
 
   // Put the preferred level first; the sort is stable, so the reviewed order breaks ties
   const ordered = [...fitting].sort((a, b) => rule.levels.indexOf(packLevel(a)) - rule.levels.indexOf(packLevel(b)));

@@ -1,3 +1,4 @@
+import type { BodyArea, Position } from '../profile/profile';
 import type { Category, Capability, Equipment, MovementCard } from './catalogue';
 import { assertMovementCard } from './customCards';
 
@@ -9,6 +10,8 @@ export type ExerciseLevel = 'beginner' | 'intermediate' | 'expert';
 
 /** Describe a build-time exercise mapping with explicit unknown fields. */
 export interface ExerciseEntry {
+  loads?: readonly BodyArea[] | null;
+  positions?: readonly Position[] | null;
   id: string;
   name: string;
   category: Category | null;
@@ -76,6 +79,7 @@ export function reviewExercise(entry: ExerciseEntry, minutes: number): MovementC
     throw new Error(blocked);
   }
   const card = { id: entry.id, name: entry.name, cue: entry.cue, primaryMuscles: [...entry.primaryMuscles], imagePath: null,
+    loads: entry.loads ?? null, positions: entry.positions ?? null,
     category: entry.category, equipment: entry.equipment, requires: entry.requires, minutes };
   assertMovementCard(card);
   return card;

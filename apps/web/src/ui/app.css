@@ -291,3 +291,13 @@ svg { flex-shrink: 0; }
 .session-equipment { display: grid; gap: 8px; padding: 12px; border: 1px solid var(--line); border-radius: 12px; }
 .plan-session-card .choice { padding: 8px 12px; border: 1px solid var(--line); border-radius: 12px; cursor: pointer; }
 .plan-session-card .choice:has(input:checked) { background: var(--action-soft); border-color: var(--action); }
+
+/* Keep the local adaptation map and its labelled controls usable at phone width. */
+.profile-areas { display: grid; grid-template-columns: 100px minmax(0,1fr); gap: 16px; align-items: center; }
+.profile-map { width: 100px; height: 180px; }
+.profile-body { fill: var(--action-soft); stroke: var(--action); stroke-width: 5; stroke-linecap: round; }
+.profile-zone { cursor: pointer; fill: #d8e2d3; stroke: var(--action); stroke-width: 1; }
+.profile-zone.selected { fill: #edb497; stroke-width: 2; }
+.profile-zone:focus-visible { outline: 2px solid var(--action); }
+.diabetes-readout { display: block; }
+@media (max-width: 479px) { .profile-areas { grid-template-columns: 80px minmax(0,1fr); gap: 8px; } .profile-map { width: 80px; } }

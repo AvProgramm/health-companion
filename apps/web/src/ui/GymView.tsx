@@ -1,5 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Barbell, ShieldCheck } from '@phosphor-icons/react';
+import { EMPTY_PROFILE, type Profile } from '../domain/profile/profile';
+import { SEATED_CARDS } from '../domain/training/seated';
 import { MOVEMENT_CARDS, type MovementCard } from '../domain/training/catalogue';
 import type { CustomCardSelection } from '../domain/training/customCards';
 import { listCustomCards, saveCustomCard } from '../storage/customCardsRepo';
@@ -18,7 +20,7 @@ const HISTORY_LENGTH = 20;
 /**
  * Display offline exercise choices, a checked plan and recent training history.
  */
-export function GymView({ db }: { db: IDBDatabase }) {
+export function GymView({ db, profile = EMPTY_PROFILE }: { db: IDBDatabase; profile?: Profile }) {
   // Keep library loading, saved choices and diary history separate.
   const [entries, setEntries] = useState<WorkoutEntry[] | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -27,7 +29,7 @@ export function GymView({ db }: { db: IDBDatabase }) {
   const [choicesReady, setChoicesReady] = useState(false);
   const [savingChoice, setSavingChoice] = useState(false);
   const pendingKeys = useRef(new Map<string, string>());
-  const cards = useMemo(() => [...MOVEMENT_CARDS, ...choices.filter(choice => !choice.deleted).map(choice => choice.card)], [choices]);
+  const cards = useMemo(() => [...MOVEMENT_CARDS, ...(profile.seatedOnly ? SEATED_CARDS : []), ...choices.filter(choice => !choice.deleted).map(choice => choice.card)], [choices, profile.seatedOnly]);
 
   // Load a separate bundled chunk; its URL contains no search text and the worker precaches it.
   useEffect(() => {
@@ -86,16 +88,18 @@ export function GymView({ db }: { db: IDBDatabase }) {
         <p className="status">Choose your exercises. Make room for a session that fits today.</p>
       </header>
 
-      {library !== null && <TrainerCard entries={library.EXERCISE_ENTRIES} />}
+      {library !== null && <TrainerCard entries={library.EXERCISE_ENTRIES} profile={profile} />}
 
-      {library !== null && <PackPicker entries={library.EXERCISE_ENTRIES} chosen={choices} busy={!choicesReady || savingChoice} onAdd={card => persistChoice(card, false)} />}
+      {library !== null && <PackPicker profile={profile} entries={library.EXERCISE_ENTRIES} chosen={choices} busy={!choicesReady || savingChoice} onAdd={card => persistChoice(card, false)} />}
 
+      {(profile.seatedOnly || profile.avoidAreas.length > 0 || profile.unableTo.length > 0) && <p className="notice">Your saved adaptations apply on this device. Unreviewed movement facts are excluded when a restriction needs them. Change adaptations in Me.</p>}
+      {profile.diabetes && <p className="notice">Check your glucose before and after exercise as your care team advised.</p>}
       <div className="gym-layout">
         {library === null ? <section className="card" aria-label="Loading offline exercise library"><div className="skeleton skeleton-card" /></section> : <ExerciseSearch entries={library.EXERCISE_ENTRIES} chosen={choices} busy={!choicesReady || savingChoice}
           onAdd={card => persistChoice(card, false)} onRemove={async choice => {
             try { await persistChoice(choice.card, true); } catch (problem) { setError(errorText(problem)); }
           }} />}
-        <div className="gym-planner-column">{choicesReady ? <PlanSession cards={cards} /> : <div className="skeleton skeleton-card" role="status" aria-label="Loading exercise choices" />}<p className="device-note"><ShieldCheck size={20} />Exercise searches and choices stay on this device. Log completed training on Today.</p></div>
+        <div className="gym-planner-column">{choicesReady ? <PlanSession cards={cards} profile={profile} /> : <div className="skeleton skeleton-card" role="status" aria-label="Loading exercise choices" />}<p className="device-note"><ShieldCheck size={20} />Exercise searches and choices stay on this device. Log completed training on Today.</p></div>
       </div>
 
       {error !== null && <p className="notice notice-error" role="alert">{error}</p>}
