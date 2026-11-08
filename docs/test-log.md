@@ -234,3 +234,9 @@ Check and build pass. Browser: 31/31, 60/60 (four rounds), 90/90 and 241/241 fro
 - Browser pane, with the coach service and preview started fresh: typed "250 ml milk", requested an estimate. Result: Database estimate, ≈146.0 kcal (127.5–155.0), source USDA, added sugar Unknown. POST /api/estimate returned 200. The draft was discarded, nothing was saved and no console errors appeared.
 - Router sealed test, run once after settings were committed at a181128: head 0.721 macro-F1, keyword 0.735, TF-IDF 0.723. Does not ship. Record: experiments/router/results/final.json.
 - Physical phone check of the M4 Gym features: NOT TESTED.
+
+
+## M5 local profile and adaptations (8 Nov, Codex)
+Check and build pass, including 120 coach and 33 router tests. Unit/fake-IDB: v4-to-v5 preservation, whole-diary backup round trip with a profile, retries/conflicts/collisions/concurrent writes/corrupt reads and 1,536 body-area/seated combinations. Throwaway seated-only mutant rejected, then restored. Trainer privacy and stale replies checked with mocked requests.
+
+Browser: profile stays draft until confirmation, survives reload, excludes unknown/blocked movement facts and yields a seated arm-only plan under the synthetic seated/knee-avoidance profile. Existing three meals remain. Diabetes priorities keep Unknown apart from a real zero. At 375 px no horizontal overflow; laptop layout checked. Cached cold reload and the same seated plan pass with preview stopped; preview restarted. Test settings were cleared with a new confirmed version, no diary entry changed. Physical phone: NOT TESTED. Follow docs/milestones/m5-profile-walkthrough.md.

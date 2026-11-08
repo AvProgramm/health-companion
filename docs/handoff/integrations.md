@@ -18,3 +18,7 @@ Only the food name and portion text may leave the device under the current reque
 For the router/DL work, follow the family-grouped evaluation and pinned-model plan in `docs/handoff/codex.md`. Use fictional fixtures only. Yash still owns the PyTorch training loop and `compareCandidates`. Veritaserum code reuse still needs the existing provenance/permission entry before copying any implementation.
 
 Current pipeline: composition data → Tavily excerpts → Groq → Hugging Face → unavailable/manual fallback. Sources selected by model IDs must belong to the retrieved evidence. See `services/coach/coach/pipeline.py` and `docs/milestones/m3a-ui-and-retrieval.md`. The full reviewed WHO/BM25 coach, local model downloads and training remain later work.
+
+
+## Device-only profile (8 Nov, B1/B2)
+The schema-v5 profile holds opt-in avoided areas, seated-only, blocked pull-up/jumping capabilities and diabetes display priorities. None is appended to Trainer/Coach requests or prompts. The existing explicitly named Trainer fields remain the entire outgoing payload; all profile filtering and fallback happen on-device. Backups include immutable profile history and must be kept private. UI request-shape and stale-reply tests pass; no new live-provider verification was run for this checkpoint. B5 logged diary sharing remains an open decision for Yash. Read docs/milestones/m5-profile-walkthrough.md.

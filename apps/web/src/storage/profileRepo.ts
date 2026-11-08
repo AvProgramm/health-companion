@@ -3,10 +3,15 @@ import { resultOf, runTransaction } from './connection';
 
 /** Return the last confirmed profile, or null when none has been saved. */
 export function readProfile(db: IDBDatabase): Promise<ProfileSnapshot | null> {
-  return runTransaction(db, ['profile'], (tx, finish) => {
+  return runTransaction(db, ['profile'], (tx, finish, fail) => {
     tx.objectStore('profile').openCursor(null, 'prev').onsuccess = event => {
       const cursor = resultOf(event) as IDBCursorWithValue | null;
-      finish(cursor === null ? null : cursor.value as ProfileSnapshot);
+      // Reject corrupt persisted facts rather than silently reverting to an unrestricted profile.
+      const latest = cursor === null ? null : cursor.value as ProfileSnapshot;
+      try {
+        if (latest !== null) assertProfileSnapshot(latest);
+        finish(latest);
+      } catch (problem) { fail(problem); }
     };
   }, 'readonly');
 }
@@ -34,6 +39,8 @@ export function saveProfile(db: IDBDatabase, entry: ProfileSnapshot, expectedVer
       store.openCursor(null, 'prev').onsuccess = latestEvent => {
         const cursor = resultOf(latestEvent) as IDBCursorWithValue | null;
         const latest = cursor === null ? null : cursor.value as ProfileSnapshot;
+        // Ignore a corrupt previous snapshot because appending could conceal invalid restrictions.
+        try { if (latest !== null) assertProfileSnapshot(latest); } catch (problem) { fail(problem); return; }
         if ((latest?.version ?? 0) !== expectedVersion) {
           finish({ status: 'conflict', latest });
           return;

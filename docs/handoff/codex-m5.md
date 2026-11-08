@@ -34,7 +34,9 @@ Yash reviews every diff and must be able to explain it. Interview: Fri 13 Nov. H
 
 Check off anything already in `git log`. Each item should end green and pushed. The Trainer, Coach and MCP are complete, so start at the profile. The Nutritionist can reuse `answer_question` with `topics` limited to nutrition and diabetes, and must pass `check_safety` first.
 
-### 1. Profile and adaptations (B1, B2)
+### 1. Profile and adaptations (B1, B2) — implemented, phone gate pending
+
+Checkpoint (8 Nov, Codex): implemented on this branch. Read `docs/milestones/m5-profile-walkthrough.md` for the storage, metadata, client checks, privacy tests, mutant check and observed browser/offline results. Three seated local starter cards are available; unreviewed facts fail closed when needed by the profile. No live model request was made during this change; physical phone verification remains pending. Continue at B5 next. The requirements below record the implemented scope.
 
 Use `.claude/skills/schema-migration` to add a profile store at schema v5: injury areas, seated only, cannot pull up or jump, opt-in diabetes. It never leaves the device, and backup and restore must cover it.
 

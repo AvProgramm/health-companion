@@ -1,7 +1,7 @@
 import { BODY_AREAS, POSITIONS } from '../profile/profile';
 import type { Capability, Category, Equipment, MovementCard } from './catalogue';
 
-// Twenty-four choices plus eight starter cards bound the pool searched on the phone.
+// Twenty-four choices plus the reviewed starter sets bound the pool searched on the phone.
 export const MAX_CUSTOM_CARDS = 24;
 // These are the existing planner categories, not new exercise safety rules.
 export const EXERCISE_CATEGORIES: readonly Category[] = ['push', 'pull', 'legs', 'core'];

@@ -41,7 +41,7 @@ Goal: when the composer meets an unknown food ("nasi lemak", "2 weetabix"), the 
    - New `domain/nutrition/rules.ts`. A rule has a kind (`allergy` | `exclusion` | `dislike`), food tags (meat, poultry, fish, egg, dairy, beef, pork, alcohol, caffeine), and optional inclusive `startDate`/`endDate`.
    - Foods get optional `tags` in `FoodVersion`. Add tag checkboxes to `ui/FoodEditor.tsx`.
    - A draft or meal shows a badge such as "Outside your vegetarian rule (11–19 Oct)". **It never blocks a save.** It never infers a rule from identity or religion, and there are no fasting windows.
-   - Storage: a new `rules` store means schema **v5** (v4 now holds `customCards`). Follow `.claude/skills/schema-migration/SKILL.md` exactly: an upgrade test from v4 with data, plus a backup checker.
+   - Storage: a new `rules` store means schema **v6** (v4 holds `customCards`, v5 holds the local profile). Follow `.claude/skills/schema-migration/SKILL.md` exactly: an upgrade test from v5 with data, plus a backup checker.
 2. **Local photo on a meal (FR08).**
    - Resize the photo and re-encode it to strip metadata (canvas → JPEG blob), then store it in an `attachments` store.
    - Never upload it. Backups exclude images by default and say so.
@@ -67,7 +67,7 @@ Goal: when the composer meets an unknown food ("nasi lemak", "2 weetabix"), the 
 
 ### M5: coach (RAG + MCP) — the full data flow is in the approved plan
 - **Service:** FastAPI on `127.0.0.1:8000`, proxied as `/api`.
-- **Retrieval:** BM25 over 8–12 reviewed WHO evidence cards (`eval/fixtures/evidence_seed.json` to start).
+- **Retrieval:** Implemented fused BM25/MiniLM retrieval over 36 paraphrased cards in `services/coach/knowledge/cards.json`. See `eval/results/retrieval_final.json`; the sealed test has run once and must not be rerun.
 - **MCP:** a stdio server with exactly `search_evidence` and `get_demo_day`, synthetic data only. Add `.mcp.json` then, not before.
 - **Answering:**
   - The provider adapter defaults to no key (source excerpts only).

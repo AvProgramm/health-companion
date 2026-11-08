@@ -104,7 +104,7 @@ export function MeView({ db, profileSnapshot, onSaveProfile, durability, foodCou
       const counts = await restoreDiary(db, pending);
       setPending(null);
       await onDiaryReplaced();
-      setMessage({ kind: 'saved', text: `Restored ${counts.meals} meals, ${counts.foods} food versions and ${counts.customCards} exercise-choice snapshots.` });
+      setMessage({ kind: 'saved', text: `Restored ${counts.meals} meals, ${counts.foods} food versions and ${counts.customCards} exercise-choice snapshots and ${counts.profile} profile versions.` });
     } catch (problem) {
       setMessage({ kind: 'error', text: `Nothing was restored. ${errorText(problem)}` });
     } finally {
@@ -133,7 +133,7 @@ export function MeView({ db, profileSnapshot, onSaveProfile, durability, foodCou
     <>
       <header className="masthead">
         <h1 className="title">Me</h1>
-        <p className="status">Your diary stays on this device. Optional nutrition lookup sends only the selected food name and portion.</p>
+        <p className="status">Your saved profile and diary stay on this device. Optional services receive only the text and choices you submit.</p>
       </header>
 
       {message !== null && (
@@ -154,7 +154,7 @@ export function MeView({ db, profileSnapshot, onSaveProfile, durability, foodCou
 
       <section className="card" aria-labelledby="backup-heading">
         <h2 id="backup-heading" className="heading">Backup</h2>
-        <p className="hint">A backup file holds every meal, revision and food. Restoring replaces what is on this device.</p>
+        <p className="hint">A backup includes your diary, exercise choices and saved profile history. Keep the file private. Restoring replaces what is on this device.</p>
         <div className="row">
           <button type="button" className="button" onClick={handleExport}>Download backup</button>
           <label className="button button-secondary file-button">
@@ -188,7 +188,7 @@ export function MeView({ db, profileSnapshot, onSaveProfile, durability, foodCou
 
       <section className="card" aria-labelledby="erase-heading">
         <h2 id="erase-heading" className="heading">Erase</h2>
-        <p className="hint">Removes every meal and food from this device. It cannot be undone; download a backup first if you might want them.</p>
+        <p className="hint">Removes the diary, exercise choices and saved profile history from this device. It cannot be undone; download a backup first if you might want them.</p>
         {confirmErase ? (
           <div className="row">
             <button type="button" className="button button-danger" disabled={busy} onClick={handleErase}>Tap again to erase everything</button>

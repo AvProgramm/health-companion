@@ -44,3 +44,25 @@ it('round-trips profile history and accepts older backups without it', async () 
   }
   db.close();
 });
+
+
+it('refuses corrupt stored adaptations instead of treating them as unrestricted', async () => {
+  const db = await openDiary(new IDBFactory());
+  await new Promise<void>((resolve, reject) => {
+    const tx = db.transaction('profile', 'readwrite');
+    tx.objectStore('profile').add({ ...first, value: { ...EMPTY_PROFILE, seatedOnly: 'unknown' } });
+    tx.oncomplete = () => resolve();
+    tx.onerror = () => reject(tx.error);
+  });
+  await expect(readProfile(db)).rejects.toThrow();
+  db.close();
+});
+
+it('serialises competing confirmations so only one expected version commits', async () => {
+  const db = await openDiary(new IDBFactory());
+  const results = await Promise.all([saveProfile(db, first, 0), saveProfile(db, { ...first, operationKey: 'competing' }, 0)]);
+  expect(results.filter(result => result.status === 'saved')).toHaveLength(1);
+  expect(results.filter(result => result.status === 'conflict')).toHaveLength(1);
+  expect((await exportDiary(db)).profile).toHaveLength(1);
+  db.close();
+});

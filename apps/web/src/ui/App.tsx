@@ -107,7 +107,7 @@ export function App() {
   // Refresh after another tab changes the profile; remount plan screens by saved revision below.
   useEffect(() => {
     if (db === null) return;
-    const reload = () => { readProfile(db).then(latest => setSavedProfile(previous => previous?.version === latest?.version ? previous : latest), problem => setLoadError(problem instanceof Error ? problem.message : String(problem))); };
+    const reload = () => { readProfile(db).then(latest => setSavedProfile(previous => JSON.stringify(previous) === JSON.stringify(latest) ? previous : latest), problem => setLoadError(problem instanceof Error ? problem.message : String(problem))); };
     window.addEventListener('focus', reload);
     return () => window.removeEventListener('focus', reload);
   }, [db]);

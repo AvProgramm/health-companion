@@ -60,19 +60,34 @@ describe('upgrading an existing diary', () => {
       tx.oncomplete = () => resolve();
       tx.onerror = () => reject(tx.error);
     });
+    // Keep a legacy chosen-exercise snapshot byte-for-byte, including its unknown adaptation facts.
+    const legacyChoice = { id: 'free-exercise-db:fictional-old', version: 1, operationKey: 'old-choice', card: { name: 'Fictional old choice' } };
+    if (version === 4) await new Promise<void>((resolve, reject) => {
+      const tx = old.transaction('customCards', 'readwrite');
+      tx.objectStore('customCards').add(legacyChoice);
+      tx.oncomplete = () => resolve();
+      tx.onerror = () => reject(tx.error);
+    });
     old.close();
 
     // Opening with the current app runs every later step
     const upgraded = await openDiary(factory);
     expect(upgraded.version).toBe(DB_VERSION);
+    if (version === 4) {
+      const choices = await new Promise(resolve => {
+        const request = upgraded.transaction('customCards').objectStore('customCards').getAll();
+        request.onsuccess = () => resolve(request.result);
+      });
+      expect(choices).toEqual([legacyChoice]);
+    }
     expect([...upgraded.objectStoreNames].sort()).toEqual(['customCards', 'foods', 'meals', 'operations', 'profile', 'revisions', 'sleep', 'workouts']);
     expect((await mealsOn(upgraded, '2026-11-09')).map((meal) => meal.header.mealId)).toEqual(['m1']);
   });
 
-  it('keeps version-3 workout and sleep records unchanged when adding exercise choices', async () => {
+  it.each([3, 4] as const)('keeps version-%i workout and sleep records unchanged when adding later stores', async version => {
     // Store fictional records directly, as the previous build would have left them.
     const factory = new IDBFactory();
-    const old = await openOldVersion(factory, 3);
+    const old = await openOldVersion(factory, version);
     const workout = { id: 'fictional-workout', localDate: '2026-11-07', movementKey: 'fictional-row', sets: [{ reps: 8, load: null }] };
     const sleep = { id: 'fictional-sleep', localDate: '2026-11-07', asleepMin: null, timeInBedMin: 450 };
     await new Promise<void>((resolve, reject) => {

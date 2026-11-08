@@ -12,8 +12,10 @@ Follow these instructions when continuing the project. Treat attached requiremen
 
 Run `npm run check` before and after every change; Claude Code hooks do not run for Codex. Write failing tests first. Commit only when checks pass, stage explicit paths, and push each green checkpoint. Never force-push or use `--no-verify`.
 
-Keep domain logic pure, unknown nutrients null, and all estimates in drafts until confirmation. Only food name and portion text may leave the device. Keep API keys in the laptop `.env`, never Vite variables. Preserve manual entry and the offline diary. Use fictional fixtures only.
+Keep domain logic pure, unknown nutrients null, and all estimates in drafts until confirmation. Optional services receive only explicitly submitted request fields: food name/portion, Trainer goal/minutes/kit/areas/level, or the Coach question. Saved profile, diary and health history stay on the device; the Nutritionist logged-data decision remains open. Keep API keys in the laptop `.env`, never Vite variables. Preserve manual entry and the offline diary. Use fictional fixtures only.
 
 Yash owns `compareCandidates` and the PyTorch training loop. Both exist now; change them only with his approval.
 
 Unfinished Milestone 5 work: read `docs/handoff/codex-m5.md` first.
+
+Local profile adaptations now use schema v5 and must apply to every planner path on the device. Read `docs/milestones/m5-profile-walkthrough.md`; a later schema addition starts at v6. Do not paste the profile into a service request or model prompt.

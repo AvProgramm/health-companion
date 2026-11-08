@@ -26,3 +26,24 @@ The importer copies explicit annotations from data/exercises/adaptations.json; u
 Opt-in diabetes display promotes carbohydrate, added sugar and fibre without hiding the original nutrients or changing totals. Meal rows keep unknown values null and show unknown, never zero; Gym has the care-team glucose-check note and no dosing or targets.
 
 Tests cover explicit confirmation, local-only Trainer request fields, stale-reply rejection, body-area/seated combinations and profile-aware pack filtering. Browser and physical phone checks are still pending at this checkpoint.
+
+
+## Final B1/B2 verification (8 Nov)
+
+- Full npm run check passes: web/type/hook checks, 120 coach tests, 33 router tests and nine importer tests. Production build passes; the existing large exercise-chunk warning remains. No sealed evaluation, real training, weight download or photo download was run.
+- Schema checklist: fresh upgrades from v1/v2/v3/v4 preserve meals; v3/v4 workout/sleep records and the v4 legacy exercise choice are preserved exactly. The main backup fixture now includes a profile alongside meals, revisions, foods, exercise choices, workout and sleep. Export/wipe/restore preserves them together; older backups receive no inferred profile.
+- Profile tests cover retries, stale writes, operation-key collisions, competing confirmations, corrupt persisted facts and complete version histories. A bad stored profile is rejected, never silently converted to unrestricted settings.
+- The independent body-area/seated sweep checks 1,536 combinations. A throwaway mutant disabling seated-only made those assertions fail; the original file was restored in a finally block and no mutant remains.
+- Browser on localhost:4173: draft toggles did not affect Gym before Save; a confirmed seated-only/avoid-knees synthetic profile yielded only the seated arm movement. A reload retained the profile. The original three diary meals remained. Diabetes view showed carbs, added sugar and fibre first, preserving Unknown carbs/fibre and real-zero added sugar plus unknown coverage.
+- At 375 px, the map, labelled controls and bottom dock render without horizontal overflow. Laptop layout also checked. With the preview server stopped, a cold reload still loaded the profile and generated the same seated plan. Preview was restarted. Synthetic test settings were cleared via a confirmed new empty version, without deleting history or changing meals.
+- Trainer privacy and profile-change races were verified with mocked service requests in UI tests, not a new live model call. Packs retain hard filters and can honestly have no reviewed match. Physical phone gate for this change is NOT TESTED.
+
+## Explain it back
+
+Why is the profile a versioned list rather than one overwritten object? Why is the operation replay checked before the expected version? Why does unknown metadata fail only when the active restriction needs that fact? Why must every required position be seated, rather than accepting any list which contains seated? Why is the profile checked after the Trainer reply rather than copied into its prompt? Why must a late reply be discarded after a profile change?
+
+## Phone check
+
+Reload twice on the same localhost:4173 origin and confirm the old diary first. In Me, toggle a draft and leave without saving: Gym must stay unchanged. Save a test seated/avoid-area profile, then check manual plans and ready-made days. A blocked or unknown movement must not appear to fill time. Verify the Trainer reply is adapted on-device, including an honest no-plan if needed. Enable diabetes priorities and check Unknown values and hidden-number mode. Close/reopen in airplane mode after caching. Download a private backup; use a separate test browser for restore. Clear test settings with Save afterwards.
+
+B1/B2 are implemented. B5 Nutritionist, C1–C6 dish-photo work and the remaining M5/M6 documentation are still separate outstanding work in codex-m5.md. The logged-data-sharing decision remains Yash's; no diary/profile sharing was added. This does not claim all of Milestone 5 is complete.
