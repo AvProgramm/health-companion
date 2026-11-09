@@ -44,12 +44,14 @@ Sources are at the end. Most market comparisons online are written by app makers
 | Weight trend | The market | From the profile's saved versions |
 | Cardio with calories | Your request | Uses your own weight, always as a range |
 | Sign-up with height and weight | Your request and FitSense | On the device, in your Veritaserum style |
+| Seven-day overview | The market | Food, training and sleep side by side; food with no energy value stays visible as ? or + |
+| Log again | The market | Fills a draft for today with each food's newest version; nothing saves until it is confirmed |
 
 ## Worth adding next
 
 1. **On-device rep counting and form cues**, as in FitSense. It needs a pose model download, so it needs your approval.
 2. Android Health Connect, once the app is installable.
-3. Reminders and a weekly summary.
+3. Reminders. A web app cannot schedule them reliably without a push server, so these wait until the app is installable too.
 
 ## Sources
 

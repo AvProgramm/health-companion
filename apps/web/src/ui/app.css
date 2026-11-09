@@ -94,8 +94,8 @@ svg { flex-shrink: 0; }
 .file-button { position: relative; }
 .suggestion { display: grid; gap: 8px; }
 .week-card { display: grid; gap: 12px; }
-.week-grid { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 6px; }
-.week-day { display: grid; justify-items: center; gap: 4px; padding: 8px 2px; border-radius: 10px; font-size: 12px; line-height: 16px; }
+.week-grid { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 2px; }
+.week-day { display: grid; justify-items: center; gap: 4px; padding: 8px 0; border-radius: 10px; font-size: 12px; line-height: 16px; }
 .week-today { background: var(--action-soft); }
 .week-bar { display: flex; align-items: flex-end; width: 14px; height: 56px; border-radius: 7px; background: var(--line); overflow: hidden; }
 .week-bar i { display: block; width: 100%; border-radius: inherit; background: var(--action); }

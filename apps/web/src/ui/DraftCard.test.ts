@@ -22,7 +22,7 @@ function meal(...components: MealComponent[]): MealRevision {
 
 describe('logging a meal again', () => {
   it('repeats the amount and the share eaten last time', () => {
-    expect(repeatRows(meal(item({ eatenFraction: 0.5 })), [food('oats', 1)])).toMatchObject([{ foodKey: foodKey('oats', 1), amountText: '40', unit: 'g', eatenFraction: 0.5, problem: null }]);
+    expect(repeatRows(meal(item({ eatenFraction: 0.5 })), [food('oats', 1)])).toMatchObject([{ text: '', foodKey: foodKey('oats', 1), amountText: '40', unit: 'g', eatenFraction: 0.5, problem: null }]);
   });
 
   it('uses the newest version of the food, the same as typing its name today', () => {

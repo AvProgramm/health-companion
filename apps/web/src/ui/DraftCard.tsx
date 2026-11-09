@@ -76,7 +76,8 @@ export function repeatRows(meal: MealRevision, currentFoods: readonly FoodVersio
     const fits = areCompatible(component.served.unit, food.basis.unit);
     rows.push({
       key: crypto.randomUUID(),
-      text: food.name,
+      // Nothing was typed for this row, so the draft must not say "You wrote"
+      text: '',
       foodKey: foodKey(food.id, food.version),
       amountText: fits ? String(component.served.amount) : '',
       unit: fits ? component.served.unit : food.basis.unit,

@@ -33,6 +33,7 @@ Organised by feature, one reason to change per module. Domain never imports stor
   - `profile/body`: height, weight, BMI and energy estimates (unknown when a fact is missing). `profile/weightTrend`: recorded weights from saved versions. `nutrition/balance`: food against estimated need. `training/cardio`: ACSM walk and run energy, always a range.
   - `dish/dishModel`: everything around the photo model that must match training (crop placement, normalisation, top guesses).
   - `training/workouts`, `sleep/sleep`: build and describe workout and sleep entries.
+  - `week/weekOverview`: one line per day of food, training and sleep; a day with nothing logged stays a gap.
   - `parsing/`: the composer grammar. `parseEntry` tries an ordered list of small parsers (`question`, `correction`, `sleepEntry`, `workoutEntry`, `meal`); a new kind of entry is a new parser in that list.
 - `data/exercises/`, `scripts/import-exercises.mjs`, `apps/web/src/data/`: pinned Unlicense exercise source and reproducible offline search index; see `docs/data/exercise-dataset.md`.
 - `apps/web/src/storage/`: `connection` (open, schema upgrades, `runTransaction`), `foodsRepo`, `mealsRepo`, `logsRepo`, `customCardsRepo` (immutable exercise-choice snapshots, schema v4), `profileRepo` (immutable device-only adaptations, schema v5), `persistence`, and `backup/` (`format`, `validate` with one checker per store, `transfer` for export/restore/erase).
