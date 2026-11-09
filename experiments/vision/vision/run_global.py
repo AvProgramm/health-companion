@@ -111,20 +111,23 @@ def lora():
     save_result('global_lora.json', {'split': 'validation', 'dishes': len(dishes), 'trainable_parameters': trainable, 'best_epoch': result['best_epoch'], 'best_valid_top1': result['best_valid'], 'history': result['history']})
 
 
+def with_names(vision, names, device):
+    """Return this ViT with a head for these names, which is all it takes to change what it can recognise."""
+    model, tokenizer = load_siglip()
+    vectors = name_vectors(model, tokenizer, names, device, PROMPTS)
+    fresh = FoodMatcher(vision, vectors, model.logit_scale.exp().item())
+    del model
+    torch.cuda.empty_cache()
+    return fresh
+
+
 def trained_matcher(names, device, attention=None):
     """Return the fine-tuned ViT with a head for these names, as an ordinary model."""
     dishes = read_global_dishes()
     matcher = add_lora(matcher_for(dishes, device, attention), GLOBAL_SETTINGS.rank, GLOBAL_SETTINGS.alpha, train_head=False)
     matcher.load_state_dict(torch.load(GLOBAL_CHECKPOINT, weights_only=True))
     merge_lora(matcher)
-
-    # Swap in the requested names, which is all it takes to change what it can recognise
-    model, tokenizer = load_siglip()
-    vectors = name_vectors(model, tokenizer, names, device, PROMPTS)
-    fresh = FoodMatcher(matcher.vision, vectors, model.logit_scale.exp().item())
-    del model
-    torch.cuda.empty_cache()
-    return fresh
+    return with_names(matcher.vision, names, device)
 
 
 def sealed_loader(settings):

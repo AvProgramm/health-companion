@@ -73,6 +73,19 @@ def add_lora(model, rank, alpha, train_head=True):
     return model
 
 
+def set_lora_strength(model, alpha, strength):
+    """
+    Apply every correction at this share of its trained size, where 1 is as trained.
+
+    Nothing is retrained, so one fine-tuned model can be measured at several strengths,
+    and merging afterwards keeps whichever strength was set last.
+    """
+    for module in model.modules():
+        if isinstance(module, LoRALinear):
+            module.scale = strength * alpha / module.rank
+    return model
+
+
 def merge_lora(model):
     """Replace every correction with one plain linear layer computing the same function."""
     targets = [(parent, name, child) for parent in model.modules() for name, child in parent.named_children() if isinstance(child, LoRALinear)]

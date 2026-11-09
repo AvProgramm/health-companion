@@ -45,10 +45,15 @@ class FoodPhotos(Dataset):
         return self.transform(photo), int(self.labels[position])
 
 
+def loader_over(folder, positions, labels, transform, settings, training=False):
+    """Return a loader over these photos, shuffled only when training."""
+    dataset = FoodPhotos(folder, positions, labels, transform)
+    return DataLoader(dataset, batch_size=settings.batch_size, shuffle=training, drop_last=training, num_workers=settings.workers,
+                      pin_memory=torch.cuda.is_available(), persistent_workers=settings.workers > 0, prefetch_factor=4 if settings.workers > 0 else None)
+
+
 def make_loader(folder, split, transform, settings, training=False):
     """Return a loader over one split, shuffled only when training."""
     labels = np.load(Path(folder) / 'labels.npy')
     positions = np.flatnonzero(np.load(Path(folder) / 'splits.npy') == split)
-    dataset = FoodPhotos(folder, positions, labels, transform)
-    return DataLoader(dataset, batch_size=settings.batch_size, shuffle=training, drop_last=training, num_workers=settings.workers,
-                      pin_memory=torch.cuda.is_available(), persistent_workers=settings.workers > 0, prefetch_factor=4 if settings.workers > 0 else None)
+    return loader_over(folder, positions, labels, transform, settings, training)
