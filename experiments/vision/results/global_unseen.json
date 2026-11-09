@@ -1,0 +1,32 @@
+{
+  "names_on_offer": 777,
+  "test_dishes": 100,
+  "test_dishes_never_trained": 95,
+  "note": "Replaces the void ISIA half of global_final.json, which used the wrong labels. Nothing was tuned between the two.",
+  "reports": {
+    "siglip2_alone": {
+      "never_trained": {
+        "photos": 13056,
+        "top1": 0.4976256191730499,
+        "top5": 0.8092830777168274
+      },
+      "trained_under_that_name": {
+        "photos": 1143,
+        "top1": 0.4995625615119934,
+        "top5": 0.8573928475379944
+      }
+    },
+    "siglip2_lora": {
+      "never_trained": {
+        "photos": 13056,
+        "top1": 0.35523897409439087,
+        "top5": 0.7104779481887817
+      },
+      "trained_under_that_name": {
+        "photos": 1143,
+        "top1": 0.4050743579864502,
+        "top5": 0.6517935395240784
+      }
+    }
+  }
+}

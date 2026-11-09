@@ -1,7 +1,8 @@
 {
   "names": 686,
+  "weights": "16-bit",
   "full_mb": 373.8,
-  "small_mb": 96.3,
-  "photos_checked": 200,
-  "same_first_guess_as_pytorch": 0.4449999928474426
+  "small_mb": 187.2,
+  "photos_checked": 223,
+  "same_first_guess_as_pytorch": 1.0
 }

@@ -1,0 +1,43 @@
+{
+  "split": "validation",
+  "photos": 14252,
+  "names": 686,
+  "top1_before_shrinking": 0.7973617911338806,
+  "variants": {
+    "16-bit, every weight": {
+      "same_first_guess": 0.9991580247879028,
+      "top1": 0.7972214221954346,
+      "share_of_weights": 1.0
+    },
+    "8-bit, every weight": {
+      "same_first_guess": 0.8196042776107788,
+      "top1": 0.7108476161956787,
+      "share_of_weights": 1.0
+    },
+    "8-bit per row, every weight": {
+      "same_first_guess": 0.8824726343154907,
+      "top1": 0.7413696050643921,
+      "share_of_weights": 1.0
+    },
+    "8-bit, feed-forward layers only": {
+      "same_first_guess": 0.9570586681365967,
+      "top1": 0.796449601650238,
+      "share_of_weights": 0.6071449145358933
+    },
+    "8-bit, attention only": {
+      "same_first_guess": 0.9719337821006775,
+      "top1": 0.7911170125007629,
+      "share_of_weights": 0.3033749475364776
+    },
+    "8-bit, blocks 0 to 5 only": {
+      "same_first_guess": 0.959233820438385,
+      "top1": 0.7924501895904541,
+      "share_of_weights": 0.45525993103618545
+    },
+    "8-bit, blocks 6 to 11 only": {
+      "same_first_guess": 0.9721442461013794,
+      "top1": 0.7977126240730286,
+      "share_of_weights": 0.45525993103618545
+    }
+  }
+}

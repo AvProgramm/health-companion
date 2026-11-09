@@ -1,0 +1,13 @@
+{
+  "note": "A further look at sealed photos already scored, for reporting only.",
+  "malaysian_photos": {
+    "photos": 1278,
+    "top1": 0.9241001605987549,
+    "top5": 0.9866979718208313
+  },
+  "malaysian_only_dishes": {
+    "photos": 1161,
+    "top1": 0.91989666223526,
+    "top5": 0.9862187504768372
+  }
+}
