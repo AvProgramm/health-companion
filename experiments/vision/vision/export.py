@@ -15,7 +15,8 @@ def export_onnx(model, path, image_size=IMAGE_SIZE):
     """Write a model as ONNX with one fixed-size input, on the CPU."""
     # Use the plain attention path, because the fused one does not export cleanly
     for block in model.blocks:
-        block.attn.fused_attn = False
+        if hasattr(block, 'attn'):
+            block.attn.fused_attn = False
 
     # Trace one fixed input, which is all the phone will ever send
     model.cpu().eval()

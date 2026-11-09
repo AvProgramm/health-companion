@@ -9,6 +9,8 @@ DATA_ROOT = Path(os.environ.get('HC_VISION_ROOT', Path.home() / 'hc-vision'))
 HUB_CACHE = DATA_ROOT / 'hub'
 # The decoded photos and their labels
 PREPARED = DATA_ROOT / 'prepared'
+# The first experiment's photos joined with the ISIA sample
+GLOBAL_PREPARED = DATA_ROOT / 'prepared-global'
 # Trained weights, which never go in Git
 CHECKPOINTS = DATA_ROOT / 'checkpoints'
 # The committed record of every run
@@ -19,6 +21,10 @@ DATASETS = {
     'food101': ('ethz/food101', '83488de741c1bd1ce27aa6a2b33e19c7bdf92ca9'),
     'malaysian': ('lowyisan/malaysian_food_images', 'f64a696b071ce2b97830d7864dfee9f8969e3dac'),
 }
+# The large dataset behind the global food model: repository and commit
+LARGE_DATASETS = {'isia': ('advancedcv/isiafoodcap_all', 'e9ca6fc3adeaf5936131c338805844c51f9b7ad4')}
+# A model trained on web-scale captioned images, which can match a photo to any food name (Apache-2.0)
+SIGLIP = ('google/siglip2-base-patch16-224', '75de2d55ec2d0b4efc50b3e9ad70dba96a7b2fa2')
 # The ViT-Small weights compared: repository, commit and timm model name (Apache-2.0)
 BACKBONES = {
     'dinov2': ('timm/vit_small_patch14_dinov2.lvd142m', '4610ca143709d58a633b6397a74412c2c3842454', 'vit_small_patch14_dinov2.lvd142m'),
@@ -50,3 +56,7 @@ class Settings:
     label_smoothing: float = 0.1
     # Share of the training pool held back to compare designs
     validation_share: float = 0.1
+
+
+# The larger ViT-Base needs a smaller batch, and three epochs fit the time available
+GLOBAL_SETTINGS = Settings(batch_size=64, epochs=3)

@@ -27,8 +27,11 @@ class LoRALinear(nn.Module):
         self.base = base
         self.rank = min(rank, base.in_features, base.out_features)
         self.scale = alpha / self.rank
-        self.down = nn.Linear(base.in_features, self.rank, bias=False)
-        self.up = nn.Linear(self.rank, base.out_features, bias=False)
+
+        # Build the correction where the frozen layer already is, or merging would mix devices
+        device = base.weight.device
+        self.down = nn.Linear(base.in_features, self.rank, bias=False, device=device)
+        self.up = nn.Linear(self.rank, base.out_features, bias=False, device=device)
         nn.init.kaiming_uniform_(self.down.weight, a=math.sqrt(5))
         nn.init.zeros_(self.up.weight)
 
@@ -47,12 +50,12 @@ class LoRALinear(nn.Module):
         return layer
 
 
-def add_lora(model, rank, alpha):
+def add_lora(model, rank, alpha, train_head=True):
     """
     Freeze the whole model, then give every linear layer in its transformer blocks a correction.
 
-    The classifier head stays trainable, because the dishes are new outputs. The patch
-    embedding, position embedding and class token stay frozen.
+    The classifier head stays trainable unless told otherwise, because the dishes are new
+    outputs. The patch embedding, position embedding and class token stay frozen.
     """
     # Freeze everything first, so that only what is added below can learn
     for parameter in model.parameters():
@@ -63,9 +66,10 @@ def add_lora(model, rank, alpha):
     for parent, name, child in targets:
         setattr(parent, name, LoRALinear(child, rank, alpha))
 
-    # Let the head learn
-    for parameter in model.head.parameters():
-        parameter.requires_grad = True
+    # Let the head learn, unless it is fixed text vectors that must keep their meaning
+    if train_head:
+        for parameter in model.head.parameters():
+            parameter.requires_grad = True
     return model
 
 

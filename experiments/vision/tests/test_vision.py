@@ -70,6 +70,10 @@ class LoraTests(unittest.TestCase):
         inputs = torch.randn(8, 6)
         self.assertTrue(torch.allclose(layer.merged()(inputs), layer(inputs), atol=1e-6))
 
+    def test_a_correction_is_built_on_the_same_device_as_its_layer(self):
+        layer = LoRALinear(nn.Linear(4, 4, device='meta'), 2, 2.0)
+        self.assertEqual((layer.down.weight.device.type, layer.up.weight.device.type), ('meta', 'meta'))
+
     def test_rank_cannot_exceed_the_layer(self):
         self.assertEqual(LoRALinear(nn.Linear(2, 9), 16, 16.0).rank, 2)
 

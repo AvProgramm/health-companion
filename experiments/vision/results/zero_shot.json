@@ -1,0 +1,29 @@
+{
+  "split": "validation",
+  "photos": 8513,
+  "dishes": 109,
+  "by_wording": {
+    "This is a photo of {}.": {
+      "top1": 0.8786561489105225,
+      "top5": 0.9754493236541748
+    },
+    "a photo of {}, a type of food.": {
+      "top1": 0.8779513835906982,
+      "top5": 0.9760366678237915
+    },
+    "a photo of a plate of {}.": {
+      "top1": 0.8747797608375549,
+      "top5": 0.973099946975708
+    },
+    "all wordings averaged": {
+      "top1": 0.8814753890037537,
+      "top5": 0.976858913898468
+    }
+  },
+  "best_wording": "all wordings averaged",
+  "wide_list": {
+    "names": 333,
+    "top1": 0.8120521306991577,
+    "top5": 0.9457300305366516
+  }
+}

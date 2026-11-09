@@ -114,8 +114,11 @@ def predict_top(model, loader, device):
 def parameter_groups(model, settings):
     """Return the trainable weights grouped by learning rate: the head, and the corrections."""
     trainable = [(name, parameter) for name, parameter in model.named_parameters() if parameter.requires_grad]
-    return [{'params': [parameter for name, parameter in trainable if name.startswith('head')], 'lr': settings.head_lr},
-            {'params': [parameter for name, parameter in trainable if not name.startswith('head')], 'lr': settings.lora_lr}]
+    groups = [{'params': [parameter for name, parameter in trainable if name.startswith('head')], 'lr': settings.head_lr},
+              {'params': [parameter for name, parameter in trainable if not name.startswith('head')], 'lr': settings.lora_lr}]
+
+    # Ignore an empty group, because a head of fixed text vectors has nothing to learn
+    return [group for group in groups if group['params']]
 
 
 def train_epoch(model, loader, optimizer, scheduler, scaler, criterion, device):
