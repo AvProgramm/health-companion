@@ -1,0 +1,644 @@
+{
+  "split": "validation",
+  "names": 686,
+  "trained_dishes": 406,
+  "held_out_dishes": [
+    "aebleflaesk",
+    "arancini",
+    "avocado fries",
+    "bacon sandwich",
+    "baklava",
+    "banana bread",
+    "beef bun",
+    "biryani",
+    "bouillabaisse",
+    "bread roll",
+    "breakfast burrito",
+    "bun bo hue",
+    "buttery bread",
+    "carrot juice",
+    "ceviche",
+    "cheese and tomato sandwich",
+    "cheese maki",
+    "chicken marsala",
+    "chicken parmigiana",
+    "chilli crab",
+    "christmas cake",
+    "cig kofte",
+    "colcannon",
+    "cotoletta",
+    "crab cakes",
+    "crumble",
+    "escargots",
+    "fishcake",
+    "fuqi feipian",
+    "goulash",
+    "greek salad",
+    "grilled cheese sandwich",
+    "gyutan",
+    "ham and cheese sandwich",
+    "kedgeree",
+    "lasagna",
+    "lemon meringue pie",
+    "lo mein",
+    "macaroni and cheese",
+    "macarons",
+    "meatloaf",
+    "mie goreng",
+    "nachos",
+    "omelette",
+    "plateau de fruits de mer",
+    "poutine",
+    "pulled pork",
+    "rice and peas",
+    "rice cakes",
+    "samosa",
+    "shaker lemon pie",
+    "shrimp toast",
+    "spatzle",
+    "strawberry jam",
+    "succotash",
+    "sweet potato pie",
+    "twix",
+    "vitello tonnato",
+    "white cut chicken"
+  ],
+  "malaysian_held_out": [
+    "fried noodles",
+    "kaya toast",
+    "laksa",
+    "mixed rice",
+    "nasi lemak",
+    "popiah",
+    "roti canai",
+    "satay"
+  ],
+  "layers": {
+    "batch_norm_layers": 0,
+    "block_layer_norm_weights": 36864
+  },
+  "training": {
+    "lora": {
+      "trainable_weights": 2654208,
+      "best_epoch": 3,
+      "best_valid": 0.8230551481246948,
+      "history": [
+        {
+          "epoch": 1,
+          "train_loss": 1.847235477014339,
+          "train_accuracy": 0.7655963827838828,
+          "valid_top1": 0.8058152794837952,
+          "valid_top5": 0.9523972868919373,
+          "seconds": 946.0
+        },
+        {
+          "epoch": 2,
+          "train_loss": 1.6159150525472685,
+          "train_accuracy": 0.8235557844932845,
+          "valid_top1": 0.8199673891067505,
+          "valid_top5": 0.9595162272453308,
+          "seconds": 769.8
+        },
+        {
+          "epoch": 3,
+          "train_loss": 1.5051164986595276,
+          "train_accuracy": 0.8547008547008547,
+          "valid_top1": 0.8230551481246948,
+          "valid_top5": 0.9608885645866394,
+          "seconds": 762.8
+        }
+      ]
+    },
+    "norm": {
+      "trainable_weights": 36864,
+      "best_epoch": 2,
+      "best_valid": 0.7166995406150818,
+      "history": [
+        {
+          "epoch": 1,
+          "train_loss": 2.2011140408096734,
+          "train_accuracy": 0.6887877747252747,
+          "valid_top1": 0.7098379135131836,
+          "valid_top5": 0.9084827303886414,
+          "seconds": 566.2
+        },
+        {
+          "epoch": 2,
+          "train_loss": 2.115347834661039,
+          "train_accuracy": 0.7046607905982906,
+          "valid_top1": 0.7166995406150818,
+          "valid_top5": 0.9103696942329407,
+          "seconds": 566.9
+        },
+        {
+          "epoch": 3,
+          "train_loss": 2.098175217162122,
+          "train_accuracy": 0.7085527319902319,
+          "valid_top1": 0.7164422273635864,
+          "valid_top5": 0.9107127785682678,
+          "seconds": 627.2
+        }
+      ]
+    },
+    "lora_and_norm": {
+      "trainable_weights": 2691072,
+      "best_epoch": 3,
+      "best_valid": 0.828201413154602,
+      "history": [
+        {
+          "epoch": 1,
+          "train_loss": 1.8463181807444646,
+          "train_accuracy": 0.7654819139194139,
+          "valid_top1": 0.8078737258911133,
+          "valid_top5": 0.9541984796524048,
+          "seconds": 893.0
+        },
+        {
+          "epoch": 2,
+          "train_loss": 1.6129482229114016,
+          "train_accuracy": 0.823622557997558,
+          "valid_top1": 0.8219401240348816,
+          "valid_top5": 0.9602023959159851,
+          "seconds": 892.1
+        },
+        {
+          "epoch": 3,
+          "train_loss": 1.501691668315976,
+          "train_accuracy": 0.8568853021978022,
+          "valid_top1": 0.828201413154602,
+          "valid_top5": 0.9600308537483215,
+          "seconds": 895.3
+        }
+      ]
+    }
+  },
+  "chosen_for_next_training": "lora at strength 0.5",
+  "average_top1": {
+    "siglip2_alone": 0.6349709033966064,
+    "shipped_model": 0.803335964679718,
+    "lora at strength 1.0": 0.6578602492809296,
+    "lora at strength 0.75": 0.6941592991352081,
+    "lora at strength 0.5": 0.6945030093193054,
+    "lora at strength 0.25": 0.6701514422893524,
+    "norm at strength 1.0": 0.6650532484054565,
+    "lora_and_norm at strength 1.0": 0.665077418088913
+  },
+  "reports": {
+    "siglip2_alone": {
+      "trained": {
+        "photos": 11659,
+        "top1": 0.6371043920516968,
+        "top5": 0.8660262227058411
+      },
+      "held_out": {
+        "photos": 1882,
+        "top1": 0.6328374147415161,
+        "top5": 0.87035071849823
+      },
+      "malaysian_held_out": {
+        "photos": 711,
+        "top1": 0.450070321559906,
+        "top5": 0.7313642501831055
+      },
+      "dish: fried noodles": {
+        "photos": 87,
+        "top1": 0.0,
+        "top5": 0.25287356972694397
+      },
+      "dish: kaya toast": {
+        "photos": 85,
+        "top1": 0.6705882549285889,
+        "top5": 0.7882353067398071
+      },
+      "dish: laksa": {
+        "photos": 116,
+        "top1": 0.2844827473163605,
+        "top5": 0.8534482717514038
+      },
+      "dish: mixed rice": {
+        "photos": 86,
+        "top1": 0.04651162773370743,
+        "top5": 0.4767441749572754
+      },
+      "dish: nasi lemak": {
+        "photos": 85,
+        "top1": 0.6470588445663452,
+        "top5": 0.9176470637321472
+      },
+      "dish: popiah": {
+        "photos": 82,
+        "top1": 0.5,
+        "top5": 0.7439024448394775
+      },
+      "dish: roti canai": {
+        "photos": 84,
+        "top1": 0.6904761791229248,
+        "top5": 0.8928571343421936
+      },
+      "dish: satay": {
+        "photos": 86,
+        "top1": 0.8372092843055725,
+        "top5": 0.895348846912384
+      }
+    },
+    "shipped_model": {
+      "trained": {
+        "photos": 11659,
+        "top1": 0.7968950867652893,
+        "top5": 0.944763720035553
+      },
+      "held_out": {
+        "photos": 1882,
+        "top1": 0.8097768425941467,
+        "top5": 0.9543039202690125
+      },
+      "malaysian_held_out": {
+        "photos": 711,
+        "top1": 0.7721518874168396,
+        "top5": 0.954992949962616
+      },
+      "dish: fried noodles": {
+        "photos": 87,
+        "top1": 0.7931034564971924,
+        "top5": 0.9425287246704102
+      },
+      "dish: kaya toast": {
+        "photos": 85,
+        "top1": 0.8941176533699036,
+        "top5": 0.9529411792755127
+      },
+      "dish: laksa": {
+        "photos": 116,
+        "top1": 0.25,
+        "top5": 0.9568965435028076
+      },
+      "dish: mixed rice": {
+        "photos": 86,
+        "top1": 0.8372092843055725,
+        "top5": 0.9534883499145508
+      },
+      "dish: nasi lemak": {
+        "photos": 85,
+        "top1": 0.9176470637321472,
+        "top5": 0.9882352948188782
+      },
+      "dish: popiah": {
+        "photos": 82,
+        "top1": 0.8170731663703918,
+        "top5": 0.9268292784690857
+      },
+      "dish: roti canai": {
+        "photos": 84,
+        "top1": 0.9404761791229248,
+        "top5": 0.976190447807312
+      },
+      "dish: satay": {
+        "photos": 86,
+        "top1": 0.9186046719551086,
+        "top5": 0.9418604373931885
+      }
+    },
+    "lora at strength 1.0": {
+      "trained": {
+        "photos": 11659,
+        "top1": 0.8034994602203369,
+        "top5": 0.9469079971313477
+      },
+      "held_out": {
+        "photos": 1882,
+        "top1": 0.5122210383415222,
+        "top5": 0.8336875438690186
+      },
+      "malaysian_held_out": {
+        "photos": 711,
+        "top1": 0.4233473837375641,
+        "top5": 0.6258790493011475
+      },
+      "dish: fried noodles": {
+        "photos": 87,
+        "top1": 0.0,
+        "top5": 0.0
+      },
+      "dish: kaya toast": {
+        "photos": 85,
+        "top1": 0.7058823704719543,
+        "top5": 0.929411768913269
+      },
+      "dish: laksa": {
+        "photos": 116,
+        "top1": 0.008620689623057842,
+        "top5": 0.4568965435028076
+      },
+      "dish: mixed rice": {
+        "photos": 86,
+        "top1": 0.0,
+        "top5": 0.011627906933426857
+      },
+      "dish: nasi lemak": {
+        "photos": 85,
+        "top1": 0.7411764860153198,
+        "top5": 0.9764705896377563
+      },
+      "dish: popiah": {
+        "photos": 82,
+        "top1": 0.5243902206420898,
+        "top5": 0.8658536672592163
+      },
+      "dish: roti canai": {
+        "photos": 84,
+        "top1": 0.761904776096344,
+        "top5": 0.9523809552192688
+      },
+      "dish: satay": {
+        "photos": 86,
+        "top1": 0.8139534592628479,
+        "top5": 0.9069767594337463
+      }
+    },
+    "lora at strength 0.75": {
+      "trained": {
+        "photos": 11659,
+        "top1": 0.7932069897651672,
+        "top5": 0.944334864616394
+      },
+      "held_out": {
+        "photos": 1882,
+        "top1": 0.595111608505249,
+        "top5": 0.8724761009216309
+      },
+      "malaysian_held_out": {
+        "photos": 711,
+        "top1": 0.4331927001476288,
+        "top5": 0.6807313561439514
+      },
+      "dish: fried noodles": {
+        "photos": 87,
+        "top1": 0.0,
+        "top5": 0.05747126415371895
+      },
+      "dish: kaya toast": {
+        "photos": 85,
+        "top1": 0.7058823704719543,
+        "top5": 0.9176470637321472
+      },
+      "dish: laksa": {
+        "photos": 116,
+        "top1": 0.0258620698004961,
+        "top5": 0.75
+      },
+      "dish: mixed rice": {
+        "photos": 86,
+        "top1": 0.0,
+        "top5": 0.09302325546741486
+      },
+      "dish: nasi lemak": {
+        "photos": 85,
+        "top1": 0.7529411911964417,
+        "top5": 0.9647058844566345
+      },
+      "dish: popiah": {
+        "photos": 82,
+        "top1": 0.5365853905677795,
+        "top5": 0.8292682766914368
+      },
+      "dish: roti canai": {
+        "photos": 84,
+        "top1": 0.7857142686843872,
+        "top5": 0.9404761791229248
+      },
+      "dish: satay": {
+        "photos": 86,
+        "top1": 0.8255813717842102,
+        "top5": 0.895348846912384
+      }
+    },
+    "lora at strength 0.5": {
+      "trained": {
+        "photos": 11659,
+        "top1": 0.7529805302619934,
+        "top5": 0.9264087677001953
+      },
+      "held_out": {
+        "photos": 1882,
+        "top1": 0.6360254883766174,
+        "top5": 0.8761955499649048
+      },
+      "malaysian_held_out": {
+        "photos": 711,
+        "top1": 0.4388185739517212,
+        "top5": 0.7018284201622009
+      },
+      "dish: fried noodles": {
+        "photos": 87,
+        "top1": 0.0,
+        "top5": 0.14942528307437897
+      },
+      "dish: kaya toast": {
+        "photos": 85,
+        "top1": 0.6823529601097107,
+        "top5": 0.8588235378265381
+      },
+      "dish: laksa": {
+        "photos": 116,
+        "top1": 0.08620689809322357,
+        "top5": 0.8017241358757019
+      },
+      "dish: mixed rice": {
+        "photos": 86,
+        "top1": 0.0,
+        "top5": 0.19767442345619202
+      },
+      "dish: nasi lemak": {
+        "photos": 85,
+        "top1": 0.7411764860153198,
+        "top5": 0.9529411792755127
+      },
+      "dish: popiah": {
+        "photos": 82,
+        "top1": 0.5365853905677795,
+        "top5": 0.792682945728302
+      },
+      "dish: roti canai": {
+        "photos": 84,
+        "top1": 0.7976190447807312,
+        "top5": 0.9285714030265808
+      },
+      "dish: satay": {
+        "photos": 86,
+        "top1": 0.8139534592628479,
+        "top5": 0.9186046719551086
+      }
+    },
+    "lora at strength 0.25": {
+      "trained": {
+        "photos": 11659,
+        "top1": 0.7010892629623413,
+        "top5": 0.8969036936759949
+      },
+      "held_out": {
+        "photos": 1882,
+        "top1": 0.6392136216163635,
+        "top5": 0.8751328587532043
+      },
+      "malaysian_held_out": {
+        "photos": 711,
+        "top1": 0.4571026861667633,
+        "top5": 0.7299578189849854
+      },
+      "dish: fried noodles": {
+        "photos": 87,
+        "top1": 0.0,
+        "top5": 0.2183908075094223
+      },
+      "dish: kaya toast": {
+        "photos": 85,
+        "top1": 0.6941176652908325,
+        "top5": 0.8352941274642944
+      },
+      "dish: laksa": {
+        "photos": 116,
+        "top1": 0.21551723778247833,
+        "top5": 0.8706896305084229
+      },
+      "dish: mixed rice": {
+        "photos": 86,
+        "top1": 0.0,
+        "top5": 0.302325576543808
+      },
+      "dish: nasi lemak": {
+        "photos": 85,
+        "top1": 0.7647058963775635,
+        "top5": 0.9529411792755127
+      },
+      "dish: popiah": {
+        "photos": 82,
+        "top1": 0.5,
+        "top5": 0.792682945728302
+      },
+      "dish: roti canai": {
+        "photos": 84,
+        "top1": 0.726190447807312,
+        "top5": 0.9166666865348816
+      },
+      "dish: satay": {
+        "photos": 86,
+        "top1": 0.8604651093482971,
+        "top5": 0.9186046719551086
+      }
+    },
+    "norm at strength 1.0": {
+      "trained": {
+        "photos": 11659,
+        "top1": 0.6823912858963013,
+        "top5": 0.882665753364563
+      },
+      "held_out": {
+        "photos": 1882,
+        "top1": 0.6477152109146118,
+        "top5": 0.8756641745567322
+      },
+      "malaysian_held_out": {
+        "photos": 711,
+        "top1": 0.48523205518722534,
+        "top5": 0.7412095665931702
+      },
+      "dish: fried noodles": {
+        "photos": 87,
+        "top1": 0.01149425283074379,
+        "top5": 0.14942528307437897
+      },
+      "dish: kaya toast": {
+        "photos": 85,
+        "top1": 0.658823549747467,
+        "top5": 0.8588235378265381
+      },
+      "dish: laksa": {
+        "photos": 116,
+        "top1": 0.37931033968925476,
+        "top5": 0.9396551847457886
+      },
+      "dish: mixed rice": {
+        "photos": 86,
+        "top1": 0.0,
+        "top5": 0.2906976640224457
+      },
+      "dish: nasi lemak": {
+        "photos": 85,
+        "top1": 0.7176470756530762,
+        "top5": 0.9647058844566345
+      },
+      "dish: popiah": {
+        "photos": 82,
+        "top1": 0.5243902206420898,
+        "top5": 0.8048780560493469
+      },
+      "dish: roti canai": {
+        "photos": 84,
+        "top1": 0.761904776096344,
+        "top5": 0.9523809552192688
+      },
+      "dish: satay": {
+        "photos": 86,
+        "top1": 0.8837209343910217,
+        "top5": 0.9186046719551086
+      }
+    },
+    "lora_and_norm at strength 1.0": {
+      "trained": {
+        "photos": 11659,
+        "top1": 0.8062440752983093,
+        "top5": 0.9473367929458618
+      },
+      "held_out": {
+        "photos": 1882,
+        "top1": 0.5239107608795166,
+        "top5": 0.840063750743866
+      },
+      "malaysian_held_out": {
+        "photos": 711,
+        "top1": 0.4135020971298218,
+        "top5": 0.604781985282898
+      },
+      "dish: fried noodles": {
+        "photos": 87,
+        "top1": 0.0,
+        "top5": 0.02298850566148758
+      },
+      "dish: kaya toast": {
+        "photos": 85,
+        "top1": 0.6823529601097107,
+        "top5": 0.9176470637321472
+      },
+      "dish: laksa": {
+        "photos": 116,
+        "top1": 0.0,
+        "top5": 0.3965517282485962
+      },
+      "dish: mixed rice": {
+        "photos": 86,
+        "top1": 0.0,
+        "top5": 0.011627906933426857
+      },
+      "dish: nasi lemak": {
+        "photos": 85,
+        "top1": 0.729411780834198,
+        "top5": 0.9764705896377563
+      },
+      "dish: popiah": {
+        "photos": 82,
+        "top1": 0.5487805008888245,
+        "top5": 0.8292682766914368
+      },
+      "dish: roti canai": {
+        "photos": 84,
+        "top1": 0.738095223903656,
+        "top5": 0.9166666865348816
+      },
+      "dish: satay": {
+        "photos": 86,
+        "top1": 0.7790697813034058,
+        "top5": 0.8720930218696594
+      }
+    }
+  }
+}

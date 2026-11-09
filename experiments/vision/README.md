@@ -91,6 +91,8 @@ Fine-tuning buys 17 points on the dishes it saw and costs 14 on the ones it did 
 
 Weights are stored in 16 bits, because 8-bit weights changed the first guess on 18% of validation photos (`results/global_shrink.json`).
 
+`vision/run_holdout.py` measures what fine-tuning costs on validation photos, with 67 dishes kept out of training altogether, names included. LoRA at half strength kept those names at SigLIP2's level for 5 points on the trained dishes. LayerNorm tuning, the nearest thing a ViT has to FIT3181's BatchNorm fix, was safe but weak. Nothing from it is on the phone yet. Walkthrough section 7; record `results/global_holdout.json`.
+
 | Dataset or weights | Revision | Size used | Licence |
 |---|---|---|---|
 | ISIA Food-500, Hugging Face mirror, pinned in `config.py` | See `LARGE_DATASETS` | 71,701 photos, every fourth block of 93 of 131 files | None stated. Decide before publicly hosting |
@@ -99,7 +101,7 @@ Weights are stored in 16 bits, because 8-bit weights changed the first guess on 
 Then, from `experiments/vision`, with `PYTHONPATH=.`:
 
 ```bash
-python -m vision.isia
+python -m vision.isia     # one block in four; add 1 for every block
 python -m vision.prepare_global
 python -m vision.run_global zero
 python -m vision.run_global lora
@@ -110,8 +112,9 @@ python -m vision.run_global malaysian
 python -m vision.run_global compare
 python -m vision.run_global shrink
 python -m vision.run_global export
+python -m vision.run_holdout
 ```
 
 ## Later
 
-Regional or per-country fine-tunes on the global model, as Yash intends: a region is a small set of corrections and extra names on a shared base. Before building one, test on dishes held out of training, because the first fine-tune cost the dishes it never saw.
+Regional or per-country fine-tunes on the global model, as Yash intends: a region is a small set of corrections and extra names on a shared base. The first fine-tune cost the dishes it never saw, and `run_holdout.py` shows that applying LoRA at half strength removes that cost, so measure a regional fine-tune on held-out dishes the same way.

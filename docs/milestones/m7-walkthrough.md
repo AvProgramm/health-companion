@@ -102,7 +102,51 @@ The unsure line comes from [`global_bands.json`](../../experiments/vision/result
 
 From 0.5 up the first guess is right at least about two times in three, so below that the card says it is not sure.
 
-The next experiment, not built: hold some trained dishes out to act as unseen ones on validation, and use them to choose how strongly LoRA is applied.
+Section 7 measures that trade on dishes held out of training, and how to make it smaller.
+
+## 7. Which way of fine-tuning, on dishes held out of training
+
+[`run_holdout.py`](../../experiments/vision/vision/run_holdout.py) asks what a fine-tune costs a dish it never saw, on validation photos only. 67 dishes are kept out of training altogether, photos and name: the 8 only the Malaysian set has, and 59 chosen at random. Every version is then scored against all 686 phone names.
+
+FIT3181 gave two ideas to test. LoRA is in the Week 10 lecture, and we already use it. `freeze_backbone_batchnorm`, from Assignment 1, stops a CNN's BatchNorm overwriting its pretrained running statistics. SigLIP2 has 0 BatchNorm layers (counted in the record), so there is nothing to freeze. The nearest thing is to let its 36,864 LayerNorm weights learn, which is why "LayerNorm only" and "LoRA and LayerNorm" are here.
+
+The rule is in the docstring, written before the run and committed a minute into it (`be20d9d`), before any version had finished training: the next full training uses the fine-tuned version with the highest average of top-1 on trained and held-out dishes, and LoRA at full strength stays unless another beats it by at least one point. Malaysian dishes are reported but do not count, because eight dishes are too few to choose by.
+
+| Top-1, 686 names | Trained dishes, 11,659 photos | Held-out dishes, 1,882 photos | Malaysian-only dishes, held out, 711 photos | Average of the first two |
+|---|---|---|---|---|
+| SigLIP2 alone | 63.7% | 63.3% | 45.0% | 63.50 |
+| LoRA at full strength, today's method | 80.3% | 51.2% | 42.3% | 65.79 |
+| LoRA at 0.75 | 79.3% | 59.5% | 43.3% | 69.42 |
+| **LoRA at 0.5, chosen by the rule** | 75.3% | 63.6% | 43.9% | **69.45** |
+| LoRA at 0.25 | 70.1% | 63.9% | 45.7% | 67.02 |
+| LayerNorm only | 68.2% | 64.8% | 48.5% | 66.51 |
+| LoRA and LayerNorm | 80.6% | 52.4% | 41.4% | 66.51 |
+| Shipped model, for reference: it did train on these dishes | 79.7% | 81.0% | 77.2% | not a candidate |
+
+Strength is how much of each low-rank correction is applied (`set_lora_strength`). It needs no retraining, and merging keeps whichever strength was set.
+
+Say these plainly:
+- **Turning LoRA down is what worked.** At 0.75 it gives up 1 point on trained dishes and gains 8.3 on dishes it never saw. At 0.5 it gives up 5 and gains 12.4, which brings them level with SigLIP2 alone.
+- 0.5 won by 0.03 of a point over 0.75. That is a tie, however the rule reads it, and 0.75 keeps 4 more points on trained dishes.
+- **The normalisation idea did not earn its place.** Adding LayerNorm to LoRA gained 0.7 of a point on the average, under the one-point bar. LayerNorm alone improved every group over SigLIP2 alone, but only by 4.5 points on trained dishes against LoRA's 16.6.
+- The average weighs the two groups equally, which is a choice. A plate is more often a trained dish.
+- The 59 random dishes come from the datasets, so they resemble the phone's 282 names with no photos but are not the same foods.
+- Nothing here has reached the phone, and no sealed photo was read.
+
+What photos of a local dish are worth, top-1 on the same validation photos:
+
+| Dish | Name only, SigLIP2 alone | With its photos, shipped model |
+|---|---|---|
+| Satay | 83.7% | 91.9% |
+| Roti canai | 69.0% | 94.0% |
+| Kaya toast | 67.1% | 89.4% |
+| Nasi lemak | 64.7% | 91.8% |
+| Popiah | 50.0% | 81.7% |
+| Laksa | 28.4% | 25.0% |
+| Mixed rice | 4.7% | 83.7% |
+| Fried noodles | 0.0% | 79.3% |
+
+Across all eight, photos took top-1 from 45.0% to 77.2%. Fried noodles and mixed rice are generic names, and without photos they probably lose to specific ones on the list, so the five dishes with distinctive names are the fairer figure: 67.1% to 89.8%. Laksa's top-5 is 95.7%, so its first guess is probably curry laksa or asam laksa, which the phone also lists; that was not checked.
 
 ## Bugs found
 
@@ -115,8 +159,9 @@ The next experiment, not built: hold some trained dishes out to act as unseen on
 
 ## Verified
 
-- `npm run check`: typecheck, web tests, hook tests, coach 148, router 33, vision 55.
+- `npm run check`: typecheck, web tests, hook tests, coach 148, router 33, vision 71.
 - Real training on the RTX 5060: 48 minutes (`results/global_lora.json`).
+- Held-out comparison: three more trainings of 29 to 45 minutes each, after rehearsing the whole path on a few hundred photos (`results/global_holdout.json`).
 - `final` and `unseen` each ran once. Their refusal to run twice is by the same guard as Milestone 6.
 - The relabelled join: `dishes.json`, `splits` and `origins` identical, and zero training or validation labels changed (a throwaway comparison of the old and new arrays).
 - The export: 373.8 MB becomes 187.2 MB, same first guess on 223 of 223 photos (`results/global_export.json`).
@@ -132,6 +177,7 @@ The next experiment, not built: hold some trained dishes out to act as unseen on
 
 - **Real plates through the phone camera, and everything else on the phone.** The download, how long the first load takes, the time per photo, and whether a phone has the memory for it.
 - Whether almonds, now one of the names, is recognised.
+- Whether a lower LoRA strength helps on real plates. The phone still runs full strength, and a new strength would need a fresh sealed test.
 - SigLIP2 alone on the Malaysian photos.
 - Licences: ISIA, like the first two datasets, does not grant clear reuse rights, so decide before publicly hosting the model.
 - Hosting: a 187 MB file is larger than many free static hosts allow per file, so it may need to be split or kept elsewhere.
