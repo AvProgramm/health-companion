@@ -33,7 +33,7 @@ from .export import save_result
 from .lora import add_lora, set_lora_strength
 from .prepare import TRAIN, VALIDATION
 from .run import read_result
-from .run_global import SIGLIP_MEAN, SIGLIP_STD, dishes_with_training_photos, group_scores, matcher_for, read_global_dishes, versions, with_names
+from .run_global import READING_WORKERS, SIGLIP_MEAN, SIGLIP_STD, dishes_with_training_photos, group_scores, matcher_for, read_global_dishes, versions, with_names
 from .train import predict_top, seed_all, train_lora
 from .zero_shot import food_names, readable
 
@@ -45,8 +45,6 @@ CLEARLY_BETTER = 0.01
 CURRENT_VERSION = 'lora at strength 1.0'
 # Reported beside the rest but never chosen: one saw the held-out dishes, the other is not fine-tuned
 REFERENCES = {'shipped_model', 'siglip2_alone'}
-# Few workers for the loaders that only read centre crops, because many workers can exhaust the Windows page file
-READING_WORKERS = 4
 
 
 def free_norms(matcher):

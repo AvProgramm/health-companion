@@ -43,6 +43,29 @@ def block_paths():
     return sorted(path for path in BLOCKS.glob('*.npz') if not path.name.endswith('.partial.npz'))
 
 
+def read_isia_names():
+    """Return each split's dish names, with the category numbers as integers."""
+    stored = json.loads((BLOCKS / 'names.json').read_text(encoding='utf-8'))
+    return {split: {int(key): value for key, value in names.items()} for split, names in stored.items()}
+
+
+def copy_in_steps(source, target):
+    """Copy photos to the start of a larger array, a step at a time to keep memory use small."""
+    for start in range(0, len(source), COPY_STEP):
+        # The last step can be short, so size the target from what was actually read
+        step_photos = source[start:start + COPY_STEP]
+        target[start:start + len(step_photos)] = step_photos
+
+        # Write this step out now, because gigabytes of unwritten pages would crowd out everything else
+        target.flush()
+
+
+def fingerprints(images, positions):
+    """Return the fingerprint of the photo at each of these positions."""
+    with ThreadPoolExecutor(max_workers=THREADS) as pool:
+        return np.array(list(pool.map(lambda index: difference_hash(images[index]), positions.tolist())), dtype=np.uint64)
+
+
 def main():
     """Write one array of photos with labels, origins and splits, and record the counts."""
     # Read the first experiment's facts and the ISIA dish names
@@ -50,7 +73,7 @@ def main():
     old_dishes = json.loads((PREPARED / 'dishes.json').read_text(encoding='utf-8'))
     old_labels, old_origins, old_splits = np.load(PREPARED / 'labels.npy'), np.load(PREPARED / 'origins.npy'), np.load(PREPARED / 'splits.npy')
     old_images = np.load(PREPARED / 'images.npy', mmap_mode='r')
-    isia_named = {split: {int(key): value for key, value in names.items()} for split, names in json.loads((BLOCKS / 'names.json').read_text(encoding='utf-8')).items()}
+    isia_named = read_isia_names()
     dishes = global_names(old_dishes, isia_named['train'].values())
     test_dishes = sorted({readable(name) for name in isia_named['test'].values()})
 
@@ -61,10 +84,7 @@ def main():
     images = np.lib.format.open_memmap(GLOBAL_PREPARED / 'images.npy', mode='w+', dtype=np.uint8, shape=(total, STORED_SIZE, STORED_SIZE, 3))
 
     # Copy the first experiment's photos unchanged, moving their labels to the shared list
-    for start in range(0, len(old_labels), COPY_STEP):
-        # The last step can be short, so size the target from what was actually read
-        step_photos = old_images[start:start + COPY_STEP]
-        images[start:start + len(step_photos)] = step_photos
+    copy_in_steps(old_images, images)
     old_lookup = label_lookup(old_dishes, dishes)
     new_old_labels = np.where(old_labels >= 0, old_lookup[old_labels.clip(min=0)], -1)
     position_of = {dish: index for index, dish in enumerate(dishes)}
@@ -89,9 +109,7 @@ def main():
     images.flush()
 
     # Fingerprint the first experiment's training photos, so copies stay out of the new sealed set
-    training = np.flatnonzero(old_splits != 2)
-    with ThreadPoolExecutor(max_workers=THREADS) as pool:
-        training_hashes = np.array(list(pool.map(lambda index: difference_hash(old_images[index]), training.tolist())), dtype=np.uint64)
+    training_hashes = fingerprints(old_images, np.flatnonzero(old_splits != 2))
 
     # Split ISIA, then join every array in the same order as the photos
     labels_array, sealed_array, hashes_array = np.array(isia_labels, dtype=np.int32), np.array(isia_sealed, dtype=bool), np.array(isia_hashes, dtype=np.uint64)

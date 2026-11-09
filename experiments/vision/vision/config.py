@@ -11,6 +11,8 @@ HUB_CACHE = DATA_ROOT / 'hub'
 PREPARED = DATA_ROOT / 'prepared'
 # The first experiment's photos joined with the ISIA sample
 GLOBAL_PREPARED = DATA_ROOT / 'prepared-global'
+# That join plus every ISIA photo it does not hold
+FULL_PREPARED = DATA_ROOT / 'prepared-full'
 # Trained weights, which never go in Git
 CHECKPOINTS = DATA_ROOT / 'checkpoints'
 # The committed record of every run

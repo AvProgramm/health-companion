@@ -22,6 +22,7 @@ import copy
 import json
 import sys
 import tempfile
+from dataclasses import replace
 from pathlib import Path
 import numpy as np
 import torch
@@ -29,7 +30,7 @@ from .config import CHECKPOINTS, GLOBAL_PREPARED, GLOBAL_SETTINGS, PREPARED, RES
 from .data import make_loader, photo_transform
 from .export import SMALLEST_HALVED, export_onnx, halve_weights, run_onnx, save_result, write_web_files
 from .global_model import FoodMatcher
-from .lora import add_lora, merge_lora
+from .lora import add_lora, merge_lora, set_lora_strength
 from .prepare import SEALED, TRAIN, VALIDATION
 from .prepare_global import ISIA_ORIGIN
 from .run import MALAYSIAN, read_dishes, read_result
@@ -48,6 +49,8 @@ SAME_FIRST_GUESS_LINE = 0.98
 EIGHT_BIT_LEVELS = 256
 # Where each confidence band ends, for deciding when the photo card should say it is unsure
 BAND_EDGES = [0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8]
+# Few workers for the loaders that only read centre crops, because many workers can exhaust the Windows page file
+READING_WORKERS = 4
 
 
 def scores(photos, names, labels, device):
@@ -92,8 +95,8 @@ def matcher_for(names, device, attention=None, prompts=PROMPTS):
     return matcher
 
 
-def lora():
-    """Fine-tune SigLIP2 with LoRA on every photo, against the fixed text vectors of the dishes."""
+def lora(folder=GLOBAL_PREPARED, checkpoint=GLOBAL_CHECKPOINT, record='global_lora.json'):
+    """Fine-tune SigLIP2 with LoRA on every photo of a join, against the fixed text vectors of the dishes."""
     settings, device, dishes = GLOBAL_SETTINGS, 'cuda', read_global_dishes()
     seed_all()
     matcher = add_lora(matcher_for(dishes, device), settings.rank, settings.alpha, train_head=False)
@@ -101,14 +104,14 @@ def lora():
     print('dishes', len(dishes), 'trainable', trainable, 'of', sum(parameter.numel() for parameter in matcher.parameters()), flush=True)
 
     # Train on random views, and measure on the centre view
-    train_loader = make_loader(GLOBAL_PREPARED, TRAIN, photo_transform(SIGLIP_MEAN, SIGLIP_STD, training=True), settings, training=True)
-    validation_loader = make_loader(GLOBAL_PREPARED, VALIDATION, photo_transform(SIGLIP_MEAN, SIGLIP_STD, training=False), settings)
+    train_loader = make_loader(folder, TRAIN, photo_transform(SIGLIP_MEAN, SIGLIP_STD, training=True), settings, training=True)
+    validation_loader = make_loader(folder, VALIDATION, photo_transform(SIGLIP_MEAN, SIGLIP_STD, training=False), replace(settings, workers=READING_WORKERS))
     result = train_lora(matcher, train_loader, validation_loader, settings, device, report=lambda line: print(line, flush=True))
 
     # Save the best weights and the record of how they were reached
     CHECKPOINTS.mkdir(parents=True, exist_ok=True)
-    torch.save(result['state_dict'], GLOBAL_CHECKPOINT)
-    save_result('global_lora.json', {'split': 'validation', 'dishes': len(dishes), 'trainable_parameters': trainable, 'best_epoch': result['best_epoch'], 'best_valid_top1': result['best_valid'], 'history': result['history']})
+    torch.save(result['state_dict'], checkpoint)
+    save_result(record, {'split': 'validation', 'dishes': len(dishes), 'trainable_parameters': trainable, 'best_epoch': result['best_epoch'], 'best_valid_top1': result['best_valid'], 'history': result['history']})
 
 
 def with_names(vision, names, device):
@@ -121,11 +124,14 @@ def with_names(vision, names, device):
     return fresh
 
 
-def trained_matcher(names, device, attention=None):
-    """Return the fine-tuned ViT with a head for these names, as an ordinary model."""
+def trained_matcher(names, device, attention=None, checkpoint=GLOBAL_CHECKPOINT, strength=1.0):
+    """Return a fine-tuned ViT with a head for these names, as an ordinary model with its corrections at this strength."""
     dishes = read_global_dishes()
     matcher = add_lora(matcher_for(dishes, device, attention), GLOBAL_SETTINGS.rank, GLOBAL_SETTINGS.alpha, train_head=False)
-    matcher.load_state_dict(torch.load(GLOBAL_CHECKPOINT, weights_only=True))
+    matcher.load_state_dict(torch.load(checkpoint, weights_only=True))
+
+    # Set the strength first, because merging keeps whichever strength was set last
+    set_lora_strength(matcher, GLOBAL_SETTINGS.alpha, strength)
     merge_lora(matcher)
     return with_names(matcher.vision, names, device)
 
@@ -181,10 +187,18 @@ def names_with_unseen(known, test_dishes):
     return known + [name for name in test_dishes if name not in known]
 
 
-def dishes_with_training_photos(dishes):
-    """Return the names of the dishes that had at least one training photo."""
-    labels, splits = np.load(GLOBAL_PREPARED / 'labels.npy'), np.load(GLOBAL_PREPARED / 'splits.npy')
+def dishes_with_training_photos(dishes, folder=GLOBAL_PREPARED):
+    """Return the names of the dishes that had at least one training photo in a join."""
+    labels, splits = np.load(folder / 'labels.npy'), np.load(folder / 'splits.npy')
     return {dishes[index] for index in np.unique(labels[splits == TRAIN]).tolist()}
+
+
+def unseen_report(top, test_labels, test_dishes, position, trained):
+    """Return scores for test photos, keeping the dishes that never had a training photo apart."""
+    photo_dishes = [test_dishes[value] for value in test_labels.tolist()]
+    wanted = torch.tensor([position[name] for name in photo_dishes])
+    never_trained = torch.tensor([name not in trained for name in photo_dishes])
+    return group_scores(top, wanted, {'never_trained': never_trained, 'trained_under_that_name': ~never_trained})
 
 
 def unseen():
@@ -210,10 +224,7 @@ def unseen():
     report = {}
     for label, build in versions(device).items():
         top, labels = predict_top(build(names), loader, device)
-        photo_dishes = [test_dishes[value] for value in labels[is_isia].tolist()]
-        wanted = torch.tensor([position[name] for name in photo_dishes])
-        never_trained = torch.tensor([name not in trained for name in photo_dishes])
-        report[label] = group_scores(top[is_isia], wanted, {'never_trained': never_trained, 'trained_under_that_name': ~never_trained})
+        report[label] = unseen_report(top[is_isia], labels[is_isia], test_dishes, position, trained)
         torch.cuda.empty_cache()
 
     # Record the outcome, which also locks this test
@@ -339,34 +350,36 @@ def shrink():
     save_result('global_shrink.json', {'split': 'validation', 'photos': len(labels), 'names': len(names), 'top1_before_shrinking': (expected == labels).float().mean().item(), 'variants': report})
 
 
+def install_checked(matcher, names, folder, record):
+    """Write the phone's copy of this model, and install it only if it answers as the full model does."""
+    # Take one photo from each batch, so the check covers every part of the dataset
+    loader = make_loader(folder, VALIDATION, photo_transform(SIGLIP_MEAN, SIGLIP_STD, training=False), GLOBAL_SETTINGS)
+    pixels = torch.cat([batch[:1] for batch, _labels in loader])
+    matcher.cpu().eval()
+    with torch.no_grad():
+        expected = matcher(pixels).argmax(dim=1)
+    with tempfile.TemporaryDirectory() as scratch:
+        full, small = Path(scratch) / 'full.onnx', Path(scratch) / 'small.onnx'
+        export_onnx(matcher, full)
+        halve_weights(full, small)
+        same = (torch.from_numpy(run_onnx(small, pixels.numpy())).argmax(dim=1) == expected).float().mean().item()
+        save_result(record, {'names': len(names), 'weights': '16-bit', 'full_mb': round(full.stat().st_size / 1e6, 1), 'small_mb': round(small.stat().st_size / 1e6, 1), 'photos_checked': len(pixels), 'same_first_guess_as_pytorch': same})
+
+        # Ignore a copy that answers differently, because it would not be the model that was tested
+        if same < SAME_FIRST_GUESS_LINE:
+            raise SystemExit(f'The phone copy gave the same first guess on only {same:.1%} of photos, so it was not installed.')
+        write_web_files(small, names, SIGLIP_MEAN, SIGLIP_STD)
+    print(read_result(record), flush=True)
+
+
 def export():
     """Export the fine-tuned model with every known food name, if it passed, and check the phone's copy agrees."""
     # Ignore a model that did not pass, because that decision was fixed before the sealed run
     if not read_result('global_final.json')['ships']:
         raise SystemExit('The sealed test did not pass, so the phone keeps its current model.')
 
-    device, dishes = 'cuda', read_global_dishes()
-    names = food_names(dishes)
-    matcher = trained_matcher(names, device, attention='eager')
-
-    # Take one photo from each batch, so the check covers every part of the dataset
-    loader = make_loader(GLOBAL_PREPARED, VALIDATION, photo_transform(SIGLIP_MEAN, SIGLIP_STD, training=False), GLOBAL_SETTINGS)
-    pixels = torch.cat([batch[:1] for batch, _labels in loader])
-    matcher.cpu().eval()
-    with torch.no_grad():
-        expected = matcher(pixels).argmax(dim=1)
-    with tempfile.TemporaryDirectory() as folder:
-        full, small = Path(folder) / 'full.onnx', Path(folder) / 'small.onnx'
-        export_onnx(matcher, full)
-        halve_weights(full, small)
-        same = (torch.from_numpy(run_onnx(small, pixels.numpy())).argmax(dim=1) == expected).float().mean().item()
-        save_result('global_export.json', {'names': len(names), 'weights': '16-bit', 'full_mb': round(full.stat().st_size / 1e6, 1), 'small_mb': round(small.stat().st_size / 1e6, 1), 'photos_checked': len(pixels), 'same_first_guess_as_pytorch': same})
-
-        # Ignore a copy that answers differently, because it would not be the model that was tested
-        if same < SAME_FIRST_GUESS_LINE:
-            raise SystemExit(f'The phone copy gave the same first guess on only {same:.1%} of photos, so it was not installed.')
-        write_web_files(small, names, SIGLIP_MEAN, SIGLIP_STD)
-    print(read_result('global_export.json'), flush=True)
+    device, names = 'cuda', food_names(read_global_dishes())
+    install_checked(trained_matcher(names, device, attention='eager'), names, GLOBAL_PREPARED, 'global_export.json')
 
 
 def confidence_bands(confidence, correct):

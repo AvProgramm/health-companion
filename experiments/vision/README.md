@@ -93,6 +93,8 @@ Weights are stored in 16 bits, because 8-bit weights changed the first guess on 
 
 `vision/run_holdout.py` measures what fine-tuning costs on validation photos, with 67 dishes kept out of training altogether, names included. LoRA at half strength kept those names at SigLIP2's level for 5 points on the trained dishes. LayerNorm tuning, the nearest thing a ViT has to FIT3181's BatchNorm fix, was safe but weak. Nothing from it is on the phone yet. Walkthrough section 7; record `results/global_holdout.json`.
 
+`vision/prepare_full.py` and `vision/run_full.py` retrain on every ISIA photo, at the half strength the held-out comparison picked. The first join is left untouched and only photos it never held are added, which leaves two sealed sets nobody has looked at: one in ten of the new photos of trained dishes, and the new photos from ISIA's test files, of dishes known only by name. The rule is in the `run_full.py` docstring, committed before any of those photos were read.
+
 | Dataset or weights | Revision | Size used | Licence |
 |---|---|---|---|
 | ISIA Food-500, Hugging Face mirror, pinned in `config.py` | See `LARGE_DATASETS` | 71,701 photos, every fourth block of 93 of 131 files | None stated. Decide before publicly hosting |
@@ -113,6 +115,10 @@ python -m vision.run_global compare
 python -m vision.run_global shrink
 python -m vision.run_global export
 python -m vision.run_holdout
+python -m vision.prepare_full
+python -m vision.run_full lora
+python -m vision.run_full final
+python -m vision.run_full export
 ```
 
 ## Later
