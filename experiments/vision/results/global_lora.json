@@ -1,0 +1,33 @@
+{
+  "split": "validation",
+  "dishes": 473,
+  "trainable_parameters": 2654208,
+  "best_epoch": 3,
+  "best_valid_top1": 0.8155346512794495,
+  "history": [
+    {
+      "epoch": 1,
+      "train_loss": 1.936074705152483,
+      "train_accuracy": 0.7477522477522478,
+      "valid_top1": 0.7927308678627014,
+      "valid_top5": 0.9457619786262512,
+      "seconds": 1095.1
+    },
+    {
+      "epoch": 2,
+      "train_loss": 1.6994264347331745,
+      "train_accuracy": 0.8074191433566433,
+      "valid_top1": 0.8101319074630737,
+      "valid_top5": 0.9541818499565125,
+      "seconds": 896.6
+    },
+    {
+      "epoch": 3,
+      "train_loss": 1.5804145105116136,
+      "train_accuracy": 0.8397696053946054,
+      "valid_top1": 0.8155346512794495,
+      "valid_top5": 0.9564271569252014,
+      "seconds": 895.6
+    }
+  ]
+}

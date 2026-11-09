@@ -1,0 +1,11 @@
+{
+  "dishes": 473,
+  "isia_dish_names": 394,
+  "isia_blocks": 737,
+  "isia_photos": 71701,
+  "isia_train": 51583,
+  "isia_validation": 5739,
+  "isia_sealed": 14199,
+  "isia_sealed_dropped_as_copies": 180,
+  "photos_in_total": 183701
+}
