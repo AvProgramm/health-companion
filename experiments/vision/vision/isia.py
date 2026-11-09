@@ -3,13 +3,18 @@ Fetch an even sample of ISIA Food-500, one block of 100 photos at a time.
 
 All 44 GB would take nearly five hours on this connection. The files are sorted by dish and
 stored in blocks of 100 photos, so taking every fourth block keeps every dish represented
-at about a quarter of the cost. The rest can be fetched later by lowering SAMPLE_EVERY.
+at about a quarter of the cost.
+
+From experiments/vision:  python -m vision.isia [every]
+
+A larger sample only adds blocks, because any block already saved is skipped.
 
 The test files hold 100 dishes that the training files do not, numbered from zero in a list
 of their own, so a category number only means something together with its split.
 """
 import json
 import random
+import sys
 from concurrent.futures import ThreadPoolExecutor
 import numpy as np
 import pyarrow.parquet as pq
@@ -91,12 +96,12 @@ def fetch_block(parquet, block, target):
 
 def fetch_shard(job):
     """Fetch the chosen blocks of one file, skipping any already saved, and return how many are missing."""
-    shard, path = job
+    shard, path, every = job
     for attempt in range(1, ATTEMPTS + 1):
         try:
             with HfFileSystem(skip_instance_cache=True).open(path, 'rb', block_size=READ_AHEAD) as handle:
                 parquet = pq.ParquetFile(handle)
-                for block in blocks_to_fetch(parquet.metadata.num_row_groups, shard):
+                for block in blocks_to_fetch(parquet.metadata.num_row_groups, shard, every):
                     target = BLOCKS / f'{split_of(path)}_{shard:03d}_{block:03d}.npz'
                     if not target.exists():
                         fetch_block(parquet, block, target)
@@ -107,14 +112,14 @@ def fetch_shard(job):
     return 1
 
 
-def main():
-    """Fetch the dish names and the sampled blocks, reporting progress file by file."""
+def main(every=SAMPLE_EVERY):
+    """Fetch the dish names and one block in every so many, reporting progress file by file."""
     paths = shard_paths(HfFileSystem())
     if not (BLOCKS / 'names.json').exists():
         fetch_names(paths)
 
     # Fetch in a random order, so stopping early still leaves every dish represented
-    jobs = list(enumerate(paths))
+    jobs = [(shard, path, every) for shard, path in enumerate(paths)]
     random.Random(SEED).shuffle(jobs)
 
     # Fetch several files at once, and report how many gave up
@@ -129,4 +134,4 @@ def main():
 
 
 if __name__ == '__main__':
-    main()
+    main(*(int(value) for value in sys.argv[1:]))

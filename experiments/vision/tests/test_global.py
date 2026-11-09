@@ -164,6 +164,9 @@ class SamplingTests(unittest.TestCase):
         self.assertEqual(blocks_to_fetch(9, 1), [1, 5])
         self.assertEqual(blocks_to_fetch(9, 5), [1, 5])
 
+    def test_asking_for_every_block_takes_every_block(self):
+        self.assertEqual(blocks_to_fetch(3, 5, every=1), [0, 1, 2])
+
     def test_only_rows_with_a_name_teach_a_name(self):
         self.assertEqual(names_seen([2, 2, 5], ['satay', None, None]), {2: 'satay'})
 
