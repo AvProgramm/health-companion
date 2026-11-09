@@ -1,0 +1,9 @@
+{
+  "photos": 500,
+  "full_mb": 86.8,
+  "small_mb": 23.0,
+  "same_first_guess": 0.9580000042915344,
+  "pytorch_top1": 0.8679999709129333,
+  "small_model_top1": 0.8600000143051147,
+  "ships": "lora"
+}
