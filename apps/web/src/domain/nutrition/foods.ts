@@ -14,6 +14,8 @@ export interface FoodDraft {
   basis: Quantity;
   nutrients: Partial<Record<NutrientKey, NutrientValue>>;
   sourceKind: SourceKind;
+  // Where a reviewed food's numbers were found, kept only while the source stands
+  sourceReference?: string;
 }
 
 /**
@@ -69,7 +71,7 @@ export function buildFoodVersion(draft: FoodDraft, newId: string, previous?: Foo
     aliases,
     basis: { amount: draft.basis.amount, unit: draft.basis.unit },
     nutrients,
-    source: { kind: draft.sourceKind },
+    source: draft.sourceReference === undefined ? { kind: draft.sourceKind } : { kind: draft.sourceKind, reference: draft.sourceReference },
   };
 }
 

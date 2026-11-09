@@ -142,6 +142,16 @@ describe('manual estimate editing', () => {
     expect(onSave.mock.calls[0]![0].source.kind).toBe('user_estimate');
     expect(onSave.mock.calls[0]![0].range).toBeUndefined();
   });
+
+  it('keeps a scanned label as a label, and where it was found', async () => {
+    // Found while testing on 9 Nov: a scanned Nutella saved with the badge "My estimate".
+    const onSave = vi.fn().mockResolvedValue(undefined);
+    const initialFood = { ...estimatedFood('Fictional oats', readEstimate(proposal), 'food'), source: { kind: 'label' as const, reference: 'Open Food Facts: Fictional oats' } };
+    await act(async () => root.render(createElement(FoodEditor, { initialFood, onSave, onClose: vi.fn() })));
+    const form = container.querySelector('form')!;
+    await act(async () => { form.dispatchEvent(new Event('submit', { bubbles: true, cancelable: true })); });
+    expect(onSave.mock.calls[0]![0].source).toEqual({ kind: 'label', reference: 'Open Food Facts: Fictional oats' });
+  });
 });
 
 describe('phone estimate regression', () => {

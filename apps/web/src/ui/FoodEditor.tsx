@@ -39,7 +39,8 @@ export function FoodEditor({ previous, initialFood, initialName, initialUnit, on
   // Labels are usually per 100 g or 100 mL; counted foods usually per 1 piece
   const [basisAmount, setBasisAmount] = useState(seed !== undefined ? String(seed.basis.amount) : startUnit === 'piece' ? '1' : '100');
   const [basisUnit, setBasisUnit] = useState<Unit>(startUnit);
-  const [sourceKind, setSourceKind] = useState<SourceKind>(initialFood !== undefined || previous?.source.kind === 'user_estimate' || previous?.source.kind === 'database' || previous?.source.kind === 'ai_estimate' || previous?.source.kind === 'web_estimate' ? 'user_estimate' : 'label');
+  // Open on a label only when the seed was one, because an edited estimate is the person's own
+  const [sourceKind, setSourceKind] = useState<SourceKind>(seed === undefined || seed.source.kind === 'label' || seed.source.kind === 'fixture' ? 'label' : 'user_estimate');
   const [values, setValues] = useState<Record<NutrientKey, string>>(() => {
     const start = {} as Record<NutrientKey, string>;
     for (const key of EDITABLE_NUTRIENTS) {
@@ -66,8 +67,10 @@ export function FoodEditor({ previous, initialFood, initialName, initialUnit, on
         nutrients[key] = readOptional(values[key], NUTRIENT_LABELS[key].label);
       }
       const amount = Number(basisAmount.trim().replace(',', '.'));
+      // Keep where a seed's numbers were found only while the person still says the same source
+      const sourceReference = sourceKind === initialFood?.source.kind ? initialFood.source.reference : undefined;
       food = buildFoodVersion(
-        { name, aliases: aliases.split(','), basis: { amount, unit: basisUnit }, nutrients, sourceKind },
+        { name, aliases: aliases.split(','), basis: { amount, unit: basisUnit }, nutrients, sourceKind, ...(sourceReference === undefined ? {} : { sourceReference }) },
         crypto.randomUUID(),
         previous,
       );

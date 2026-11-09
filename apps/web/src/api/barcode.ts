@@ -33,5 +33,7 @@ export async function lookUpBarcode(code: string, id: string): Promise<FoodVersi
   if (typeof reply.name !== 'string' || reply.name.trim() === '') {
     throw new Error(`That product has no usable name. ${FALLBACK}`);
   }
-  return estimatedFood(reply.name, readEstimate(reply.estimate), id);
+  const food = estimatedFood(reply.name, readEstimate(reply.estimate), id);
+  // Open Food Facts records what is printed on the pack, so the review opens on "A nutrition label"
+  return { ...food, source: { ...food.source, kind: 'label' } };
 }

@@ -60,6 +60,13 @@ describe('Scan a barcode', () => {
     expect(onFound.mock.calls[0]![0].nutrients.added_sugar_g).toBeNull();
   });
 
+  it('marks the values as a label, and keeps where they were found', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue({ ok: true, status: 200, json: async () => REPLY }));
+    await lookUp('9556001234567');
+    expect(onFound.mock.calls[0]![0].source.kind).toBe('label');
+    expect(onFound.mock.calls[0]![0].source.reference).toContain('Open Food Facts');
+  });
+
   it('says what to do when the barcode is not known', async () => {
     vi.stubGlobal('fetch', vi.fn().mockResolvedValue({ ok: false, status: 404, json: async () => ({}) }));
     await lookUp('9556001234567');
