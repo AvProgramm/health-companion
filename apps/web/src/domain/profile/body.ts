@@ -5,8 +5,6 @@
  * balanced for a person without them. Everything else may stay unknown, and an estimate
  * that needs an unknown fact is unknown too, never a guess.
  */
-import { assertFinite } from '../shared/validate';
-
 export const SEXES = ['female', 'male'] as const;
 export type Sex = (typeof SEXES)[number];
 export const ACTIVITY_LEVELS = ['sedentary', 'light', 'moderate', 'active', 'very_active'] as const;
@@ -45,13 +43,11 @@ export function assertBodyFacts(value: unknown): asserts value is BodyFacts {
     throw new Error('Enter your height and weight using the fields provided.');
   }
 
-  // Check the two required numbers
-  assertFinite(body.heightCm as number, 'Height');
-  if ((body.heightCm as number) < HEIGHT_RANGE_CM[0] || (body.heightCm as number) > HEIGHT_RANGE_CM[1]) {
+  // Check the two required numbers, finite first because NaN slips past both comparisons
+  if (!Number.isFinite(body.heightCm) || (body.heightCm as number) < HEIGHT_RANGE_CM[0] || (body.heightCm as number) > HEIGHT_RANGE_CM[1]) {
     throw new RangeError(`Enter your height in centimetres, from ${HEIGHT_RANGE_CM[0]} to ${HEIGHT_RANGE_CM[1]}.`);
   }
-  assertFinite(body.weightKg as number, 'Weight');
-  if ((body.weightKg as number) < WEIGHT_RANGE_KG[0] || (body.weightKg as number) > WEIGHT_RANGE_KG[1]) {
+  if (!Number.isFinite(body.weightKg) || (body.weightKg as number) < WEIGHT_RANGE_KG[0] || (body.weightKg as number) > WEIGHT_RANGE_KG[1]) {
     throw new RangeError(`Enter your weight in kilograms, from ${WEIGHT_RANGE_KG[0]} to ${WEIGHT_RANGE_KG[1]}.`);
   }
 

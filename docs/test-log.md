@@ -257,3 +257,10 @@ Laptop only so far: unit tests, the browser pane and real GPU training. Details 
 9. Stop the laptop service: Trainer, Coach and Nutritionist must say so, and the diary must keep working.
 10. Me: the profile checks from `docs/milestones/m5-profile-walkthrough.md`.
 
+**Phone results so far (9 Nov 2026, SM-S918B, Android 16, Chrome 156.0.8078.79, connected with `adb reverse tcp:4173 tcp:4173`):**
+
+| Check | Result | What was observed |
+|---|---|---|
+| 2. Photo of a real plate | PASS for capture; model limit | Yash photographed almonds in a steel bowl. Preview was the right way up. The card said "Not sure": Popiah 13%, Roti canai 12%, Nasi lemak 12%, Kaya toast 10%, Breakfast burrito 5%. Almonds are not one of the 109 trained dishes, so this is the model's limit, not a pipeline fault |
+| Known photos on the phone | PASS | Validation photos sent through the real file input on the phone over DevTools: nasi lemak 81%, roti canai 95%, laksa 99%, about 560 to 780 ms each, matching the laptop browser |
+| 1, 3 to 10 | NOT TESTED | |

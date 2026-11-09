@@ -63,6 +63,11 @@ describe('checking what was entered', () => {
     expect(() => assertBodyFacts({ ...BODY, weightKg })).toThrow(/[Ww]eight/);
   });
 
+  // Pressing Save with the boxes empty should say what to do, not mention NaN
+  it('asks for the height in plain words when the box is empty', () => {
+    expect(() => assertBodyFacts({ ...BODY, heightCm: Number.NaN })).toThrow('Enter your height in centimetres, from 100 to 250.');
+  });
+
   it('refuses an impossible birth year, an unlisted option and extra fields', () => {
     expect(() => assertBodyFacts({ ...BODY, birthYear: 96 })).toThrow(/birth year/);
     expect(() => assertBodyFacts({ ...BODY, sex: 'other' })).toThrow(/listed/);
