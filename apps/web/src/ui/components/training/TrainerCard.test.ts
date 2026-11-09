@@ -59,10 +59,17 @@ describe('Ask the Trainer', () => {
     await type('#trainer-minutes', '120');
     await ask();
     expect(JSON.parse(fetchMock.mock.calls[0]![1].body)).toEqual({ goal: 'I want to be healthy', minutes: 120, equipment: [], areas: AREAS, level: 'intermediate' });
-    expect(container.textContent).toContain('Picked by the AI');
+    expect(container.textContent).toContain('Answered by the AI');
     expect(container.textContent).toContain('Fictional reason.');
     expect(container.querySelectorAll('.planned-exercise')).toHaveLength(12);
     expect(container.textContent).toContain('120 of 120 min');
+  });
+
+  it('names the model that picked the session', async () => {
+    vi.stubGlobal('fetch', answering({ exerciseIds: LIBRARY.map(entry => entry.id), reason: 'Fictional reason.', source: 'ai', answeredBy: 'Gemini' }));
+    await type('#trainer-goal', 'Fictional goal');
+    await ask();
+    expect(container.textContent).toContain('Answered by Gemini');
   });
 
   it('keeps the minutes a session was planned for after the box is edited', async () => {
@@ -80,6 +87,7 @@ describe('Ask the Trainer', () => {
     await ask();
     expect(container.textContent).toContain('Please call your local emergency number.');
     expect(container.textContent).not.toContain('Picked');
+    expect(container.textContent).not.toContain('Answered by');
     expect(container.querySelector('.gym-plan-result')).toBeNull();
   });
 
@@ -88,6 +96,7 @@ describe('Ask the Trainer', () => {
     await type('#trainer-goal', 'Fictional goal');
     await ask();
     expect(container.textContent).toContain('Picked from the library');
+    expect(container.textContent).not.toContain('Answered by');
   });
 
   it('says what still works when the laptop cannot be reached', async () => {

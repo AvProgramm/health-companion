@@ -62,6 +62,12 @@ describe('Ideas for what to eat', () => {
     expect(container.textContent).toContain('Beans add fibre. [1]');
   });
 
+  it('names the model behind the ideas', async () => {
+    vi.stubGlobal('fetch', answering({ mode: 'suggestions', message: 'Ideas to try.', suggestions: [IDEA], sources: [SOURCE], answeredBy: 'Groq' }));
+    await ask('Fictional goal');
+    expect(container.textContent).toContain('Answered by Groq');
+  });
+
   it('only makes a draft when the person chooses to', async () => {
     vi.stubGlobal('fetch', answering({ mode: 'suggestions', message: 'Ideas to try.', suggestions: [IDEA], sources: [SOURCE] }));
     await ask('Fictional goal');
@@ -81,6 +87,7 @@ describe('Ideas for what to eat', () => {
     vi.stubGlobal('fetch', answering({ mode: 'excerpts', message: 'The AI answer is not available.', suggestions: [], sources: [SOURCE] }));
     await ask('Fictional goal');
     expect(container.textContent).toContain('Fictional excerpt.');
+    expect(container.textContent).not.toContain('Answered by');
   });
 
   it('says the diary still works when the service is offline', async () => {
@@ -91,7 +98,7 @@ describe('Ideas for what to eat', () => {
 });
 
 describe('readNutritionistReply', () => {
-  it.each([null, {}, { mode: 'other', message: 'm', suggestions: [], sources: [] }, { mode: 'suggestions', message: 'm', suggestions: [{ title: 1 }], sources: [] }, { mode: 'suggestions', message: 'm', suggestions: [], sources: [{}] }])('rejects a malformed reply: %j', (value) => {
+  it.each([null, {}, { mode: 'other', message: 'm', suggestions: [], sources: [] }, { mode: 'suggestions', message: 'm', suggestions: [{ title: 1 }], sources: [] }, { mode: 'suggestions', message: 'm', suggestions: [], sources: [{}] }, { mode: 'suggestions', message: 'm', suggestions: [], sources: [], answeredBy: 7 }])('rejects a malformed reply: %j', (value) => {
     expect(() => readNutritionistReply(value)).toThrow(/could not read/);
   });
 });

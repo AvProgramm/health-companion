@@ -52,6 +52,12 @@ describe('Ask the Coach', () => {
     expect(container.textContent).toContain('Fictional claim. [1]');
   });
 
+  it('names the model behind the answer', async () => {
+    vi.stubGlobal('fetch', answering({ mode: 'answer', message: 'From reviewed guidance.', claims: [{ text: 'Fictional claim.', cites: [1] }], sources: [SOURCE], answeredBy: 'Gemini' }));
+    await ask('Fictional question?');
+    expect(container.textContent).toContain('Answered by Gemini');
+  });
+
   it('shows sources as plain text, never links', async () => {
     vi.stubGlobal('fetch', answering({ mode: 'answer', message: 'From reviewed guidance.', claims: [{ text: 'Fictional claim.', cites: [1] }], sources: [SOURCE] }));
     await ask('Fictional question?');
@@ -63,6 +69,7 @@ describe('Ask the Coach', () => {
     vi.stubGlobal('fetch', answering({ mode: 'excerpts', message: 'The AI answer is not available.', claims: [], sources: [SOURCE] }));
     await ask('Fictional question?');
     expect(container.textContent).toContain('Fictional excerpt.');
+    expect(container.textContent).not.toContain('Answered by');
   });
 
   it('shows a refusal with no sources', async () => {
@@ -79,7 +86,7 @@ describe('Ask the Coach', () => {
 });
 
 describe('readCoachReply', () => {
-  it.each([null, {}, { mode: 'other', message: 'm', claims: [], sources: [] }, { mode: 'answer', message: 'm', claims: [{ text: 1, cites: [] }], sources: [] }, { mode: 'answer', message: 'm', claims: [], sources: [{}] }])('rejects a malformed reply: %j', (value) => {
+  it.each([null, {}, { mode: 'other', message: 'm', claims: [], sources: [] }, { mode: 'answer', message: 'm', claims: [{ text: 1, cites: [] }], sources: [] }, { mode: 'answer', message: 'm', claims: [], sources: [{}] }, { mode: 'answer', message: 'm', claims: [], sources: [], answeredBy: 7 }])('rejects a malformed reply: %j', (value) => {
     expect(() => readCoachReply(value)).toThrow(/could not read/);
   });
 });

@@ -1,6 +1,7 @@
 import { useState, type FormEvent } from 'react';
 import { askCoach } from '../../../api/coach';
 import type { CoachReply } from '../../../domain/coach/coachReply';
+import { AnsweredBy } from '../shared/AnsweredBy';
 import { SourceLine } from '../shared/SourceLine';
 import { errorText } from '../../format';
 import { ErrorLine } from '../shared/NoticeLine';
@@ -54,6 +55,7 @@ export function AskCoach() {
       <ErrorLine error={error} />
 
       {reply !== null && <div className="ai-reply" aria-live="polite">
+        {reply.mode === 'answer' && <AnsweredBy name={reply.answeredBy} />}
         <p className="body">{reply.message}</p>
         {reply.claims.length > 0 && <ul className="items">{reply.claims.map(claim => <li key={claim.text} className="body">{claim.text} <span className="hint numbers">{claim.cites.map(cite => `[${cite}]`).join(' ')}</span></li>)}</ul>}
         {reply.mode === 'excerpts' && <ul className="items">{reply.sources.map(source => <SourceLine key={source.number} source={source} />)}</ul>}

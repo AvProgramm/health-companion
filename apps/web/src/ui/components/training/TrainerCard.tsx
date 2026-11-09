@@ -7,6 +7,7 @@ import type { ExerciseEntry } from '../../../domain/training/exerciseSearch';
 import { DIFFICULTIES, SETTINGS, type Difficulty, type Setting } from '../../../domain/training/packs';
 import type { PlanResult } from '../../../domain/training/planner';
 import { planFromProposal, type TrainerReply } from '../../../domain/training/trainerPlan';
+import { AnsweredBy } from '../shared/AnsweredBy';
 import { OptionGroup } from '../shared/OptionGroup';
 import { PlanResultView } from './PlanResultView';
 import { errorText } from '../../format';
@@ -102,7 +103,8 @@ export function TrainerCard({ entries, profile = EMPTY_PROFILE }: { entries: rea
 
       {session !== null && <>
         <div className="ai-reply">
-          {session.reply.source !== 'refused' && <span className={`badge ${session.reply.source === 'ai' ? 'badge-estimate' : 'badge-warn'}`}>{session.reply.source === 'ai' ? 'Picked by the AI' : 'Picked from the library'}</span>}
+          {session.reply.source === 'ai' && <AnsweredBy name={session.reply.answeredBy} />}
+          {session.reply.source === 'library' && <span className="badge badge-warn">Picked from the library</span>}
           <p className="body">{session.reply.reason}</p>
           {(profile.seatedOnly || profile.avoidAreas.length > 0 || profile.unableTo.length > 0) && <p className="hint">Adapted on this device. Reviewed local seated cards may replace a proposal that has no eligible seated exercise.</p>}
         </div>

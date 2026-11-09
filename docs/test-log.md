@@ -282,3 +282,16 @@ Laptop only so far. The browser pane was hidden, so the times may read slightly 
 | Phone width, 375 px | PASS | No horizontal overflow. A picked dish filled the entry box with "aloo gobi 1 plate", waiting at Review entry |
 
 **Phone checks for this model (NOT TESTED on the phone):** the warning; the download finishing; the time per photo and how long the first load takes; memory on a real phone; a real plate; almonds, which are now one of the names; airplane mode after the download.
+
+## Whichever model is available, and who answered (9 Nov 2026, Claude Code)
+
+Laptop only, generic text only. For the hand-over checks Groq was given a fake key in that one process, so it really refused. The browser-pane checks used the laptop's real keys.
+
+| Check | Result | What was observed |
+|---|---|---|
+| Hand-over between real providers | PASS | Groq answered 401, Gemini answered 200, 1.5 s in all. "nasi lemak, 2 plates" came back as 2 pieces, 1300 kcal (1000–1700), naming Gemini AI |
+| The queue remembers a refusal | PASS | After that one 401, the Trainer, Nutritionist and Coach each went straight to Gemini, with no second request to Groq |
+| Each reply names its model | PASS | `answeredBy: Gemini` on the Trainer (12 picks, 1.5 s), the Nutritionist (1 idea, 1.0 s) and the Coach (2 claims, 0.8 s) |
+| Gemini leaving a nutrient unknown | Bug found, then fixed | 12 real estimates over 4 generic foods: 4 were thrown away, because Gemini left added sugar null and still wrote a range such as 0 to 5. After the fix, 11 of 12 were kept, with that nutrient still unknown. The one rejection was correct: the model misspelled a range key as `added_standard_g` |
+| Label on the real cards | PASS | Browser pane, rebuilt app on localhost:4173, real service and real Groq. The Trainer, Nutritionist and Coach each showed "Answered by Groq" above the reply. The first two were clicked through; the Coach form was submitted by script in a background tab, because the pane was in use. No service errors |
+| Phone | NOT TESTED | The phone needs the rebuilt preview to show the label and the 35-second wait |

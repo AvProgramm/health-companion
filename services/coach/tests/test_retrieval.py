@@ -25,9 +25,9 @@ class RetrievalTests(unittest.TestCase):
 
     def setUp(self):
         """Keep automatic enrichment independent of the laptop credentials."""
-        environment = patch.dict('os.environ', {'TAVILY_API_KEY': ''})
-        environment.start()
-        self.addCleanup(environment.stop)
+        for patcher in (patch.dict('os.environ', {'TAVILY_API_KEY': ''}), patch('coach.availability.queue', ['Groq', 'Gemini', 'Hugging Face'])):
+            patcher.start()
+            self.addCleanup(patcher.stop)
 
     def test_filters_unsafe_irrelevant_and_non_nutrition_results(self):
         """Keep only relevant public nutrition snippets with a bounded length."""
@@ -47,7 +47,7 @@ class RetrievalTests(unittest.TestCase):
         result = Estimate.model_validate(proposal())
         database = AsyncMock(return_value=result)
         retrieval, groq, hf = AsyncMock(), AsyncMock(), AsyncMock()
-        self.assertEqual(asyncio.run(estimate_food('fictional oatcakes', '100 g', database, retrieval, (groq, hf))), result)
+        self.assertEqual(asyncio.run(estimate_food('fictional oatcakes', '100 g', database, retrieval, {'Groq': groq, 'Hugging Face': hf})), result)
         retrieval.assert_not_awaited()
         groq.assert_not_awaited()
         hf.assert_not_awaited()
@@ -59,7 +59,7 @@ class RetrievalTests(unittest.TestCase):
         retrieval = AsyncMock(return_value=evidence)
         groq = AsyncMock(side_effect=httpx.HTTPStatusError('Quota exceeded.', request=httpx.Request('POST', 'https://example.org'), response=httpx.Response(429)))
         hf = AsyncMock(return_value=Estimate.model_validate(proposal()))
-        result = asyncio.run(estimate_food('fictional oatcakes', '100 g', database, retrieval, (groq, hf)))
+        result = asyncio.run(estimate_food('fictional oatcakes', '100 g', database, retrieval, {'Groq': groq, 'Hugging Face': hf}))
         self.assertIsNotNone(result)
         groq.assert_awaited_once_with('fictional oatcakes', '100 g', evidence)
         hf.assert_awaited_once_with('fictional oatcakes', '100 g', evidence)
@@ -68,7 +68,7 @@ class RetrievalTests(unittest.TestCase):
         """Keep the fallback chain useful when web search is unavailable."""
         groq = AsyncMock(return_value=Estimate.model_validate(proposal()))
         hf = AsyncMock()
-        result = asyncio.run(estimate_food('fictional oatcakes', '100 g', AsyncMock(return_value=None), AsyncMock(side_effect=TimeoutError()), (groq, hf)))
+        result = asyncio.run(estimate_food('fictional oatcakes', '100 g', AsyncMock(return_value=None), AsyncMock(side_effect=TimeoutError()), {'Groq': groq, 'Hugging Face': hf}))
         self.assertIsNotNone(result)
         groq.assert_awaited_once_with('fictional oatcakes', '100 g', [])
         hf.assert_not_awaited()
@@ -99,7 +99,7 @@ class RetrievalTests(unittest.TestCase):
         """Leave manual logging available after both model providers fail."""
         result = asyncio.run(estimate_food('fictional oatcakes', '100 g',
             AsyncMock(return_value=None), AsyncMock(return_value=[]),
-            (AsyncMock(side_effect=TimeoutError()), AsyncMock(side_effect=ValueError('No usable proposal.')))))
+            {'Groq': AsyncMock(side_effect=TimeoutError()), 'Hugging Face': AsyncMock(side_effect=ValueError('No usable proposal.'))}))
         self.assertIsNone(result)
 
     def test_rejects_a_model_citation_not_present_in_retrieval(self):

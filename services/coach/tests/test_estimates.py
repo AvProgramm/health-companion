@@ -21,9 +21,9 @@ class EstimateTests(unittest.TestCase):
 
     def setUp(self):
         """Keep automatic enrichment independent of the laptop credentials."""
-        environment = patch.dict('os.environ', {'TAVILY_API_KEY': ''})
-        environment.start()
-        self.addCleanup(environment.stop)
+        for patcher in (patch.dict('os.environ', {'TAVILY_API_KEY': ''}), patch('coach.availability.queue', ['Groq', 'Gemini', 'Hugging Face'])):
+            patcher.start()
+            self.addCleanup(patcher.stop)
 
     def test_usda_preserves_unknown_and_checks_units(self):
         """Return only nutrients expressed in the expected unit."""
@@ -142,14 +142,14 @@ class EstimateTests(unittest.TestCase):
         """Use the LLM only after no usable database match remains."""
         database = AsyncMock(return_value=Estimate.model_validate(proposal('database')))
         llm = AsyncMock(return_value=Estimate.model_validate(proposal()))
-        result = asyncio.run(estimate_food('Fictional oats', '50 g', database, AsyncMock(return_value=[]), (llm, AsyncMock(return_value=None))))
+        result = asyncio.run(estimate_food('Fictional oats', '50 g', database, AsyncMock(return_value=[]), {'Groq': llm, 'Hugging Face': AsyncMock(return_value=None)}))
         self.assertEqual(result.sourceKind, 'database')
         llm.assert_not_awaited()
         database.side_effect = TimeoutError()
-        result = asyncio.run(estimate_food('Fictional oats', '50 g', database, AsyncMock(return_value=[]), (llm, AsyncMock(return_value=None))))
+        result = asyncio.run(estimate_food('Fictional oats', '50 g', database, AsyncMock(return_value=[]), {'Groq': llm, 'Hugging Face': AsyncMock(return_value=None)}))
         self.assertEqual(result.sourceKind, 'ai_estimate')
         llm.side_effect = TimeoutError()
-        self.assertIsNone(asyncio.run(estimate_food('Fictional oats', '50 g', database, AsyncMock(return_value=[]), (llm, AsyncMock(return_value=None)))))
+        self.assertIsNone(asyncio.run(estimate_food('Fictional oats', '50 g', database, AsyncMock(return_value=[]), {'Groq': llm, 'Hugging Face': AsyncMock(return_value=None)})))
 
     # Seen on 7 Nov: "nasi lemak, 2" came back as 494.0 kcal (494.0–494.0)
     def test_model_estimate_needs_a_real_range(self):

@@ -1,6 +1,9 @@
 """Validate the narrow food estimate boundary."""
-from typing import Literal
+from typing import Annotated, Literal
 from pydantic import BaseModel, ConfigDict, Field, model_validator
+
+# The hosted model that wrote a reply; unset when the words on screen are not a model's
+AnsweredBy = Annotated[str, Field(min_length=1, max_length=40)] | None
 
 
 class StrictModel(BaseModel):
@@ -28,6 +31,7 @@ class TrainerReply(StrictModel):
     exerciseIds: list[str] = Field(max_length=16)
     reason: str = Field(min_length=1, max_length=300)
     source: Literal['ai', 'library', 'refused']
+    answeredBy: AnsweredBy = None
 
 
 class CoachRequest(StrictModel):
@@ -57,6 +61,7 @@ class CoachReply(StrictModel):
     message: str = Field(min_length=1, max_length=400)
     claims: list[CoachClaim] = Field(max_length=4)
     sources: list[CoachSource] = Field(max_length=3)
+    answeredBy: AnsweredBy = None
 
 
 class NutritionistRequest(StrictModel):
@@ -77,6 +82,7 @@ class NutritionistReply(StrictModel):
     message: str = Field(min_length=1, max_length=400)
     suggestions: list[NutritionistSuggestion] = Field(max_length=3)
     sources: list[CoachSource] = Field(max_length=3)
+    answeredBy: AnsweredBy = None
 
 
 class EstimateRequest(StrictModel):

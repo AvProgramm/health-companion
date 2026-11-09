@@ -26,7 +26,11 @@ describe('readTrainerReply', () => {
     expect(readTrainerReply(reply(1))).toEqual(reply(1));
   });
 
-  it.each([null, {}, { exerciseIds: 'x', reason: 'r', source: 'ai' }, { exerciseIds: [1], reason: 'r', source: 'ai' }, { exerciseIds: [], reason: 'r', source: 'other' }])('rejects a malformed reply: %j', (value) => {
+  it('keeps the name of the model that answered', () => {
+    expect(readTrainerReply({ ...reply(1), answeredBy: 'Gemini' }).answeredBy).toBe('Gemini');
+  });
+
+  it.each([null, {}, { exerciseIds: 'x', reason: 'r', source: 'ai' }, { exerciseIds: [1], reason: 'r', source: 'ai' }, { exerciseIds: [], reason: 'r', source: 'other' }, { exerciseIds: [], reason: 'r', source: 'ai', answeredBy: 7 }])('rejects a malformed reply: %j', (value) => {
     expect(() => readTrainerReply(value)).toThrow(/could not read/);
   });
 });

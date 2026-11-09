@@ -1,6 +1,7 @@
 """Choose composition data, public evidence and validated model fallbacks."""
 import asyncio
 import httpx
+from .availability import asking_order, send_to_back
 from .providers import database_estimate, llm_estimate
 from .retrieval import search_nutrition
 from .gemini import gemini_estimate
@@ -11,8 +12,8 @@ from .enrichment import enrich_unknown
 LOOKUP_DEADLINE = 4.0
 # Model calls include their own socket deadline inside this total stage budget.
 MODEL_DEADLINE = 8.0
-# Asked in this order, so a model that is out of tokens hands over to the next.
-ESTIMATE_MODELS = (llm_estimate, gemini_estimate, hf_estimate)
+# The hosted models an estimate can ask, by their name in the shared queue.
+ESTIMATE_MODELS = {'Groq': llm_estimate, 'Gemini': gemini_estimate, 'Hugging Face': hf_estimate}
 
 
 async def attempt(provider, *args, deadline):
@@ -30,8 +31,10 @@ async def estimate_food(name, portion_text, database=database_estimate, retrieva
     if result is not None:
         return await enrich_unknown(name, portion_text, result)
     evidence = await attempt(retrieval, name, portion_text, deadline=LOOKUP_DEADLINE) or []
-    for model in models:
-        result = await attempt(model, name, portion_text, evidence, deadline=MODEL_DEADLINE)
+    for model_name in asking_order(models):
+        result = await attempt(models[model_name], name, portion_text, evidence, deadline=MODEL_DEADLINE)
         if result is not None:
             return await enrich_unknown(name, portion_text, result)
+        # Ask this model last next time, because it could not answer now
+        send_to_back(model_name)
     return None

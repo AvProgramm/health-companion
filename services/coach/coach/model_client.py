@@ -51,12 +51,29 @@ async def ask_model(endpoint, token, model, provider, provider_url, name, portio
     # Set provenance ourselves because a model cannot invent a source URL.
     data['sourceKind'] = 'ai_estimate'
     data['sources'] = sources + [{'provider': provider, 'description': 'Model estimate, not a database measurement.', 'url': provider_url}]
+    tidy_unknown_ranges(data)
     result = Estimate.model_validate(data)
     if result.basis != basis:
         raise ValueError('Keep the requested portion basis unchanged.')
     check_model_spread(result)
     check_energy_consistency(result)
     return result
+
+
+def tidy_unknown_ranges(data):
+    """
+    Clear the range of every nutrient the model left unknown.
+
+    Gemini often returns null for a nutrient and still writes a range for it, either two nulls
+    or bounds such as 0 to 5 (seen live on 9 Nov). A range around no value can never be shown,
+    and the nutrient stays unknown rather than zero, so only the stray range is dropped.
+    """
+    nutrients, ranges = data.get('nutrients'), data.get('range')
+
+    # Ignore a malformed reply, because validation will reject it
+    if not isinstance(nutrients, dict) or not isinstance(ranges, dict):
+        return
+    data['range'] = {key: None if nutrients.get(key) is None else spread for key, spread in ranges.items()}
 
 
 def scale_estimate(estimate, basis):

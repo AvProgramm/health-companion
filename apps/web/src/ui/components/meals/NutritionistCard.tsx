@@ -1,6 +1,7 @@
 import { useState, type FormEvent } from 'react';
 import { askNutritionist } from '../../../api/nutritionist';
 import type { NutritionistReply } from '../../../domain/nutrition/nutritionistReply';
+import { AnsweredBy } from '../shared/AnsweredBy';
 import { SourceLine } from '../shared/SourceLine';
 import { errorText } from '../../format';
 import { ErrorLine } from '../shared/NoticeLine';
@@ -54,6 +55,7 @@ export function NutritionistCard({ onDraft }: { onDraft: (entry: string) => void
       <ErrorLine error={error} />
 
       {reply !== null && <div className="ai-reply" aria-live="polite">
+        {reply.mode === 'suggestions' && <AnsweredBy name={reply.answeredBy} />}
         <p className="body">{reply.message}</p>
         {reply.suggestions.length > 0 && <ul className="items">{reply.suggestions.map(suggestion => <li key={suggestion.entry} className="suggestion">
           <div><strong>{suggestion.title}</strong><p className="hint">{suggestion.entry}</p><p className="hint">{suggestion.why.text} <span className="numbers">{suggestion.why.cites.map(cite => `[${cite}]`).join(' ')}</span></p></div>

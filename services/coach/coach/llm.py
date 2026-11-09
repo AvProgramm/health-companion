@@ -1,8 +1,9 @@
-"""Ask a hosted model for one JSON object, keeping the keys on the laptop."""
+"""Ask whichever hosted model is available for one JSON object, keeping the keys on the laptop."""
 import json
 import os
 from dataclasses import dataclass
 import httpx
+from .availability import asking_order, send_to_back
 from .gemini import GEMINI_DEFAULT_MODEL, GEMINI_URL
 
 # Groq's chat endpoint, the same one the estimate fallback uses
@@ -21,37 +22,53 @@ class HostedModel:
     extra_fields: dict
 
 
-# Who is asked, in order: Groq first, then Gemini once Groq is out of tokens. Only Groq gets
-# a reasoning level, because Google's guide does not list this Gemini model among those that take one.
-HOSTED_MODELS = (
-    HostedModel(GROQ_URL, 'GROQ_API_KEY', 'GROQ_MODEL', 'openai/gpt-oss-20b', {'reasoning_effort': 'low'}),
-    HostedModel(GEMINI_URL, 'GEMINI_API_KEY', 'GEMINI_MODEL', GEMINI_DEFAULT_MODEL, {}),
-)
+# The models a coach can ask, by the name shown on its card. Only Groq gets a reasoning
+# level, because Google's guide does not list this Gemini model among those that take one.
+HOSTED_MODELS = {
+    'Groq': HostedModel(GROQ_URL, 'GROQ_API_KEY', 'GROQ_MODEL', 'openai/gpt-oss-20b', {'reasoning_effort': 'low'}),
+    'Gemini': HostedModel(GEMINI_URL, 'GEMINI_API_KEY', 'GEMINI_MODEL', GEMINI_DEFAULT_MODEL, {}),
+}
 
 
-async def ask_hosted_model(messages):
-    """
-    Return the next message, as a parsed JSON object, from the first model able to answer.
+class HostedConversation:
+    """Ask whichever hosted model is available during one request, and remember who answered."""
 
-    A provider that replies with an error, such as 429 when its free tokens run out,
-    hands over to the next, because that reply costs almost none of the browser's wait.
-    Anything else raises, so the caller can fall back to library picks or plain excerpts.
-    """
-    # Ignore a provider without a key, because the diary must work with none of them
-    available = [model for model in HOSTED_MODELS if os.getenv(model.key_setting, '')]
-    if not available:
-        raise ValueError('No hosted model key is configured on this laptop.')
+    def __init__(self):
+        """Start with nobody having answered."""
+        self.answered_by = None
 
-    # Ask each in turn, keeping the latest refusal in case none of them can answer
-    refusal = None
-    for model in available:
-        try:
-            return await ask_one_model(model, messages)
-        except httpx.HTTPStatusError as problem:
-            refusal = problem
+    async def __call__(self, messages):
+        """
+        Return the next message, as a parsed JSON object, from the first model able to answer.
 
-    # Raise the last refusal, so the caller uses its fallback
-    raise refusal
+        A model that fails goes to the back of the queue. One that replies with an error,
+        such as 429 when its free tokens run out, also hands over at once, because that reply
+        costs almost none of the browser's wait. Anything else raises, so the caller can fall
+        back to library picks or plain excerpts.
+        """
+        # Ignore a provider without a key, because the diary must work with none of them
+        names = [name for name in asking_order(HOSTED_MODELS) if os.getenv(HOSTED_MODELS[name].key_setting, '')]
+        if not names:
+            raise ValueError('No hosted model key is configured on this laptop.')
+
+        # Ask each in turn, keeping the latest refusal in case none of them can answer
+        refusal = None
+        for name in names:
+            try:
+                reply = await ask_one_model(HOSTED_MODELS[name], messages)
+            except httpx.HTTPStatusError as problem:
+                send_to_back(name)
+                refusal = problem
+            except (httpx.HTTPError, ValueError, KeyError, IndexError, TypeError):
+                # Stop at a slow or garbled reply, because the browser cannot wait for a second model
+                send_to_back(name)
+                raise
+            else:
+                self.answered_by = name
+                return reply
+
+        # Raise the last refusal, so the caller uses its fallback
+        raise refusal
 
 
 async def ask_one_model(model, messages):

@@ -5,6 +5,7 @@
  * device: unknown IDs are dropped, and the same hard rules and planner used everywhere
  * else decide what actually goes in the session.
  */
+import { isAnsweredBy } from '../coach/coachReply';
 import type { MovementCard } from './catalogue';
 import { splitCards } from './eligibility';
 import { SEATED_CARDS } from './seated';
@@ -17,16 +18,17 @@ export interface TrainerReply {
   exerciseIds: string[];
   reason: string;
   source: 'ai' | 'library' | 'refused';
+  answeredBy?: string | null;
 }
 
 /** Return a validated reply, rejecting anything the service should never send. */
 export function readTrainerReply(value: unknown): TrainerReply {
   const reply = value as Partial<TrainerReply> | null;
   if (reply === null || typeof reply !== 'object' || !Array.isArray(reply.exerciseIds) || !reply.exerciseIds.every(id => typeof id === 'string')
-      || typeof reply.reason !== 'string' || (reply.source !== 'ai' && reply.source !== 'library' && reply.source !== 'refused')) {
+      || typeof reply.reason !== 'string' || (reply.source !== 'ai' && reply.source !== 'library' && reply.source !== 'refused') || !isAnsweredBy(reply.answeredBy)) {
     throw new Error('The Trainer sent a reply this app could not read. Try again.');
   }
-  return { exerciseIds: reply.exerciseIds, reason: reply.reason, source: reply.source };
+  return { exerciseIds: reply.exerciseIds, reason: reply.reason, source: reply.source, answeredBy: reply.answeredBy };
 }
 
 /**

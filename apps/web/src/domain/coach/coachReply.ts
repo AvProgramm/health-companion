@@ -20,6 +20,7 @@ export interface CoachReply {
   message: string;
   claims: CoachClaim[];
   sources: CoachSource[];
+  answeredBy?: string | null;
 }
 
 // Every outcome this app knows how to display
@@ -38,11 +39,20 @@ export function isClaim(value: unknown): value is CoachClaim {
   return claim !== null && typeof claim === 'object' && typeof claim.text === 'string' && Array.isArray(claim.cites) && claim.cites.every(cite => typeof cite === 'number');
 }
 
+/**
+ * Return whether a value can say who answered.
+ *
+ * Nobody is named when the words on screen are not a model's, or the service is older.
+ */
+export function isAnsweredBy(value: unknown): boolean {
+  return value === undefined || value === null || typeof value === 'string';
+}
+
 /** Return a validated reply, rejecting anything the service should never send. */
 export function readCoachReply(value: unknown): CoachReply {
   const reply = value as Partial<CoachReply> | null;
   if (reply === null || typeof reply !== 'object' || typeof reply.mode !== 'string' || !MODES.includes(reply.mode) || typeof reply.message !== 'string'
-      || !Array.isArray(reply.claims) || !reply.claims.every(isClaim) || !Array.isArray(reply.sources) || !reply.sources.every(isSource)) {
+      || !Array.isArray(reply.claims) || !reply.claims.every(isClaim) || !Array.isArray(reply.sources) || !reply.sources.every(isSource) || !isAnsweredBy(reply.answeredBy)) {
     throw new Error('The Coach sent a reply this app could not read. Your diary still works.');
   }
   return reply as CoachReply;

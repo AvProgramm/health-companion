@@ -1,4 +1,4 @@
-"""Use Google's Gemini when Groq has run out of tokens."""
+"""Use Google's Gemini as one of the hosted models."""
 import os
 from .databases import portion_basis
 from .model_client import request_model
