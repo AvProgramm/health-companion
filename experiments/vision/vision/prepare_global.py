@@ -61,7 +61,9 @@ def main():
 
     # Copy the first experiment's photos unchanged, moving their labels to the shared list
     for start in range(0, len(old_labels), COPY_STEP):
-        images[start:start + COPY_STEP] = old_images[start:start + COPY_STEP]
+        # The last step can be short, so size the target from what was actually read
+        step_photos = old_images[start:start + COPY_STEP]
+        images[start:start + len(step_photos)] = step_photos
     old_lookup = label_lookup(old_dishes, dishes)
     new_old_labels = np.where(old_labels >= 0, old_lookup[old_labels.clip(min=0)], -1)
     position_of = {dish: index for index, dish in enumerate(dishes)}

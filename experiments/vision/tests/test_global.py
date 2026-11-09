@@ -1,6 +1,10 @@
 """Check the global food model's parts against values worked out by hand, on fake data."""
+import json
+import tempfile
 import unittest
+from pathlib import Path
 from types import SimpleNamespace
+from unittest.mock import patch
 
 # Skip quietly where PyTorch is not installed, as in CI
 try:
@@ -10,8 +14,9 @@ try:
     from vision.global_model import FoodMatcher
     from vision.isia import blocks_to_fetch, names_seen, split_of
     from vision.lora import LoRALinear, add_lora, merge_lora
-    from vision.prepare import DROPPED, SEALED
-    from vision.prepare_global import global_names, isia_splits, label_lookup
+    from vision.config import STORED_SIZE
+    from vision.prepare import DROPPED, SEALED, TRAIN, VALIDATION
+    from vision.prepare_global import global_names, isia_splits, label_lookup, main as join_photos
     from vision.run_global import confidence_bands
 except ImportError as missing:
     raise unittest.SkipTest(f'The vision environment is not installed: {missing}.')
@@ -27,6 +32,44 @@ class FakeVision(nn.Module):
 
     def forward(self, pixel_values):
         return SimpleNamespace(pooler_output=self.block[0](pixel_values))
+
+
+def fake_photos(count, seed):
+    """Return fake photos at the stored size, each one different."""
+    return np.random.default_rng(seed).integers(0, 256, size=(count, STORED_SIZE, STORED_SIZE, 3), dtype=np.uint8)
+
+
+class WholeJoinTests(unittest.TestCase):
+    def test_joins_a_photo_count_that_is_not_a_multiple_of_the_copy_step(self):
+        # Found on 9 Nov: the last short step of the first experiment's photos crashed the join
+        with tempfile.TemporaryDirectory(ignore_cleanup_errors=True) as folder:
+            old, blocks, joined, results = (Path(folder) / name for name in ('old', 'blocks', 'joined', 'results'))
+            for path in (old, blocks, results):
+                path.mkdir()
+
+            # Three photos from the first experiment
+            old_photos = fake_photos(3, seed=1)
+            (old / 'dishes.json').write_text(json.dumps(['apple_pie', 'satay']), encoding='utf-8')
+            np.save(old / 'images.npy', old_photos)
+            np.save(old / 'labels.npy', np.array([0, 1, 0], dtype=np.int32))
+            np.save(old / 'origins.npy', np.array([0, 1, 0], dtype=np.int8))
+            np.save(old / 'splits.npy', np.array([TRAIN, VALIDATION, SEALED], dtype=np.int8))
+
+            # Three ISIA photos in two blocks, one of a dish that never received a name
+            new_photos = fake_photos(3, seed=2)
+            (blocks / 'names.json').write_text(json.dumps({'0': 'Apple_pie', '5': 'Abalone'}), encoding='utf-8')
+            np.savez(blocks / 'test_000_000.npz', photos=new_photos[:1], categories=np.array([5]), hashes=np.array([11], dtype=np.uint64))
+            np.savez(blocks / 'train_000_000.npz', photos=new_photos[1:], categories=np.array([0, 7]), hashes=np.array([12, 13], dtype=np.uint64))
+
+            with patch.multiple('vision.prepare_global', PREPARED=old, GLOBAL_PREPARED=joined, RESULTS=results, BLOCKS=blocks), patch('builtins.print'):
+                join_photos()
+
+            # By hand: the dishes sort to abalone, apple pie, satay, and the unnamed photo's slot stays unused
+            images = np.load(joined / 'images.npy')
+            self.assertTrue((images[:3] == old_photos).all() and (images[3:5] == new_photos[:2]).all() and (images[5] == 0).all())
+            self.assertEqual(np.load(joined / 'labels.npy').tolist(), [1, 2, 1, 0, 1, -1])
+            self.assertEqual(np.load(joined / 'origins.npy').tolist(), [0, 1, 0, 2, 2, 2])
+            self.assertEqual(np.load(joined / 'splits.npy').tolist(), [TRAIN, VALIDATION, SEALED, SEALED, VALIDATION, DROPPED])
 
 
 class ConfidenceBandTests(unittest.TestCase):
