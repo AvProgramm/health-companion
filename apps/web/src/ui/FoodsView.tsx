@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import type { FoodVersion } from '../domain/nutrition/types';
+import { BarcodeScan } from './BarcodeScan';
 import { FoodEditor } from './FoodEditor';
 import { NutritionistCard } from './NutritionistCard';
 import { SOURCE_LABELS, formatQuantity, formatValue } from './format';
@@ -17,6 +18,8 @@ interface FoodsViewProps {
 export function FoodsView({ currentFoods, hideNumbers, onSaveFood, onDraftEntry }: FoodsViewProps) {
   // undefined: editor closed; null: adding a new food; a food: editing that food
   const [editing, setEditing] = useState<FoodVersion | null | undefined>(undefined);
+  // A food found by barcode, waiting to be reviewed before it is saved
+  const [scanned, setScanned] = useState<FoodVersion | null>(null);
 
   return (
     <>
@@ -26,6 +29,10 @@ export function FoodsView({ currentFoods, hideNumbers, onSaveFood, onDraftEntry 
       </header>
 
       <NutritionistCard onDraft={onDraftEntry} />
+
+      <BarcodeScan onFound={setScanned} />
+
+      {scanned !== null && <FoodEditor key={scanned.id} initialFood={scanned} onSave={onSaveFood} onClose={() => setScanned(null)} />}
 
       <button type="button" className="button" onClick={() => setEditing(null)}>Add a food</button>
 

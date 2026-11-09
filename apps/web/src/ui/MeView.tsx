@@ -142,7 +142,7 @@ export function MeView({ db, profileSnapshot, onSaveProfile, durability, foodCou
       )}
 
       <ProfileEditor snapshot={profileSnapshot} onSave={onSaveProfile} />
-      <BodyCard snapshot={profileSnapshot} hideNumbers={hideNumbers} currentYear={new Date().getFullYear()} onSave={onSaveProfile} />
+      <BodyCard db={db} snapshot={profileSnapshot} hideNumbers={hideNumbers} currentYear={new Date().getFullYear()} onSave={onSaveProfile} />
 
       <AskCoach />
 

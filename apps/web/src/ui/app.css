@@ -93,6 +93,17 @@ svg { flex-shrink: 0; }
 :is(.input,.button,.tab,summary,a):focus-visible, .choice input:focus-visible, .file-button:focus-within { outline: 2px solid var(--action); outline-offset: 4px; }
 .file-button { position: relative; }
 .suggestion { display: grid; gap: 8px; }
+.balance-card { display: grid; gap: 12px; }
+.balance-numbers { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
+.balance-numbers > div { display: grid; gap: 2px; align-content: start; }
+.balance-numbers strong { font-size: 18px; line-height: 24px; font-weight: 600; }
+.balance-numbers .hint { font-size: 12px; line-height: 16px; }
+.balance-track { height: 8px; border-radius: 9999px; background: var(--action-soft); overflow: hidden; }
+.balance-track i { display: block; height: 100%; border-radius: inherit; background: var(--action); }
+.weight-line { margin: 0; display: grid; gap: 4px; }
+.weight-line svg { width: 100%; height: auto; }
+.weight-line polyline { fill: none; stroke: var(--action); stroke-width: 2; }
+.weight-line circle { fill: var(--action); }
 .signup-page { display: grid; min-height: 100vh; place-items: center; padding: 32px 16px; background: radial-gradient(120% 90% at 10% 0%, #dfeee0 0%, transparent 60%), radial-gradient(90% 80% at 100% 100%, #e7efe0 0%, transparent 55%), var(--paper); }
 .signup-card { width: min(480px, 100%); display: grid; gap: 16px; padding: clamp(32px, 6vw, 56px) clamp(24px, 5vw, 44px); border: 1px solid rgba(255, 255, 255, 0.7); border-radius: 24px; background: rgba(255, 255, 255, 0.72); box-shadow: 0 24px 60px rgba(32, 44, 38, 0.14); backdrop-filter: blur(24px); -webkit-backdrop-filter: blur(24px); animation: signup-rise 0.6s var(--ease) both; }
 @keyframes signup-rise { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: none; } }

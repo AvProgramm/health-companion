@@ -6,9 +6,10 @@ from fastapi import FastAPI, HTTPException, Request
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 from starlette.middleware.trustedhost import TrustedHostMiddleware
+from .barcode import look_up_barcode
 from .exercises import load_library
 from .llm import ask_groq
-from .models import CoachReply, CoachRequest, EstimateRequest, Estimate, NutritionistReply, NutritionistRequest, TrainerReply, TrainerRequest
+from .models import BarcodeReply, BarcodeRequest, CoachReply, CoachRequest, EstimateRequest, Estimate, NutritionistReply, NutritionistRequest, TrainerReply, TrainerRequest
 from .nutritionist import suggest_meals
 from .pipeline import estimate_food
 from .rag.answer import answer_question
@@ -75,6 +76,16 @@ async def nutritionist(request: Request, item: NutritionistRequest):
     if not item.goal.strip():
         raise HTTPException(422, 'Tell the Nutritionist what you are looking for.')
     return await suggest_meals(item.goal.strip(), knowledge(), ask_groq)
+
+
+@app.post('/api/barcode', response_model=BarcodeReply)
+async def barcode(request: Request, item: BarcodeRequest):
+    """Return one packaged food's label values; only the barcode number is sent."""
+    check_local(request)
+    found = await look_up_barcode(item.code)
+    if found is None:
+        raise HTTPException(404, 'That barcode is not in Open Food Facts.')
+    return found
 
 
 @app.post('/api/coach', response_model=CoachReply)

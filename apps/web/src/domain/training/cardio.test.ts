@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { cardioBurn } from './cardio';
+import { burnOfDay, cardioBurn } from './cardio';
 import type { WorkoutEntry, WorkoutSet } from './workouts';
 
 /** Return one timed set. */
@@ -63,5 +63,31 @@ describe('cardio energy', () => {
 
   it('stays unknown if any one set cannot be worked out', () => {
     expect(cardioBurn(session('Run', [timed(10, 2), timed(10, null)]), 70)).toBeNull();
+  });
+});
+
+describe('a whole day', () => {
+  /** Return a saved fictional entry. */
+  function saved(movement: string, sets: WorkoutSet[], changes: Partial<WorkoutEntry> = {}): WorkoutEntry {
+    return { id: movement, localDate: '2026-11-09', zone: 'Asia/Kuala_Lumpur', savedAt: '2026-11-09T10:00:00Z', operationKey: movement, movement, movementKey: movement, status: 'done', sets, version: 1, ...changes };
+  }
+
+  it('adds the sessions it can estimate and counts the ones it cannot', () => {
+    const one = cardioBurn(saved('Run', [timed(10, 2)]), 70)!;
+    const day = burnOfDay([saved('Run', [timed(10, 2)]), saved('Walk2', [timed(10, null)]), saved('Row', [{ ...timed(null, null), reps: 8 }])], 70)!;
+    expect(day.low).toBeCloseTo(one.low, 9);
+    expect(day.unknownSessions).toBe(2);
+  });
+
+  it('leaves out deleted sessions and skipped days', () => {
+    const day = burnOfDay([saved('Run', [timed(10, 2)]), saved('Run again', [timed(10, 2)], { deleted: true }), saved('Rest', [], { status: 'skipped' })], 70)!;
+    expect(day.unknownSessions).toBe(0);
+    expect(day.low).toBeCloseTo(cardioBurn(saved('Run', [timed(10, 2)]), 70)!.low, 9);
+  });
+
+  it('stays unknown with no estimate at all, rather than claiming zero', () => {
+    expect(burnOfDay([saved('Cycle', [timed(30, 10)])], 70)).toBeNull();
+    expect(burnOfDay([], 70)).toBeNull();
+    expect(burnOfDay([saved('Run', [timed(10, 2)])], null)).toBeNull();
   });
 });

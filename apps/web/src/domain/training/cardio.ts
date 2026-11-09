@@ -70,6 +70,27 @@ function burnOfSet(movement: string, set: WorkoutSet, weightKg: number): BurnEst
   return { low: kcal * (1 - ESTIMATE_SPREAD), high: kcal * (1 + ESTIMATE_SPREAD) };
 }
 
+/** A day's energy estimate, and how many sessions could not be counted in it. */
+export interface DayBurn extends BurnEstimate {
+  unknownSessions: number;
+}
+
+/**
+ * Return the day's total estimated energy, or null if no session could be estimated.
+ *
+ * Skipped days and deleted entries are not sessions, so they count for nothing.
+ */
+export function burnOfDay(entries: readonly WorkoutEntry[], weightKg: number | null): DayBurn | null {
+  const sessions = entries.filter(entry => entry.deleted !== true && entry.status === 'done');
+  const estimates = sessions.map(entry => cardioBurn(entry, weightKg)).filter((estimate): estimate is BurnEstimate => estimate !== null);
+
+  // Ignore a day with nothing estimated, because a total of zero would claim none was burnt
+  if (estimates.length === 0) {
+    return null;
+  }
+  return { low: estimates.reduce((sum, estimate) => sum + estimate.low, 0), high: estimates.reduce((sum, estimate) => sum + estimate.high, 0), unknownSessions: sessions.length - estimates.length };
+}
+
 /**
  * Return the estimated energy used in a session, or null if it cannot be worked out.
  *

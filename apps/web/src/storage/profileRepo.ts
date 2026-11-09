@@ -16,6 +16,13 @@ export function readProfile(db: IDBDatabase): Promise<ProfileSnapshot | null> {
   }, 'readonly');
 }
 
+/** Return every saved profile version, oldest first, so history such as weight can be read. */
+export function listProfileVersions(db: IDBDatabase): Promise<ProfileSnapshot[]> {
+  return runTransaction(db, ['profile'], (tx, finish) => {
+    tx.objectStore('profile').getAll().onsuccess = event => finish(resultOf(event) as ProfileSnapshot[]);
+  }, 'readonly');
+}
+
 /** Append one confirmed profile version with retry and stale-screen protection. */
 export function saveProfile(db: IDBDatabase, entry: ProfileSnapshot, expectedVersion: number) {
   assertProfileSnapshot(entry);

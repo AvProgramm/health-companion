@@ -152,7 +152,7 @@ export function App() {
       </header>
       <main id="main-content" className="page">
         {tab === 'today' && (
-          <TodayView key={diaryVersion} db={db} foods={foods} currentFoods={currentFoods} hideNumbers={hideNumbers} durability={durability} diabetes={profile.diabetes} initialEntry={draftEntry} weightKg={profile.body?.weightKg ?? null} onSaveFood={handleSaveFood} />
+          <TodayView key={diaryVersion} db={db} foods={foods} currentFoods={currentFoods} hideNumbers={hideNumbers} durability={durability} diabetes={profile.diabetes} initialEntry={draftEntry} body={profile.body ?? null} onSaveFood={handleSaveFood} />
         )}
         {tab === 'gym' && <GymView key={`${diaryVersion}:${savedProfile?.version ?? 0}`} db={db} profile={profile} hideNumbers={hideNumbers} />}
         {tab === 'foods' && <FoodsView currentFoods={currentFoods} hideNumbers={hideNumbers} onSaveFood={handleSaveFood} onDraftEntry={(entry) => { setDraftEntry(entry); setTab('today'); }} />}

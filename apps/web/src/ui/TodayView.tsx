@@ -5,6 +5,7 @@ import { correctedQuantity, type CorrectionTarget } from '../domain/meals/correc
 import { addDays, deviceZone, followToday } from '../domain/shared/dates';
 import { summariseDay } from '../domain/nutrition/day';
 import { parseEntry } from '../domain/parsing/parseEntry';
+import type { BodyFacts } from '../domain/profile/body';
 import type { ParsedAmount } from '../domain/parsing/types';
 import { startMeal } from '../domain/meals/revisions';
 import type { FoodVersion, NutrientKey } from '../domain/nutrition/types';
@@ -16,6 +17,7 @@ import { logsOn } from '../storage/logsRepo';
 import { commitEdit, confirmMeal, mealsOn, type CommitResult, type SavedMeal } from '../storage/mealsRepo';
 import type { Durability } from '../storage/persistence';
 import { CorrectionCard } from './CorrectionCard';
+import { BalanceCard } from './BalanceCard';
 import { DaySummaryCard } from './DaySummaryCard';
 import { DraftCard, emptyDraftRow, toDraftRow, type DraftRow } from './DraftCard';
 import { FoodEditor } from './FoodEditor';
@@ -49,8 +51,8 @@ export const DURABILITY_TEXT: Record<Durability, string> = {
 interface TodayViewProps {
   // Text handed over by the Nutritionist, which only fills the entry box
   initialEntry?: string;
-  // Used only to estimate cardio energy; null means no estimate
-  weightKg?: number | null;
+  // Used only for on-device estimates; null means those stay unknown
+  body?: BodyFacts | null;
   db: IDBDatabase;
   foods: ReadonlyMap<string, FoodVersion>;
   currentFoods: readonly FoodVersion[];
@@ -66,7 +68,7 @@ interface TodayViewProps {
  * Typed text goes through the grammar parser only. Nothing is saved until the
  * user confirms a draft or a correction.
  */
-export function TodayView({ db, foods, currentFoods, hideNumbers, durability, diabetes = false, initialEntry = '', weightKg = null, onSaveFood }: TodayViewProps) {
+export function TodayView({ db, foods, currentFoods, hideNumbers, durability, diabetes = false, initialEntry = '', body = null, onSaveFood }: TodayViewProps) {
   const today = useToday();
   const [date, setDate] = useState(today);
 
@@ -376,13 +378,14 @@ export function TodayView({ db, foods, currentFoods, hideNumbers, durability, di
           <MealCard diabetes={diabetes} key={meal.header.mealId} meal={meal} foods={foods} hideNumbers={hideNumbers} onOpen={() => setOpenMealId(meal.header.mealId)} />
         ))}
         {workouts.map((entry) => (
-          <WorkoutCard key={entry.id} db={db} entry={entry} weightKg={weightKg} hideNumbers={hideNumbers} onChanged={reloadDay} />
+          <WorkoutCard key={entry.id} db={db} entry={entry} weightKg={body?.weightKg ?? null} hideNumbers={hideNumbers} onChanged={reloadDay} />
         ))}
       </section>
 
       </div>
       <aside className="day-sidebar" aria-label="Daily overview">
         <DaySummaryCard diabetes={diabetes} summary={summary} dateLabel={dateLabel} hideNumbers={hideNumbers} />
+        {!hideNumbers && summary.coverage === 'some_entries' && <BalanceCard summary={summary} workouts={workouts} body={body} currentYear={new Date().getFullYear()} />}
         <div className="device-note"><ShieldCheck size={22} /><div><strong>Made for your everyday</strong><details><summary>Saved on this device</summary><p>{DURABILITY_TEXT[durability]}</p></details></div></div>
       </aside>
       </div>

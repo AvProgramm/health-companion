@@ -85,6 +85,11 @@ class EstimateRequest(StrictModel):
     portionText: str = Field(max_length=80)
 
 
+class BarcodeRequest(StrictModel):
+    """Accept only the digits printed under a barcode."""
+    code: str = Field(pattern=r'^\d{8,14}$')
+
+
 class Basis(StrictModel):
     """Describe the exact portion covered by the returned values."""
     amount: float = Field(gt=0)
@@ -146,3 +151,9 @@ class Estimate(StrictModel):
             elif spread is None or not spread.low <= value <= spread.high:
                 raise ValueError('Keep each value inside its range.')
         return self
+
+
+class BarcodeReply(StrictModel):
+    """Return one packaged food's name and label values."""
+    name: str = Field(min_length=1, max_length=80)
+    estimate: Estimate
