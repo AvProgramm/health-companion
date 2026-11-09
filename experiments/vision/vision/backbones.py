@@ -10,7 +10,9 @@ def build_backbone(name, classes):
     """Return one pinned ViT-Small with a new head for this many dishes, at phone-sized input."""
     _repo, _revision, model_name = BACKBONES[name]
     weights = Path(weights_folder(name)) / 'model.safetensors'
-    return timm.create_model(model_name, pretrained=True, pretrained_cfg_overlay={'file': str(weights)}, num_classes=classes, img_size=IMAGE_SIZE)
+
+    # Load the safetensors file directly, because timm would otherwise expect the original .npz
+    return timm.create_model(model_name, pretrained=True, pretrained_cfg_overlay={'file': str(weights), 'custom_load': False}, num_classes=classes, img_size=IMAGE_SIZE)
 
 
 def colour_settings(model):

@@ -36,7 +36,8 @@ SEED = 3181
 @dataclass(frozen=True)
 class Settings:
     """Hold the training choices, frozen before the sealed test is run."""
-    batch_size: int = 128
+    # Small enough that the larger backbone stays well inside 8 GB alongside the desktop
+    batch_size: int = 96
     workers: int = 8
     epochs: int = 8
     # Dimensions of each low-rank correction, and how strongly it is applied
