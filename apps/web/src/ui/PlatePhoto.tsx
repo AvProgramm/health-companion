@@ -1,15 +1,20 @@
 import { useEffect, useState, type ChangeEvent } from 'react';
 import { Camera } from '@phosphor-icons/react';
 import { dishLabel, type DishFacts, type DishGuess } from '../domain/dish/dishModel';
-import { loadDishFacts, recogniseDish } from '../vision/recogniseDish';
+import { loadDishFacts, modelIsKept, recogniseDish } from '../vision/recogniseDish';
 import { errorText } from './useSave';
 
-// A first guess below this reads as a shrug, so the card says it is unsure
-const UNSURE_BELOW = 0.4;
+// Below this the first guess was right less than about two times in three on the validation photos (experiments/vision/results/global_bands.json)
+const UNSURE_BELOW = 0.5;
 
 /** Return a probability as a whole percentage for display only. */
 function percent(probability: number): string {
   return `${Math.round(probability * 100)}%`;
+}
+
+/** Return a file size in whole megabytes for display only. */
+function megabytes(bytes: number): string {
+  return `${Math.round(bytes / 1_000_000)} MB`;
 }
 
 /**
@@ -25,11 +30,14 @@ export function PlatePhoto({ onPick }: { onPick: (dish: string) => void }) {
   const [guesses, setGuesses] = useState<DishGuess[] | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [kept, setKept] = useState(true);
+  const [downloaded, setDownloaded] = useState<number | null>(null);
 
-  // Find out once whether this build includes a model
+  // Find out once whether this build includes a model, and whether this device already has it
   useEffect(() => {
     let cancelled = false;
     loadDishFacts().then(value => { if (!cancelled) setFacts(value); }, () => {});
+    modelIsKept().then(value => { if (!cancelled) setKept(value); }, () => {});
     return () => { cancelled = true; };
   }, []);
 
@@ -46,10 +54,13 @@ export function PlatePhoto({ onPick }: { onPick: (dish: string) => void }) {
     if (photo === undefined || facts === null) return;
     setError(null);
     setGuesses(null);
+    setDownloaded(null);
     setPreviewUrl(URL.createObjectURL(photo));
     setBusy(true);
     try {
-      setGuesses(await recogniseDish(photo, facts));
+      setGuesses(await recogniseDish(photo, facts, setDownloaded));
+      // The model has now been fetched, so the warning no longer applies
+      setKept(true);
     } catch (problem) {
       setError(errorText(problem));
     } finally {
@@ -60,14 +71,18 @@ export function PlatePhoto({ onPick }: { onPick: (dish: string) => void }) {
   // Stay out of the way until a model is confirmed to be here
   if (facts === null) return null;
 
+  // A kept model passes through the download step too, so only a real download is announced
+  const busyLabel = !kept && downloaded !== null && downloaded < 100 ? `Downloading the food model, ${downloaded}%` : 'Looking at your plate…';
+
   return (
     <section className="card ai-card" aria-labelledby="plate-heading">
       <div><p className="eyebrow">ON THIS DEVICE</p><h2 id="plate-heading" className="heading">Photo of your plate</h2></div>
       <label className={`button plate-button${busy ? ' plate-button-busy' : ''}`}>
-        <Camera size={20} />{busy ? 'Looking at your plate…' : 'Take or choose a photo'}
+        <Camera size={20} />{busy ? busyLabel : 'Take or choose a photo'}
         <input className="visually-hidden" type="file" accept="image/*" disabled={busy} onChange={handlePhoto} />
       </label>
       <p className="hint">The photo stays on this device. Only the dish you pick is used for an estimate.</p>
+      {!kept && <p className="hint">The first photo downloads the food model once, {megabytes(facts.modelBytes)}, and keeps it on this device.</p>}
 
       {error !== null && <p className="notice notice-error" role="alert">{error}</p>}
       {previewUrl !== null && <img className="plate-preview" src={previewUrl} alt="The photo you chose" />}
@@ -77,7 +92,7 @@ export function PlatePhoto({ onPick }: { onPick: (dish: string) => void }) {
         <div className="dish-guesses">{guesses.map(guess => <button type="button" key={guess.dish} className="button button-secondary dish-guess" onClick={() => onPick(guess.dish.replace(/_/g, ' '))}>
           <span>{dishLabel(guess.dish)}</span><span className="hint numbers">{percent(guess.probability)}</span>
         </button>)}</div>
-        <p className="hint">Suggestions only, from {facts.dishes.length} dishes it was trained on. If yours is not here, type it in the box below.</p>
+        <p className="hint">Suggestions only, from {facts.dishes.length} food names. If yours is not here, type it in the box below.</p>
       </div>}
     </section>
   );

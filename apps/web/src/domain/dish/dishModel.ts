@@ -5,6 +5,7 @@ export interface DishFacts {
   std: readonly number[];
   storedSize: number;
   imageSize: number;
+  modelBytes: number;
 }
 
 /** One suggestion: a dish, and how likely the model thinks it is. */
@@ -28,7 +29,8 @@ export function readDishFacts(value: unknown): DishFacts | null {
   // Ignore anything malformed, because a host can answer a missing file with a web page
   if (facts === null || typeof facts !== 'object' || !Array.isArray(facts.dishes) || facts.dishes.length === 0 || !facts.dishes.every(dish => typeof dish === 'string') ||
       !numberList(facts.mean) || facts.mean.length !== 3 || !numberList(facts.std) || facts.std.length !== 3 || !facts.std.every(value_ => value_ > 0) ||
-      typeof facts.storedSize !== 'number' || typeof facts.imageSize !== 'number' || facts.imageSize > facts.storedSize) {
+      typeof facts.storedSize !== 'number' || typeof facts.imageSize !== 'number' || facts.imageSize > facts.storedSize ||
+      typeof facts.modelBytes !== 'number' || !Number.isSafeInteger(facts.modelBytes) || facts.modelBytes <= 0) {
     return null;
   }
   return facts as DishFacts;

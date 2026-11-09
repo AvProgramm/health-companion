@@ -224,7 +224,7 @@ class SealedAndExportTests(unittest.TestCase):
             export.write_web_files(source, ['satay'], [0.5], [0.5], Path(folder) / 'web')
             facts = json.loads((Path(folder) / 'web' / 'labels.json').read_text(encoding='utf-8'))
             self.assertEqual((Path(folder) / 'web' / 'model.onnx').read_bytes(), b'fictional model')
-        self.assertEqual((facts['dishes'], facts['storedSize'], facts['imageSize']), (['satay'], 256, 224))
+        self.assertEqual((facts['dishes'], facts['storedSize'], facts['imageSize'], facts['modelBytes']), (['satay'], 256, 224, len(b'fictional model')))
 
 
 if __name__ == '__main__':

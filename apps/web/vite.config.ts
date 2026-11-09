@@ -4,15 +4,18 @@ import { existsSync, readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import react from '@vitejs/plugin-react';
 import { defineConfig, type Plugin } from 'vite';
+import { FACTS_URL, MODEL_URL } from './src/vision/modelFiles.ts';
 
 // Files copied as-is from public/, which Vite does not list in the bundle
 const PUBLIC_FILES = ['/manifest.webmanifest', '/icon.svg'];
 
-// The trained dish model, copied into public/ by the export step; a build without it hides the photo card
-const DISH_MODEL_FILES = ['/models/dish/model.onnx', '/models/dish/labels.json'];
-
 // The service worker source, with placeholders the build fills in
 const SERVICE_WORKER_TEMPLATE = fileURLToPath(new URL('./src/sw/service-worker.js', import.meta.url));
+
+/** Return where a file served from public/ is on disk. */
+function publicPath(url: string): string {
+  return fileURLToPath(new URL(`./public${url}`, import.meta.url));
+}
 
 /**
  * Return a Vite plugin that writes sw.js with the exact list of files in this build.
@@ -37,21 +40,24 @@ function precacheServiceWorker(): Plugin {
         urls.add(`/${fileName}`);
         hash.update(fileName).update(output.type === 'chunk' ? output.code : output.source);
       }
-      for (const url of DISH_MODEL_FILES) {
-        const path = fileURLToPath(new URL(`./public${url}`, import.meta.url));
-        if (existsSync(path)) {
-          urls.add(url);
-          hash.update(url).update(readFileSync(path));
-        }
+
+      // Include the small facts file, which a build without a model does not have
+      if (existsSync(publicPath(FACTS_URL))) {
+        urls.add(FACTS_URL);
+        hash.update(FACTS_URL).update(readFileSync(publicPath(FACTS_URL)));
       }
       const sortedUrls = [...urls].sort();
+
+      // Name the model's cache after its content, so an ordinary build keeps a model already fetched
+      const modelId = existsSync(publicPath(MODEL_URL)) ? createHash('sha256').update(readFileSync(publicPath(MODEL_URL))).digest('hex').slice(0, 12) : 'none';
+      hash.update(modelId);
 
       // Name the cache after that hash, so any changed file gives a fresh cache
       // instead of mixing old and new files
       const buildId = hash.update(sortedUrls.join('\n')).digest('hex').slice(0, 12);
 
       // Fill the placeholders in the template and emit it as sw.js
-      const source = template.replace('__PRECACHE_URLS__', JSON.stringify(sortedUrls)).replace('__BUILD_ID__', buildId);
+      const source = template.replace('__PRECACHE_URLS__', JSON.stringify(sortedUrls)).replace('__BUILD_ID__', buildId).replace('__MODEL_URL__', MODEL_URL).replace('__MODEL_ID__', modelId);
       this.emitFile({ type: 'asset', fileName: 'sw.js', source });
     },
   };

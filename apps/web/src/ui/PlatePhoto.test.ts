@@ -2,14 +2,14 @@
 import { act, createElement } from 'react';
 import { createRoot, type Root } from 'react-dom/client';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { loadDishFacts, recogniseDish } from '../vision/recogniseDish';
+import { loadDishFacts, modelIsKept, recogniseDish } from '../vision/recogniseDish';
 import { PlatePhoto } from './PlatePhoto';
 
-// The worker cannot run under test, so its two entry points are replaced
-vi.mock('../vision/recogniseDish', () => ({ loadDishFacts: vi.fn(), recogniseDish: vi.fn() }));
+// The worker cannot run under test, so its entry points are replaced
+vi.mock('../vision/recogniseDish', () => ({ loadDishFacts: vi.fn(), modelIsKept: vi.fn(), recogniseDish: vi.fn() }));
 
 // Facts shaped like the ones the export step writes
-const FACTS = { dishes: ['nasi_lemak', 'satay'], mean: [0.5, 0.5, 0.5], std: [0.5, 0.5, 0.5], storedSize: 256, imageSize: 224 };
+const FACTS = { dishes: ['nasi_lemak', 'satay'], mean: [0.5, 0.5, 0.5], std: [0.5, 0.5, 0.5], storedSize: 256, imageSize: 224, modelBytes: 187_123_456 };
 // A fictional photo; its contents are never read here
 const PHOTO = new File(['fictional'], 'plate.jpg', { type: 'image/jpeg' });
 
@@ -35,6 +35,7 @@ beforeEach(() => {
   URL.revokeObjectURL = vi.fn();
   vi.clearAllMocks();
   vi.mocked(loadDishFacts).mockResolvedValue(FACTS);
+  vi.mocked(modelIsKept).mockResolvedValue(true);
   container = document.createElement('div');
   document.body.append(container);
   root = createRoot(container);
@@ -61,8 +62,56 @@ describe('Photo of your plate', () => {
     vi.mocked(recogniseDish).mockResolvedValue([{ dish: 'satay', probability: 0.9 }]);
     await show();
     await choosePhoto();
-    expect(recogniseDish).toHaveBeenCalledWith(PHOTO, FACTS);
+    expect(recogniseDish).toHaveBeenCalledWith(PHOTO, FACTS, expect.any(Function));
     expect(fetchMock).not.toHaveBeenCalled();
+  });
+
+  it('warns about the one-off download before the first photo, with the real size', async () => {
+    vi.mocked(modelIsKept).mockResolvedValue(false);
+    await show();
+    expect(container.textContent).toContain('The first photo downloads the food model once, 187 MB, and keeps it on this device.');
+  });
+
+  it('says nothing about a download when the model is already here', async () => {
+    await show();
+    expect(container.textContent).not.toContain('downloads the food model');
+  });
+
+  it('shows how far the first download has got', async () => {
+    vi.mocked(modelIsKept).mockResolvedValue(false);
+    vi.mocked(recogniseDish).mockImplementation((_photo, _facts, onDownload) => {
+      onDownload(42);
+      return new Promise(() => {});
+    });
+    await show();
+    await choosePhoto();
+    expect(container.querySelector('.plate-button')?.textContent).toBe('Downloading the food model, 42%');
+  });
+
+  it('stops warning once the first photo has fetched the model', async () => {
+    vi.mocked(modelIsKept).mockResolvedValue(false);
+    vi.mocked(recogniseDish).mockResolvedValue([{ dish: 'satay', probability: 0.9 }]);
+    await show();
+    await choosePhoto();
+    expect(container.textContent).not.toContain('downloads the food model');
+  });
+
+  it('does not count a kept model loading as a download', async () => {
+    vi.mocked(recogniseDish).mockImplementation((_photo, _facts, onDownload) => {
+      onDownload(42);
+      return new Promise(() => {});
+    });
+    await show();
+    await choosePhoto();
+    expect(container.querySelector('.plate-button')?.textContent).toBe('Looking at your plate…');
+  });
+
+  it('does not claim every name was trained on', async () => {
+    vi.mocked(recogniseDish).mockResolvedValue([{ dish: 'satay', probability: 0.9 }]);
+    await show();
+    await choosePhoto();
+    expect(container.textContent).toContain('Suggestions only, from 2 food names.');
+    expect(container.textContent).not.toContain('trained on');
   });
 
   it('only fills the entry box when a dish is picked', async () => {
@@ -75,10 +124,17 @@ describe('Photo of your plate', () => {
   });
 
   it('says when it is unsure', async () => {
-    vi.mocked(recogniseDish).mockResolvedValue([{ dish: 'satay', probability: 0.2 }]);
+    vi.mocked(recogniseDish).mockResolvedValue([{ dish: 'satay', probability: 0.49 }]);
     await show();
     await choosePhoto();
     expect(container.textContent).toContain('Not sure about this one.');
+  });
+
+  it('asks plainly from the confidence where the first guess was right three times in four', async () => {
+    vi.mocked(recogniseDish).mockResolvedValue([{ dish: 'satay', probability: 0.5 }]);
+    await show();
+    await choosePhoto();
+    expect(container.textContent).toContain('Which is it?');
   });
 
   it('says what to do when a photo cannot be read', async () => {

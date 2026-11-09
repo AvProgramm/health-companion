@@ -2,14 +2,14 @@ import { describe, expect, it } from 'vitest';
 import { dishLabel, photoPlacement, pixelsToTensor, readDishFacts, topGuesses } from './dishModel';
 
 // Facts shaped like the ones the export step writes
-const FACTS = { dishes: ['fried_rice', 'nasi_lemak', 'satay'], mean: [0.5, 0.5, 0.5], std: [0.5, 0.5, 0.5], storedSize: 256, imageSize: 224 };
+const FACTS = { dishes: ['fried_rice', 'nasi_lemak', 'satay'], mean: [0.5, 0.5, 0.5], std: [0.5, 0.5, 0.5], storedSize: 256, imageSize: 224, modelBytes: 1000 };
 
 describe('readDishFacts', () => {
   it('accepts what the export step writes', () => {
     expect(readDishFacts(FACTS)).toEqual(FACTS);
   });
 
-  it.each([null, 'page', {}, { ...FACTS, dishes: [] }, { ...FACTS, mean: [0.5] }, { ...FACTS, std: [0, 1, 1] }, { ...FACTS, imageSize: 300 }])('treats a malformed file as no model: %j', (value) => {
+  it.each([null, 'page', {}, { ...FACTS, dishes: [] }, { ...FACTS, mean: [0.5] }, { ...FACTS, std: [0, 1, 1] }, { ...FACTS, imageSize: 300 }, { ...FACTS, modelBytes: 0 }, { ...FACTS, modelBytes: 1.5 }, { ...FACTS, modelBytes: undefined }])('treats a malformed file as no model: %j', (value) => {
     expect(readDishFacts(value)).toBeNull();
   });
 });

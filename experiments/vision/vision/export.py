@@ -72,7 +72,7 @@ def write_web_files(model_path, dishes, mean, std, folder=WEB_MODEL):
     """Copy the model and the facts the phone needs next to it."""
     folder.mkdir(parents=True, exist_ok=True)
     (folder / 'model.onnx').write_bytes(Path(model_path).read_bytes())
-    (folder / 'labels.json').write_text(json.dumps({'dishes': dishes, 'mean': mean, 'std': std, 'storedSize': STORED_SIZE, 'imageSize': IMAGE_SIZE}), encoding='utf-8')
+    (folder / 'labels.json').write_text(json.dumps({'dishes': dishes, 'mean': mean, 'std': std, 'storedSize': STORED_SIZE, 'imageSize': IMAGE_SIZE, 'modelBytes': Path(model_path).stat().st_size}), encoding='utf-8')
 
 
 def save_result(name, record):
