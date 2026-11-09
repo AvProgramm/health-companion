@@ -9,6 +9,9 @@ function food(known: number, knownItems: number, unknownItems = 0): DaySummary {
   return { date: '2026-11-09', mealCount: 1, coverage: 'some_entries', totals: { kcal: { known, knownItems, unknownItems } } as DaySummary['totals'] };
 }
 
+// A fictional day with no meals at all
+const NOTHING_LOGGED: DaySummary = { ...food(0, 0), mealCount: 0, coverage: 'no_entries' };
+
 /** Return a fictional workout. */
 function workout(changes: Partial<WorkoutEntry> = {}): WorkoutEntry {
   return { id: 'w', localDate: '2026-11-09', zone: 'UTC', savedAt: '2026-11-09T10:00:00Z', operationKey: 'k', movement: 'Run', movementKey: 'run', status: 'done', sets: [], version: 1, ...changes };
@@ -26,12 +29,13 @@ describe('the last seven dates', () => {
 });
 
 describe('one day of the overview', () => {
-  it('reports known energy and items with no value', () => {
-    expect(dayOverview('2026-11-09', food(1500, 3, 2), [], [])).toMatchObject({ kcal: 1500, unknownItems: 2 });
+  it('keeps the whole energy total, so items with no value stay visible', () => {
+    expect(dayOverview('2026-11-09', food(1500, 3, 2), [], []).energy).toEqual({ known: 1500, knownItems: 3, unknownItems: 2 });
   });
 
-  it('keeps a day with no energy values unknown rather than zero', () => {
-    expect(dayOverview('2026-11-09', food(0, 0), [], []).kcal).toBeNull();
+  it('tells a day with no meals apart from meals with no energy value', () => {
+    expect(dayOverview('2026-11-09', NOTHING_LOGGED, [], []).energy).toBeNull();
+    expect(dayOverview('2026-11-09', food(0, 0, 2), [], []).energy).toEqual({ known: 0, knownItems: 0, unknownItems: 2 });
   });
 
   it('counts only sessions that happened and still exist', () => {

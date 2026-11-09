@@ -6,8 +6,9 @@ import type { WorkoutEntry } from '../domain/training/workouts';
 import { dayOverview, lastSevenDates, type DayOverview } from '../domain/week/weekOverview';
 import { logsOn } from '../storage/logsRepo';
 import { mealsOn } from '../storage/mealsRepo';
+import { formatEnergyCell, formatSleepCell, formatTotal } from './format';
 
-// A single letter for each day, read from the date alone so the device's zone cannot shift it
+// The short name of each day, read from the date alone so the device's zone cannot shift it
 const WEEKDAY = new Intl.DateTimeFormat('en-GB', { weekday: 'short', timeZone: 'UTC' });
 
 interface WeekCardProps {
@@ -37,7 +38,7 @@ export function WeekCard({ db, today, foods, reloadKey }: WeekCardProps) {
   }, [db, today, foods, reloadKey]);
 
   if (days === null) return null;
-  const highest = Math.max(1, ...days.map(day => day.kcal ?? 0));
+  const highest = Math.max(1, ...days.map(day => day.energy?.known ?? 0));
 
   return (
     <section className="card week-card" aria-labelledby="week-heading">
@@ -45,13 +46,13 @@ export function WeekCard({ db, today, foods, reloadKey }: WeekCardProps) {
       <div className="week-grid" role="table" aria-label="Food, training and sleep for the last seven days">
         {days.map(day => <div key={day.date} className={`week-day${day.date === today ? ' week-today' : ''}`} role="row">
           <span className="hint" role="cell">{WEEKDAY.format(new Date(`${day.date}T00:00:00Z`))}</span>
-          <span className="week-bar" role="cell" aria-label={day.kcal === null ? 'No food logged' : `${Math.round(day.kcal)} kcal`}>{day.kcal !== null && <i style={{ height: `${(day.kcal / highest) * 100}%` }} />}</span>
-          <span className="numbers" role="cell">{day.kcal === null ? '–' : Math.round(day.kcal)}</span>
+          <span className="week-bar" role="cell" aria-label={day.energy === null ? 'No food logged' : formatTotal(day.energy, 'kcal', 0)}>{day.energy !== null && <i style={{ height: `${(day.energy.known / highest) * 100}%` }} />}</span>
+          <span className="numbers" role="cell">{formatEnergyCell(day.energy)}</span>
           <span className="numbers" role="cell" aria-label={`${day.sessions} training sessions`}>{day.sessions > 0 ? `${day.sessions}×` : '–'}</span>
-          <span className="numbers" role="cell" aria-label="Hours of sleep">{day.sleepMinutes === null ? '–' : `${(day.sleepMinutes / 60).toFixed(1)}h`}</span>
+          <span className="numbers" role="cell" aria-label="Hours of sleep">{formatSleepCell(day.sleepMinutes)}</span>
         </div>)}
       </div>
-      <p className="hint">Each column is one day: energy eaten in kcal, training sessions, then sleep. A dash means nothing was logged, not zero.</p>
+      <p className="hint">Each column is a day: energy eaten in kcal, training sessions, sleep. – nothing logged · ? food with no energy value · + at least this, some items had no value · ≈ includes estimates.</p>
     </section>
   );
 }

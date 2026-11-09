@@ -4,6 +4,7 @@
  * Null means nothing was logged, which is not the same as zero: a day with no food
  * written down is a gap in the diary, not a day of fasting.
  */
+import type { NutrientTotal } from '../nutrition/aggregate';
 import type { DaySummary } from '../nutrition/day';
 import { addDays } from '../shared/dates';
 import type { SleepEntry } from '../sleep/sleep';
@@ -15,8 +16,8 @@ const DAYS_SHOWN = 7;
 /** One day's food, training and sleep. */
 export interface DayOverview {
   date: string;
-  kcal: number | null;
-  unknownItems: number;
+  // Null when no meal was logged; a total with no known items is food of unknown energy
+  energy: NutrientTotal | null;
   sessions: number;
   sleepMinutes: number | null;
 }
@@ -31,9 +32,8 @@ export function dayOverview(date: string, summary: DaySummary, workouts: readonl
   const nights = sleeps.filter(entry => entry.deleted !== true);
   return {
     date,
-    // Ignore a day where no item had an energy value, because a total of zero would be invented
-    kcal: summary.totals.kcal.knownItems === 0 ? null : summary.totals.kcal.known,
-    unknownItems: summary.totals.kcal.unknownItems,
+    // Ignore the total of a day with no meals, because a gap in the diary is not zero
+    energy: summary.coverage === 'no_entries' ? null : summary.totals.kcal,
     sessions: workouts.filter(entry => entry.deleted !== true && entry.status === 'done').length,
     // Use measured sleep where it was recorded, and time in bed otherwise
     sleepMinutes: nights.length === 0 ? null : nights.reduce((total, entry) => total + (entry.asleepMin ?? entry.timeInBedMin), 0),

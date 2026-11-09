@@ -80,6 +80,30 @@ export function formatTotal(total: NutrientTotal, unit: string, digits = 1): str
 }
 
 /**
+ * Return a day's energy for a narrow table cell, e.g. "1500", "≈1500", "1500+" or "?".
+ *
+ * The plus means at least this much, because some items had no value.
+ */
+export function formatEnergyCell(energy: NutrientTotal | null): string {
+  // Ignore a day with no meals because nothing was logged, which is not zero
+  if (energy === null) {
+    return '–';
+  }
+  // Ignore a total with no known items because a number here would be invented
+  if (energy.knownItems === 0) {
+    return '?';
+  }
+  return `${energy.range === undefined ? '' : '≈'}${Math.round(energy.known)}${energy.unknownItems > 0 ? '+' : ''}`;
+}
+
+/**
+ * Return a day's sleep for a narrow table cell, e.g. "7.5h", or a dash if none was logged.
+ */
+export function formatSleepCell(minutes: number | null): string {
+  return minutes === null ? '–' : `${(minutes / 60).toFixed(1)}h`;
+}
+
+/**
  * Return one nutrient value as text, with "unknown" for a blank label value.
  */
 export function formatValue(value: NutrientValue, unit: string, digits = 1): string {
