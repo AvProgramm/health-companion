@@ -68,4 +68,4 @@ Organised by feature, one reason to change per module. Domain never imports stor
 
 Current repeated-round planner and wrap-up: read `docs/handoff/claude-code.md` and `docs/milestones/m4-repeated-rounds-walkthrough.md`. Repetition is explicitly selectable; the earlier distinct-only duration notes are historical.
 
-Remaining work and its rules, including the next core requirement (cardio and first-run setup): `docs/handoff/codex-m5.md`.
+Current work: finish the global food model, `docs/handoff/codex-m7.md`. Earlier rules and later ideas: `docs/handoff/codex-m5.md`.
