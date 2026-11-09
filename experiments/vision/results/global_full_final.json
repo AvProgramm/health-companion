@@ -1,0 +1,105 @@
+{
+  "names_on_offer": {
+    "phone": 686,
+    "with_test_dishes": 777
+  },
+  "strength": 0.5,
+  "malaysian_margin": 0.05,
+  "averages": {
+    "siglip2_alone": 0.5174931585788727,
+    "phone_model": 0.4643741101026535,
+    "new_model_at_half_strength": 0.5638486593961716,
+    "new_model_at_full_strength": 0.5329933762550354
+  },
+  "ships": false,
+  "reports": {
+    "siglip2_alone": {
+      "fresh_trained": {
+        "photos": 23132,
+        "top1": 0.5165139436721802,
+        "top5": 0.7792668342590332
+      },
+      "malaysian_validation": {
+        "photos": 936,
+        "top1": 0.5448718070983887,
+        "top5": 0.7895299196243286
+      },
+      "never_trained": {
+        "photos": 65043,
+        "top1": 0.5184723734855652,
+        "top5": 0.8128161430358887
+      },
+      "trained_under_that_name": {
+        "photos": 4461,
+        "top1": 0.55503249168396,
+        "top5": 0.8442053198814392
+      }
+    },
+    "phone_model": {
+      "fresh_trained": {
+        "photos": 23132,
+        "top1": 0.5390368103981018,
+        "top5": 0.7910686731338501
+      },
+      "malaysian_validation": {
+        "photos": 936,
+        "top1": 0.8322649598121643,
+        "top5": 0.9626068472862244
+      },
+      "never_trained": {
+        "photos": 65043,
+        "top1": 0.3897114098072052,
+        "top5": 0.7276263236999512
+      },
+      "trained_under_that_name": {
+        "photos": 4461,
+        "top1": 0.44586417078971863,
+        "top5": 0.6998431086540222
+      }
+    },
+    "new_model_at_half_strength": {
+      "fresh_trained": {
+        "photos": 23132,
+        "top1": 0.630641520023346,
+        "top5": 0.8798633813858032
+      },
+      "malaysian_validation": {
+        "photos": 936,
+        "top1": 0.6420940160751343,
+        "top5": 0.9145299196243286
+      },
+      "never_trained": {
+        "photos": 65043,
+        "top1": 0.4970557987689972,
+        "top5": 0.8148148059844971
+      },
+      "trained_under_that_name": {
+        "photos": 4461,
+        "top1": 0.5101994872093201,
+        "top5": 0.8018381595611572
+      }
+    },
+    "new_model_at_full_strength": {
+      "fresh_trained": {
+        "photos": 23132,
+        "top1": 0.711698055267334,
+        "top5": 0.9168683886528015
+      },
+      "malaysian_validation": {
+        "photos": 936,
+        "top1": 0.7809829115867615,
+        "top5": 0.938034176826477
+      },
+      "never_trained": {
+        "photos": 65043,
+        "top1": 0.3542886972427368,
+        "top5": 0.7179712057113647
+      },
+      "trained_under_that_name": {
+        "photos": 4461,
+        "top1": 0.2039901316165924,
+        "top5": 0.5492042303085327
+      }
+    }
+  }
+}

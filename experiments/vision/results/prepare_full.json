@@ -1,0 +1,10 @@
+{
+  "photos_in_total": 503633,
+  "isia_blocks": 4027,
+  "new_photos": 318472,
+  "new_train": 201480,
+  "new_validation": 22395,
+  "fresh_trained": 23132,
+  "fresh_unseen": 69504,
+  "fresh_unseen_dropped_as_copies": 1961
+}
