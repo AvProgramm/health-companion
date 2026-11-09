@@ -1,0 +1,19 @@
+{
+  "dishes": 109,
+  "photos": 112000,
+  "unreadable": 1,
+  "train": 76586,
+  "validation": 8513,
+  "sealed": 25862,
+  "sealed_dropped_as_copies": 1038,
+  "only_in_malaysian": [
+    "fried_noodles",
+    "kaya_toast",
+    "laksa",
+    "mixed_rice",
+    "nasi_lemak",
+    "popiah",
+    "roti_canai",
+    "satay"
+  ]
+}
