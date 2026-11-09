@@ -7,6 +7,7 @@ import type { Durability } from '../storage/persistence';
 import type { Profile, ProfileSnapshot } from '../domain/profile/profile';
 import { ProfileEditor } from './ProfileEditor';
 import { AskCoach } from './AskCoach';
+import { BodyCard } from './BodyCard';
 import { DURABILITY_TEXT } from './TodayView';
 import { errorText } from './useSave';
 
@@ -141,6 +142,8 @@ export function MeView({ db, profileSnapshot, onSaveProfile, durability, foodCou
       )}
 
       <ProfileEditor snapshot={profileSnapshot} onSave={onSaveProfile} />
+      <BodyCard snapshot={profileSnapshot} hideNumbers={hideNumbers} currentYear={new Date().getFullYear()} onSave={onSaveProfile} />
+
       <AskCoach />
 
       <section className="card" aria-labelledby="storage-heading">

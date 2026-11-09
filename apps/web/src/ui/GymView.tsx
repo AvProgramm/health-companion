@@ -5,11 +5,13 @@ import { SEATED_CARDS } from '../domain/training/seated';
 import { MOVEMENT_CARDS, type MovementCard } from '../domain/training/catalogue';
 import { OWN_EXERCISE_PREFIX, type CustomCardSelection, type ExerciseOrigin } from '../domain/training/customCards';
 import { listCustomCards, saveCustomCard } from '../storage/customCardsRepo';
+import { CardioCard } from './CardioCard';
 import { ExerciseSearch } from './ExerciseSearch';
 import { PackPicker } from './PackPicker';
+import { cardioBurn } from '../domain/training/cardio';
 import { describeSets, lastPerformed, type WorkoutEntry } from '../domain/training/workouts';
 import { listWorkouts } from '../storage/logsRepo';
-import { formatDiaryDate } from './format';
+import { burnText, formatDiaryDate } from './format';
 import { PlanSession } from './PlanSession';
 import { TrainerCard } from './TrainerCard';
 import { errorText } from './useSave';
@@ -17,10 +19,16 @@ import { errorText } from './useSave';
 // Enough history to see a trend on a phone screen without scrolling forever
 const HISTORY_LENGTH = 20;
 
+/** Return the estimated energy of a past session as text, or nothing if unknown or hidden. */
+function historyBurn(entry: WorkoutEntry, weightKg: number | null, hideNumbers: boolean): string {
+  const burn = cardioBurn(entry, weightKg);
+  return burn === null || hideNumbers ? '' : ` · ${burnText(burn)}`;
+}
+
 /**
  * Display offline exercise choices, a checked plan and recent training history.
  */
-export function GymView({ db, profile = EMPTY_PROFILE }: { db: IDBDatabase; profile?: Profile }) {
+export function GymView({ db, profile = EMPTY_PROFILE, hideNumbers = false }: { db: IDBDatabase; profile?: Profile; hideNumbers?: boolean }) {
   // Keep library loading, saved choices and diary history separate.
   const [entries, setEntries] = useState<WorkoutEntry[] | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -76,9 +84,12 @@ export function GymView({ db, profile = EMPTY_PROFILE }: { db: IDBDatabase; prof
     } finally { setSavingChoice(false); }
   }
 
-  useEffect(() => {
+  /** Reload the training history, after loading the screen and after logging a session. */
+  const reloadEntries = useCallback(() => {
     listWorkouts(db).then(setEntries, (problem: unknown) => setError(errorText(problem)));
   }, [db]);
+
+  useEffect(reloadEntries, [reloadEntries]);
 
   // Newest first, leaving out deleted entries
   const live = (entries ?? [])
@@ -95,6 +106,8 @@ export function GymView({ db, profile = EMPTY_PROFILE }: { db: IDBDatabase; prof
         <h1 className="page-title">Your movement space.</h1></div></div>
         <p className="status">Choose your exercises. Make room for a session that fits today.</p>
       </header>
+
+      <CardioCard db={db} weightKg={profile.body?.weightKg ?? null} hideNumbers={hideNumbers} onSaved={reloadEntries} />
 
       {library !== null && <TrainerCard entries={library.EXERCISE_ENTRIES} profile={profile} />}
 
@@ -142,7 +155,7 @@ export function GymView({ db, profile = EMPTY_PROFILE }: { db: IDBDatabase; prof
           <ol className="history">
             {live.slice(0, HISTORY_LENGTH).map((entry) => (
               <li key={entry.id}>
-                <span className="history-main">{entry.status === 'skipped' ? 'Rest day' : `${entry.movement}: ${describeSets(entry)}`}</span>
+                <span className="history-main">{entry.status === 'skipped' ? 'Rest day' : `${entry.movement}: ${describeSets(entry)}`}{historyBurn(entry, profile.body?.weightKg ?? null, hideNumbers)}</span>
                 <span className="history-meta">{formatDiaryDate(entry.localDate)}</span>
               </li>
             ))}

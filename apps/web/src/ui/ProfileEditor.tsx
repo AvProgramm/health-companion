@@ -65,7 +65,7 @@ export function ProfileEditor({ snapshot, onSave }: ProfileEditorProps) {
         <label className="choice"><input type="checkbox" checked={draft.diabetes} onChange={event => setDraft({ ...draft, diabetes: event.target.checked })} />Diabetes display priorities</label>
         <p className="hint">Opt in to show carbohydrate, added sugar and fibre first. This changes display only; it provides no dosing or glucose targets.</p>
       </fieldset>
-      <div className="row"><button type="submit" className="button" disabled={busy}>{busy ? 'Saving…' : 'Save adaptations'}</button><button type="button" className="button button-secondary" disabled={busy} onClick={() => { setDraft(EMPTY_PROFILE); setMessage('Cleared the draft. Save to confirm this change.'); }}>Clear draft</button></div>
+      <div className="row"><button type="submit" className="button" disabled={busy}>{busy ? 'Saving…' : 'Save adaptations'}</button><button type="button" className="button button-secondary" disabled={busy} onClick={() => { setDraft({ ...EMPTY_PROFILE, body: draft.body }); setMessage('Cleared the draft. Save to confirm this change.'); }}>Clear draft</button></div>
       <p className="hint">Saved changes apply to manual plans, ready-made days and the device check on Trainer replies. They are never sent to the Coach or Trainer. Backups include this profile and its history; keep the file private.</p>
       {message && <p className="notice" role="status">{message}</p>}
     </form>

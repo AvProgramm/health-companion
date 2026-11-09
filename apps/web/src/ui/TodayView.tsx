@@ -49,6 +49,8 @@ export const DURABILITY_TEXT: Record<Durability, string> = {
 interface TodayViewProps {
   // Text handed over by the Nutritionist, which only fills the entry box
   initialEntry?: string;
+  // Used only to estimate cardio energy; null means no estimate
+  weightKg?: number | null;
   db: IDBDatabase;
   foods: ReadonlyMap<string, FoodVersion>;
   currentFoods: readonly FoodVersion[];
@@ -64,7 +66,7 @@ interface TodayViewProps {
  * Typed text goes through the grammar parser only. Nothing is saved until the
  * user confirms a draft or a correction.
  */
-export function TodayView({ db, foods, currentFoods, hideNumbers, durability, diabetes = false, initialEntry = '', onSaveFood }: TodayViewProps) {
+export function TodayView({ db, foods, currentFoods, hideNumbers, durability, diabetes = false, initialEntry = '', weightKg = null, onSaveFood }: TodayViewProps) {
   const today = useToday();
   const [date, setDate] = useState(today);
 
@@ -374,7 +376,7 @@ export function TodayView({ db, foods, currentFoods, hideNumbers, durability, di
           <MealCard diabetes={diabetes} key={meal.header.mealId} meal={meal} foods={foods} hideNumbers={hideNumbers} onOpen={() => setOpenMealId(meal.header.mealId)} />
         ))}
         {workouts.map((entry) => (
-          <WorkoutCard key={entry.id} db={db} entry={entry} onChanged={reloadDay} />
+          <WorkoutCard key={entry.id} db={db} entry={entry} weightKg={weightKg} hideNumbers={hideNumbers} onChanged={reloadDay} />
         ))}
       </section>
 

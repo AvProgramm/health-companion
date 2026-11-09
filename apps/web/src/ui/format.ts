@@ -4,6 +4,11 @@ import type { Quantity } from '../domain/shared/units';
 import type { Capability, Equipment } from '../domain/training/catalogue';
 import type { ExerciseLevel } from '../domain/training/exerciseSearch';
 
+/** Return an energy-burnt estimate as words, always as a range, rounded for display only. */
+export function burnText(burn: { low: number; high: number }): string {
+  return `About ${Math.round(burn.low)}–${Math.round(burn.high)} kcal burnt (estimate)`;
+}
+
 // How each ability an exercise needs reads in a list of facts
 export const CAPABILITY_LABELS: Record<Capability, string> = { pull_up: 'A pull-up', jumping: 'Jumping' };
 

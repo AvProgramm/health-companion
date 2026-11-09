@@ -8,6 +8,7 @@ import type { FoodVersion } from '../domain/nutrition/types';
 import { listFoods, saveFoodVersion } from '../storage/foodsRepo';
 import { openDiary } from '../storage/connection';
 import { readDurability, requestDurability, type Durability } from '../storage/persistence';
+import { FirstRunSetup } from './FirstRunSetup';
 import { FoodsView } from './FoodsView';
 import { GymView } from './GymView';
 import { MeView } from './MeView';
@@ -35,6 +36,8 @@ export function App() {
   const [tab, setTab] = useState<Tab>('today');
   // Text the Nutritionist handed to the entry box; moving between tabs clears it
   const [draftEntry, setDraftEntry] = useState('');
+  // Set when someone chooses to restore a backup rather than fill in the first-run screen
+  const [restoringBackup, setRestoringBackup] = useState(false);
   const [durability, setDurability] = useState<Durability>('unknown');
   const [hideNumbers, setHideNumbers] = useState(readHideNumbers);
   // Bumped after a restore or erase, so the Today screen reloads from scratch
@@ -134,6 +137,12 @@ export function App() {
     );
   }
 
+  // Nothing else opens until height and weight are saved, unless a backup is being restored
+  if (savedProfile?.value.body == null && !restoringBackup) {
+    return <FirstRunSetup hideNumbers={hideNumbers} currentYear={new Date().getFullYear()} onRestoreInstead={() => { setRestoringBackup(true); setTab('me'); }}
+      onSave={(body, operationKey) => handleSaveProfile({ ...profile, body }, operationKey, savedProfile?.version ?? 0)} />;
+  }
+
   return (
     <div className="app">
       <a className="skip-link" href="#main-content">Skip to diary</a>
@@ -143,9 +152,9 @@ export function App() {
       </header>
       <main id="main-content" className="page">
         {tab === 'today' && (
-          <TodayView key={diaryVersion} db={db} foods={foods} currentFoods={currentFoods} hideNumbers={hideNumbers} durability={durability} diabetes={profile.diabetes} initialEntry={draftEntry} onSaveFood={handleSaveFood} />
+          <TodayView key={diaryVersion} db={db} foods={foods} currentFoods={currentFoods} hideNumbers={hideNumbers} durability={durability} diabetes={profile.diabetes} initialEntry={draftEntry} weightKg={profile.body?.weightKg ?? null} onSaveFood={handleSaveFood} />
         )}
-        {tab === 'gym' && <GymView key={`${diaryVersion}:${savedProfile?.version ?? 0}`} db={db} profile={profile} />}
+        {tab === 'gym' && <GymView key={`${diaryVersion}:${savedProfile?.version ?? 0}`} db={db} profile={profile} hideNumbers={hideNumbers} />}
         {tab === 'foods' && <FoodsView currentFoods={currentFoods} hideNumbers={hideNumbers} onSaveFood={handleSaveFood} onDraftEntry={(entry) => { setDraftEntry(entry); setTab('today'); }} />}
         {tab === 'me' && (
           <MeView

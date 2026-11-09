@@ -1,4 +1,5 @@
 import type { Capability } from '../training/catalogue';
+import { assertBodyFacts, type BodyFacts } from './body';
 
 // Keep body-area choices finite so a misspelling cannot silently disable a filter.
 export const BODY_AREAS = ['neck', 'shoulders', 'elbows', 'wrists', 'back', 'hips', 'knees', 'ankles'] as const;
@@ -13,6 +14,8 @@ export interface Profile {
   readonly seatedOnly: boolean;
   readonly unableTo: readonly Capability[];
   readonly diabetes: boolean;
+  // Absent in profiles saved before setup existed, which keeps older backups valid
+  readonly body?: BodyFacts | null;
 }
 
 // No restriction or condition is inferred on a new device or from an older backup.
@@ -32,11 +35,12 @@ export function assertProfile(value: unknown): asserts value is Profile {
   // Ignore an unrecognised field because this profile never accepts clinical free text.
   const profile = value as Record<string, unknown> | null;
   if (profile === null || typeof profile !== 'object' || Array.isArray(profile) ||
-      Object.keys(profile).some(key => !['avoidAreas', 'seatedOnly', 'unableTo', 'diabetes'].includes(key)) ||
+      Object.keys(profile).some(key => !['avoidAreas', 'seatedOnly', 'unableTo', 'diabetes', 'body'].includes(key)) ||
       !uniqueChoices(profile.avoidAreas, BODY_AREAS) || !uniqueChoices(profile.unableTo, ['pull_up', 'jumping']) ||
       typeof profile.seatedOnly !== 'boolean' || typeof profile.diabetes !== 'boolean') {
     throw new Error('Choose listed body areas and abilities, and use the condition switches explicitly.');
   }
+  if (profile.body != null) assertBodyFacts(profile.body);
 }
 
 /** Reject an incomplete immutable snapshot before any transaction writes it. */
