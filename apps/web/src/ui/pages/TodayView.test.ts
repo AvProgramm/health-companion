@@ -8,7 +8,7 @@ import { foodKey } from '../../domain/nutrition/aggregate';
 import type { FoodVersion } from '../../domain/nutrition/types';
 import { openDiary } from '../../storage/connection';
 import { logsOn } from '../../storage/logsRepo';
-import { mealsOn } from '../../storage/mealsRepo';
+import { commitEdit, mealsOn } from '../../storage/mealsRepo';
 import { TEST_FOODS } from '../../test/testFoods';
 import { formatDiaryDate } from '../format';
 import { useToday } from '../hooks/useToday';
@@ -290,6 +290,20 @@ describe('saving what was typed', () => {
     const [meal] = await mealsOn(db, TODAY);
     expect(meal!.latest.revision).toBe(2);
     expect(meal!.latest.components[0]!.served).toEqual({ amount: 250, unit: 'mL' });
+  });
+
+  it('explains a conflict and keeps the correction open when the meal changed underneath it', async () => {
+    await show();
+    await logMeal('300 ml milk');
+    await enter('actually 250 ml');
+    const [meal] = await mealsOn(db, TODAY);
+    const milk = meal!.latest.components[0]!;
+    await commitEdit(db, { mealId: meal!.header.mealId, expectedRevision: 1, operationKey: 'another-screen', savedAt: '2026-11-09T02:00:00Z', edit: { kind: 'update_component', componentId: milk.id, served: { amount: 200, unit: 'mL' }, eatenFraction: 1 } }, new Map(currentFoods.map((food) => [foodKey(food.id, food.version), food])));
+
+    await click('Save correction');
+    await until(() => expect(noticeText()).toBe('This meal changed since the preview (now revision 2). The preview is updated; check it and save again.'));
+    expect(screenText()).toContain('Save correction');
+    expect((await mealsOn(db, TODAY))[0]!.latest.components[0]!.served).toEqual({ amount: 200, unit: 'mL' });
   });
 
   it('logs sleep once it is confirmed', async () => {

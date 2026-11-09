@@ -8,8 +8,7 @@ import type { Profile, ProfileSnapshot } from '../../domain/profile/profile';
 import { ProfileEditor } from '../components/me/ProfileEditor';
 import { AskCoach } from '../components/me/AskCoach';
 import { BodyCard } from '../components/me/BodyCard';
-import { DURABILITY_TEXT } from './TodayView';
-import { errorText } from '../format';
+import { DURABILITY_TEXT, errorText } from '../format';
 import { NoticeLine } from '../components/shared/NoticeLine';
 
 interface MeViewProps {
