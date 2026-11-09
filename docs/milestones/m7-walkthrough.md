@@ -4,7 +4,7 @@ Open each file beside this page. Part 1 follows one photo through what changed i
 
 ## 1. One photo, on a model eight times the size
 
-[PlatePhoto.tsx](../../apps/web/src/ui/PlatePhoto.tsx) `handlePhoto` → [recogniseDish.ts](../../apps/web/src/vision/recogniseDish.ts) `recogniseDish` → [dishWorker.ts](../../apps/web/src/vision/dishWorker.ts) `readModel` → [service-worker.js](../../apps/web/src/sw/service-worker.js) `modelResponse`.
+[PlatePhoto.tsx](../../apps/web/src/ui/components/meals/PlatePhoto.tsx) `handlePhoto` → [recogniseDish.ts](../../apps/web/src/vision/recogniseDish.ts) `recogniseDish` → [dishWorker.ts](../../apps/web/src/vision/dishWorker.ts) `readModel` → [service-worker.js](../../apps/web/src/sw/service-worker.js) `modelResponse`.
 
 - `modelIsKept` asks whether any cache already holds the model. If none does, the card gives the download's real size, which `write_web_files` wrote into `labels.json` as `modelBytes`.
   - *Why warn first:* it is a large one-off download, and a person on mobile data should know before choosing a photo.

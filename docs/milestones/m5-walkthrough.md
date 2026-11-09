@@ -6,7 +6,7 @@ The whole milestone follows one idea: **the model only proposes, and ordinary co
 
 ## 1. Asking the Coach "How much sodium is too much in a day?"
 
-**Screen to service.** [AskCoach.tsx](../../apps/web/src/ui/AskCoach.tsx) `handleSubmit` → [coach.ts](../../apps/web/src/api/coach.ts) `askCoach` → [post.ts](../../apps/web/src/api/post.ts) `postJson`. The body is only `{ question }`.
+**Screen to service.** [AskCoach.tsx](../../apps/web/src/ui/components/me/AskCoach.tsx) `handleSubmit` → [coach.ts](../../apps/web/src/api/coach.ts) `askCoach` → [post.ts](../../apps/web/src/api/post.ts) `postJson`. The body is only `{ question }`.
 - *Why:* invariant 5. The diary is not involved, so it cannot leak.
 
 **The door.** [app.py](../../services/coach/coach/app.py) `coach` calls `check_local`, then `answer_question` in [answer.py](../../services/coach/coach/rag/answer.py).
@@ -29,11 +29,11 @@ If the closest card is below similarity 0.336, it returns nothing.
 - *Why:* model output is never trusted for numbers. An invented "1,500 mg" gets dropped.
 - *With no key or a busy provider:* the reviewed cards themselves are shown, so the feature degrades instead of breaking.
 
-**Back on screen.** [coachReply.ts](../../apps/web/src/domain/coach/coachReply.ts) `readCoachReply` validates the reply. [SourceLine.tsx](../../apps/web/src/ui/SourceLine.tsx) shows sources as plain text, never links, as `CLAUDE.md` asks.
+**Back on screen.** [coachReply.ts](../../apps/web/src/domain/coach/coachReply.ts) `readCoachReply` validates the reply. [SourceLine.tsx](../../apps/web/src/ui/components/shared/SourceLine.tsx) shows sources as plain text, never links, as `CLAUDE.md` asks.
 
 ## 2. "120 minutes, no kit" from the Trainer
 
-[TrainerCard.tsx](../../apps/web/src/ui/TrainerCard.tsx) sends only goal, minutes, kit, areas and level (invariant 5). In [trainer.py](../../services/coach/coach/trainer.py) `plan_session`:
+[TrainerCard.tsx](../../apps/web/src/ui/components/training/TrainerCard.tsx) sends only goal, minutes, kit, areas and level (invariant 5). In [trainer.py](../../services/coach/coach/trainer.py) `plan_session`:
 
 1. `check_safety` runs on the goal.
 2. [exercises.py](../../services/coach/coach/exercises.py) `search_exercises` filters by area, kit and level, then `spread_by_muscle` builds a shortlist of 40.
@@ -47,7 +47,7 @@ Back on the phone, [trainerPlan.ts](../../apps/web/src/domain/training/trainerPl
 
 ## 3. The Nutritionist
 
-[NutritionistCard.tsx](../../apps/web/src/ui/NutritionistCard.tsx) → [nutritionist.py](../../services/coach/coach/nutritionist.py) `suggest_meals`, which follows the Coach's steps but searches only the nutrition and diabetes cards.
+[NutritionistCard.tsx](../../apps/web/src/ui/components/meals/NutritionistCard.tsx) → [nutritionist.py](../../services/coach/coach/nutritionist.py) `suggest_meals`, which follows the Coach's steps but searches only the nutrition and diabetes cards.
 
 `valid_suggestion` refuses any entry stating calories or nutrient amounts.
 - *Why:* those numbers come only from the estimate step, with its ranges and energy check.
@@ -57,7 +57,7 @@ Back on the phone, [trainerPlan.ts](../../apps/web/src/domain/training/trainerPl
 
 ## 4. Adding an exercise the library lacks, down to storage
 
-A search miss in [ExerciseSearch.tsx](../../apps/web/src/ui/ExerciseSearch.tsx) offers the typed name. [OwnExerciseSheet.tsx](../../apps/web/src/ui/OwnExerciseSheet.tsx) `confirm` → [customCards.ts](../../apps/web/src/domain/training/customCards.ts) `ownExerciseCard` → [GymView.tsx](../../apps/web/src/ui/GymView.tsx) `persistChoice` → [customCardsRepo.ts](../../apps/web/src/storage/customCardsRepo.ts) `saveCustomCard`.
+A search miss in [ExerciseSearch.tsx](../../apps/web/src/ui/components/training/ExerciseSearch.tsx) offers the typed name. [OwnExerciseSheet.tsx](../../apps/web/src/ui/components/training/OwnExerciseSheet.tsx) `confirm` → [customCards.ts](../../apps/web/src/domain/training/customCards.ts) `ownExerciseCard` → [GymView.tsx](../../apps/web/src/ui/pages/GymView.tsx) `persistChoice` → [customCardsRepo.ts](../../apps/web/src/storage/customCardsRepo.ts) `saveCustomCard`.
 
 - *Why blank facts stay `null`:* invariant 1 applied to exercises. Unticked is not the same as "loads nothing", so an active adaptation leaves the exercise out.
 - *Why one ID per open form:* a retried save replays instead of creating a second exercise (invariant 3).

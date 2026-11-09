@@ -40,7 +40,7 @@ It returns a negative number if session `a` is better. The order:
 `planner.test.ts` proves both.
 
 ## 6. Screen
-[PlanSession.tsx](../../apps/web/src/ui/PlanSession.tsx), on the Gym tab: minutes, equipment, "you cannot do", and what to train. It shows the session with each cue, "Best of N possible sessions", or the "no plan" reason, plus why each exercise was left out. A plan is only a suggestion; you still log what you actually did on Today.
+[PlanSession.tsx](../../apps/web/src/ui/components/training/PlanSession.tsx), on the Gym tab: minutes, equipment, "you cannot do", and what to train. It shows the session with each cue, "Best of N possible sessions", or the "no plan" reason, plus why each exercise was left out. A plan is only a suggestion; you still log what you actually did on Today.
 
 ## Verified (7 Nov 2026)
 - `npm run check`: the search matches the independent oracle on all 12 kit scenarios, with **zero rule violations**, and the greedy counterexample holds.

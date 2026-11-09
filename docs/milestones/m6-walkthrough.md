@@ -4,7 +4,7 @@ Open each file beside this page. Part 1 follows one photo through the app. Part 
 
 ## 1. One photo, from the screen to a draft
 
-[PlatePhoto.tsx](../../apps/web/src/ui/PlatePhoto.tsx) `handlePhoto` → [recogniseDish.ts](../../apps/web/src/vision/recogniseDish.ts) `recogniseDish` → [dishWorker.ts](../../apps/web/src/vision/dishWorker.ts) `preparePhoto`.
+[PlatePhoto.tsx](../../apps/web/src/ui/components/meals/PlatePhoto.tsx) `handlePhoto` → [recogniseDish.ts](../../apps/web/src/vision/recogniseDish.ts) `recogniseDish` → [dishWorker.ts](../../apps/web/src/vision/dishWorker.ts) `preparePhoto`.
 
 - *Why a worker:* the model takes a moment, and the screen must not freeze while it runs.
 - *Why on the device:* invariant 5. The photo goes only to this worker, and nothing about it is uploaded.
@@ -16,7 +16,7 @@ Open each file beside this page. Part 1 follows one photo through the app. Part 
 
 *Why these are separate pure functions:* if the phone's crop drifts from training, accuracy falls with no error shown, so each is tested against values worked out by hand.
 
-The card shows five chips, and says it is unsure when the first guess is under 40%. Tapping a chip calls `onPick`, and [TodayView.tsx](../../apps/web/src/ui/TodayView.tsx) fills the entry box with "nasi lemak 1 plate".
+The card shows five chips, and says it is unsure when the first guess is under 40%. Tapping a chip calls `onPick`, and [TodayView.tsx](../../apps/web/src/ui/pages/TodayView.tsx) fills the entry box with "nasi lemak 1 plate".
 - *Why only fill the box:* invariant 4. The normal review, estimate and confirmation still decide what is saved, and only that text goes to the estimate.
 - *Why it hides without a model:* `loadDishFacts` returns null, so a build with no model simply has no card.
 

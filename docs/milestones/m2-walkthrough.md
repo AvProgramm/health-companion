@@ -11,9 +11,9 @@ Open each file beside this page. The order follows one real use, from typing a m
 It never guesses. An unknown food, a missing amount, or a unit that doesn't fit the label (300 g of a mL milk) becomes a `problem` the draft shows. The typed number is kept in `typedAmount`, so adding the missing food doesn't lose it. That was a bug found while testing.
 
 ## 2. Draft → one save
-[DraftCard.tsx](../../apps/web/src/ui/DraftCard.tsx) previews each row with the same `scaleNutrient` the totals use. "Save meal" stays disabled until every row has a food and a valid amount.
+[DraftCard.tsx](../../apps/web/src/ui/components/meals/DraftCard.tsx) previews each row with the same `scaleNutrient` the totals use. "Save meal" stays disabled until every row has a food and a valid amount.
 
-[TodayView.tsx](../../apps/web/src/ui/TodayView.tsx) `saveDraft` → `startMeal` → [db.ts](../../apps/web/src/storage/db.ts) `confirmMeal`. That path is unchanged from Milestone 1, plus `assertTotalable`: the meal must total cleanly before it is written.
+[TodayView.tsx](../../apps/web/src/ui/pages/TodayView.tsx) `saveDraft` → `startMeal` → [db.ts](../../apps/web/src/storage/db.ts) `confirmMeal`. That path is unchanged from Milestone 1, plus `assertTotalable`: the meal must total cleanly before it is written.
 
 ## 3. "Actually 250 mL"
 [corrections.ts](../../apps/web/src/domain/corrections.ts) `findCorrectionTargets` keeps the day's items that the new amount can describe:
@@ -21,7 +21,7 @@ It never guesses. An unknown food, a missing amount, or a unit that doesn't fit 
 - a bare count fits a counted item
 - a named food fits only that food
 
-[CorrectionCard.tsx](../../apps/web/src/ui/CorrectionCard.tsx) then:
+[CorrectionCard.tsx](../../apps/web/src/ui/components/meals/CorrectionCard.tsx) then:
 - **0 matches:** explains why and points at the meal.
 - **1 match:** previews, by running the real `reviseMeal` on a copy.
 - **2+ matches:** asks "Which one is 250 mL?"
@@ -38,7 +38,7 @@ It never guesses. An unknown food, a missing amount, or a unit that doesn't fit 
 | `delete_meal` | wrong entry; the meal keeps its history and can be restored |
 | `restore` | **Undo**: a *new* revision with the previous revision's contents. Nothing is rewound. |
 
-The [meal sheet](../../apps/web/src/ui/MealSheet.tsx) shows the history in words ("Milk 300 mL → 250 mL") using [describe.ts](../../apps/web/src/ui/describe.ts).
+The [meal sheet](../../apps/web/src/ui/components/meals/MealSheet.tsx) shows the history in words ("Milk 300 mL → 250 mL") using [describe.ts](../../apps/web/src/ui/describe.ts).
 
 ## 5. The day total
 [day.ts](../../apps/web/src/domain/day.ts) `summariseDay` adds the latest revision of each live meal on that date. An empty day is `coverage: 'no_entries'`, which the screen shows as "Nothing logged", never "0 kcal" (golden E). Unknown label values stay as "+ N unknown".

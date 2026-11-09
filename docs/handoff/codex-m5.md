@@ -20,10 +20,10 @@ Yash reviews every diff and must be able to explain it. Interview: Fri 13 Nov. H
 |---|---|---|
 | Trainer search (B0) | `services/coach/coach/exercises.py` | Filters kit, level and area in code before any model sees it |
 | Bounded agent | `coach/agent.py`, `coach/llm.py` | JSON protocol, three steps at most, tool results labelled as data |
-| Trainer (B3, B4) | `coach/trainer.py`, `POST /api/trainer`, `apps/web/src/ui/TrainerCard.tsx`, `domain/training/trainerPlan.ts` | Verified live in the browser pane: 120 min, no kit, 12 different exercises |
+| Trainer (B3, B4) | `coach/trainer.py`, `POST /api/trainer`, `apps/web/src/ui/components/training/TrainerCard.tsx`, `domain/training/trainerPlan.ts` | Verified live in the browser pane: 120 min, no kit, 12 different exercises |
 | Knowledge base (A1) | `services/coach/knowledge/cards.json` | 36 paraphrased cards with source, date and licence; the loader refuses an incomplete card |
 | Search (A3–A5) | `coach/rag/bm25.py`, `vectors.py`, `retriever.py`, `metrics.py` | BM25 with S-stemmer, MiniLM ONNX, RRF k=60 |
-| Coach and safety (A7, A8, B6) | `coach/safety.py`, `coach/rag/answer.py`, `POST /api/coach`, `apps/web/src/ui/AskCoach.tsx` on the Me tab | Verified live through the app's `/api` proxy with Groq: a cited answer, a no-evidence reply and a dosing refusal. The Ask card was also driven in the browser pane. Nothing here has been tested on the phone |
+| Coach and safety (A7, A8, B6) | `coach/safety.py`, `coach/rag/answer.py`, `POST /api/coach`, `apps/web/src/ui/components/me/AskCoach.tsx` on the Me tab | Verified live through the app's `/api` proxy with Groq: a cited answer, a no-evidence reply and a dosing refusal. The Ask card was also driven in the browser pane. Nothing here has been tested on the phone |
 | Trainer safety and evidence | `coach/trainer.py` | The same rules run on the goal, and a `search_evidence` tool is limited to activity and diabetes topics |
 | MCP server (A9) | `coach/mcp_server.py`, `.mcp.json` | Two tools only. `tests/test_mcp.py` runs the real process over stdin and stdout. Claude Code connected through `.mcp.json` on 9 Nov and both tools answered |
 | Evaluation (A6) | `coach/rag/evaluate.py`, `eval/results/retrieval_final.json` | The sealed set has run once and refuses a second run |
@@ -44,7 +44,7 @@ Add `loads` and `positions` tags in the importer and starter cards. Add `ineligi
 
 ### 2. Nutritionist (B5) — implemented, phone gate pending
 
-See `coach/nutritionist.py`, `ui/NutritionistCard.tsx` and `docs/milestones/m5-walkthrough.md`. It uses only what the person types. Sending logged data remains Yash's open decision.
+See `coach/nutritionist.py`, `ui/components/meals/NutritionistCard.tsx` and `docs/milestones/m5-walkthrough.md`. It uses only what the person types. Sending logged data remains Yash's open decision.
 
 ### 3. Dish photo (C1–C6) — implemented, phone gate pending
 

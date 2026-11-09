@@ -39,7 +39,7 @@ Goal: when the composer meets an unknown food ("nasi lemak", "2 weetabix"), the 
 ### M3b: diet rules, photos, reminder (UI + domain; Codex can own this)
 1. **Diet rules (FR02/FR03/FR43, journeys J1 and J11).**
    - New `domain/nutrition/rules.ts`. A rule has a kind (`allergy` | `exclusion` | `dislike`), food tags (meat, poultry, fish, egg, dairy, beef, pork, alcohol, caffeine), and optional inclusive `startDate`/`endDate`.
-   - Foods get optional `tags` in `FoodVersion`. Add tag checkboxes to `ui/FoodEditor.tsx`.
+   - Foods get optional `tags` in `FoodVersion`. Add tag checkboxes to `ui/components/meals/FoodEditor.tsx`.
    - A draft or meal shows a badge such as "Outside your vegetarian rule (11–19 Oct)". **It never blocks a save.** It never infers a rule from identity or religion, and there are no fasting windows.
    - Storage: a new `rules` store means schema **v6** (v4 holds `customCards`, v5 holds the local profile). Follow `.claude/skills/schema-migration/SKILL.md` exactly: an upgrade test from v5 with data, plus a backup checker.
 2. **Local photo on a meal (FR08).**

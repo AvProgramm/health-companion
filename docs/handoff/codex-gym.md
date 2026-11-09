@@ -10,7 +10,7 @@ Written 7 Nov 2026, after M4 part 1 merged (`main` at e5bf9ac). Read `CLAUDE.md`
   - Ranking: Yash wrote `compareCandidates` himself.
   - Tests: oracle tests, the greedy counterexample and 6 ranking tests, all green.
 - **Gym tab:**
-  - `ui/GymView.tsx` shows the "Plan a session" card (`ui/PlanSession.tsx`), "Last time" and "History".
+  - `ui/pages/GymView.tsx` shows the "Plan a session" card (`ui/components/training/PlanSession.tsx`), "Last time" and "History".
   - Browser-pane check: 20 min, all equipment, all four areas gives band pull-apart, jump squat and plank, "14 of 20 min, covers 3 of 4", best of 70.
   - Not checked yet: the phone.
 - **Fixed 7 Nov:**

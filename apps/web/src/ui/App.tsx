@@ -8,12 +8,12 @@ import type { FoodVersion } from '../domain/nutrition/types';
 import { listFoods, saveFoodVersion } from '../storage/foodsRepo';
 import { openDiary } from '../storage/connection';
 import { readDurability, requestDurability, type Durability } from '../storage/persistence';
-import { FirstRunSetup } from './FirstRunSetup';
-import { FoodsView } from './FoodsView';
-import { GymView } from './GymView';
-import { MeView } from './MeView';
+import { FirstRunSetup } from './pages/FirstRunSetup';
+import { FoodsView } from './pages/FoodsView';
+import { GymView } from './pages/GymView';
+import { MeView } from './pages/MeView';
 import { readHideNumbers, writeHideNumbers } from './preferences';
-import { TodayView } from './TodayView';
+import { TodayView } from './pages/TodayView';
 
 type Tab = 'today' | 'gym' | 'foods' | 'me';
 

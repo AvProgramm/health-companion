@@ -19,7 +19,7 @@ A new kind of entry means adding a parser to the list (open/closed), not editing
 - **"Each hand" is a flag.** `describeSets` writes "3 × 8 @ 5 kg each hand" and never adds hands together (kit Tuesday test 2).
 - `lastPerformed` ignores skipped and deleted entries, so "last time" always means a session that happened.
 
-On screen, [WorkoutDraftCard](../../apps/web/src/ui/WorkoutDraftCard.tsx) checks the draft with the same `buildWorkout` it saves with, and shows last time. The [Gym tab](../../apps/web/src/ui/GymView.tsx) lists the last session of each movement, then history.
+On screen, [WorkoutDraftCard](../../apps/web/src/ui/components/training/WorkoutDraftCard.tsx) checks the draft with the same `buildWorkout` it saves with, and shows last time. The [Gym tab](../../apps/web/src/ui/pages/GymView.tsx) lists the last session of each movement, then history.
 
 ## 3. Sleep
 [sleep.ts](../../apps/web/src/domain/sleep/sleep.ts) `resolveSleep(wakeDate, bed, wake)`:
