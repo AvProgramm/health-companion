@@ -1,7 +1,7 @@
 """
 Run the global food model one stage at a time.
 
-From experiments/vision:  python -m vision.run_global zero | lora | final | export
+From experiments/vision:  python -m vision.run_global zero | lora | bands | final | export
 
 The first stage needs no food training at all: it asks whether SigLIP2 can already name
 food, on the same validation photos as the first model.
@@ -27,7 +27,7 @@ from .lora import add_lora, merge_lora
 from .prepare import SEALED, TRAIN, VALIDATION
 from .prepare_global import ISIA_ORIGIN
 from .run import read_dishes
-from .train import predict_top, seed_all, top_k_accuracy, train_lora
+from .train import half_precision, predict_top, seed_all, top_k_accuracy, train_lora
 from .zero_shot import PROMPTS, food_names, load_siglip, match, name_vectors, photo_vectors, readable
 
 # SigLIP2 expects each colour channel scaled to the range -1 to 1
@@ -38,6 +38,8 @@ SHIP_LINE = 0.893
 GLOBAL_CHECKPOINT = CHECKPOINTS / 'global_lora.pt'
 # Photos used to confirm the phone's small model still agrees with the full one
 EXPORT_CHECK_PHOTOS = 200
+# Where each confidence band ends, for deciding when the photo card should say it is unsure
+BAND_EDGES = [0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8]
 
 
 def scores(photos, names, labels, device):
@@ -180,8 +182,46 @@ def export():
     print(json.loads((RESULTS / 'global_export.json').read_text(encoding='utf-8')), flush=True)
 
 
+def confidence_bands(confidence, correct):
+    """Return, for each confidence band, how many first guesses fell in it and how often they were right."""
+    bucket = torch.bucketize(confidence, torch.tensor(BAND_EDGES), right=True)
+
+    # Report an empty band as having no rate, because nothing measured is not zero
+    report = []
+    for index, start in enumerate([0.0, *BAND_EDGES]):
+        inside = bucket == index
+        count = int(inside.sum())
+        report.append({'from': start, 'photos': count, 'right': None if count == 0 else correct[inside].float().mean().item()})
+    return report
+
+
+def bands():
+    """Record how often the model is right at each confidence, on validation, with every food name."""
+    settings, device, dishes = GLOBAL_SETTINGS, 'cuda', read_global_dishes()
+    names = food_names(dishes)
+    matcher = trained_matcher(names, device)
+    matcher.to(device)
+    matcher.eval()
+    loader = make_loader(GLOBAL_PREPARED, VALIDATION, photo_transform(SIGLIP_MEAN, SIGLIP_STD, training=False), settings)
+
+    # Take each photo's first guess and its probability, computed as the phone computes them
+    confidence, correct = [], []
+    with torch.no_grad():
+        for pictures, targets in loader:
+            with half_precision(device):
+                outputs = matcher(pictures.to(device, non_blocking=True))
+            best, guesses = outputs.float().softmax(dim=1).max(dim=1)
+            confidence.append(best.cpu())
+            correct.append(guesses.cpu() == targets)
+
+    # Record the table the unsure line is read from
+    report = confidence_bands(torch.cat(confidence), torch.cat(correct))
+    save_result('global_bands.json', {'split': 'validation', 'names': len(names), 'bands': report})
+    print(report, flush=True)
+
+
 # Every stage this script can run; a new one is one more entry here
-STAGES = {'zero': zero, 'lora': lora, 'final': final, 'export': export}
+STAGES = {'zero': zero, 'lora': lora, 'bands': bands, 'final': final, 'export': export}
 
 
 if __name__ == '__main__':

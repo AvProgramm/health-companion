@@ -12,6 +12,7 @@ try:
     from vision.lora import LoRALinear, add_lora, merge_lora
     from vision.prepare import DROPPED, SEALED
     from vision.prepare_global import global_names, isia_splits, label_lookup
+    from vision.run_global import confidence_bands
 except ImportError as missing:
     raise unittest.SkipTest(f'The vision environment is not installed: {missing}.')
 
@@ -26,6 +27,15 @@ class FakeVision(nn.Module):
 
     def forward(self, pixel_values):
         return SimpleNamespace(pooler_output=self.block[0](pixel_values))
+
+
+class ConfidenceBandTests(unittest.TestCase):
+    def test_each_photo_counts_once_and_an_empty_band_has_no_rate(self):
+        # By hand: 0.1 is alone in the first band, 0.2 and 0.25 share the next, 0.85 is in the last
+        bands = confidence_bands(torch.tensor([0.1, 0.2, 0.25, 0.85]), torch.tensor([False, True, False, True]))
+        self.assertEqual([band['photos'] for band in bands], [1, 2, 0, 0, 0, 0, 0, 1])
+        self.assertEqual([bands[0]['right'], bands[1]['right'], bands[7]['right']], [0.0, 0.5, 1.0])
+        self.assertIsNone(bands[2]['right'])
 
 
 class FoodMatcherTests(unittest.TestCase):
