@@ -3,7 +3,7 @@ import { BODY_AREAS, type BodyArea } from '../../../domain/profile/profile';
 import type { Capability, Category, Equipment, MovementCard } from '../../../domain/training/catalogue';
 import { ownExerciseCard } from '../../../domain/training/customCards';
 import { Choices } from '../shared/Choices';
-import { CAPABILITY_LABELS, EQUIPMENT_LABELS } from '../../format';
+import { CAPABILITY_LABELS, EQUIPMENT_LABELS, errorText } from '../../format';
 import { OptionGroup } from '../shared/OptionGroup';
 import { CATEGORY_CHOICES } from './PlanResultView';
 import { Sheet } from '../shared/Sheet';
@@ -51,7 +51,7 @@ export function OwnExerciseSheet({ initialName, onConfirm, onClose }: OwnExercis
       await onConfirm(ownExerciseCard({ name, category, equipment, minutes: Number(minutes), cue, requires, seated, loads }, id));
       onClose();
     } catch (problem) {
-      setError(problem instanceof Error ? problem.message : String(problem));
+      setError(errorText(problem));
     } finally { setBusy(false); }
   }
 

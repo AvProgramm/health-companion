@@ -4,8 +4,7 @@ import type { Profile, ProfileSnapshot } from '../../../domain/profile/profile';
 import { weightTrend, type WeightPoint } from '../../../domain/profile/weightTrend';
 import { listProfileVersions } from '../../../storage/profileRepo';
 import { BodyFactsForm, BodyNumbers } from './BodyFactsForm';
-import { formatDiaryDate } from '../../format';
-import { errorText } from '../../hooks/useSave';
+import { formatDiaryDate, errorText } from '../../format';
 
 interface BodyCardProps {
   db: IDBDatabase;

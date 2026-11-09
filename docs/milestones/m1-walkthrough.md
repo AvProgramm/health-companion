@@ -2,21 +2,23 @@
 
 Read this, open each file beside it, and then answer the questions at the end in your own words. Put your answers in `docs/milestones/m1-my-words.md`.
 
+Written for Milestone 1. The code has grown since: an amount is now changed by `saveChange` in [MealSheet.tsx](../../apps/web/src/ui/components/meals/MealSheet.tsx), as one `MealEdit`, and steps 2 to 4 below run the same way.
+
 ## The path of one correction (300 → 250 mL)
 1. **The page** ([App.tsx](../../apps/web/src/ui/App.tsx), `handleSave`)
    - Checks the typed text is a finite, non-negative number.
    - Builds a `ChangeAmountRequest` that holds the **revision currently on screen** (`expectedRevision`) and a **pending operation key**.
-2. **Storage** ([db.ts](../../apps/web/src/storage/db.ts), `commitRevision`) opens **one** readwrite transaction over `meals`, `revisions` and `operations`. Inside it:
+2. **Storage** ([mealsRepo.ts](../../apps/web/src/storage/mealsRepo.ts), `commitEdit`) opens **one** readwrite transaction over `meals`, `revisions` and `operations`. Inside it:
    1. If the operation key is already in `operations`, it returns the revision that key produced. This is a replay, so a double tap or retry never saves twice (golden C).
    2. Otherwise it reads the meal header and then the latest revision.
    3. It hands both to the domain.
-3. **Domain** ([revisions.ts](../../apps/web/src/domain/revisions.ts), `reviseAmount`) is a pure function: no storage, no clock.
+3. **Domain** ([revisions.ts](../../apps/web/src/domain/meals/revisions.ts), `reviseMeal`) is a pure function: no storage, no clock.
    - It returns a **conflict** if `expectedRevision` is not the latest (golden D).
    - It checks the new amount is finite and non-negative, and that the component exists.
    - It checks the unit fits, e.g. `L` works for `mL`, but `g` throws `UnitMismatchError`.
    - It returns a **new** revision: number + 1, `supersedes` the old one, and only the milk component replaced. The other components are shared, untouched.
 4. **Back in storage:** a conflict writes nothing. Otherwise the new revision, the moved header pointer and the used key are all written in the same transaction. The promise only resolves on the transaction's `complete` event, with `durability: 'strict'`.
-5. **The page reloads from the database.** Totals come from [aggregate.ts](../../apps/web/src/domain/aggregate.ts) `totalNutrient`, which calls [scale.ts](../../apps/web/src/domain/scale.ts) `scaleNutrient` per component:
+5. **The page reloads from the database.** Totals come from [aggregate.ts](../../apps/web/src/domain/nutrition/aggregate.ts) `totalNutrient`, which calls [scale.ts](../../apps/web/src/domain/nutrition/scale.ts) `scaleNutrient` per component:
    - `110.8 × (250 / 250) × 1 = 110.8 kcal`
    - an unknown label value stays unknown ("0 g known + 1 unknown")
    - rounding happens only in [format.ts](../../apps/web/src/ui/format.ts)

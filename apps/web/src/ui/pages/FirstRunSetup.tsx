@@ -2,7 +2,8 @@ import { useRef, useState } from 'react';
 import { Leaf } from '@phosphor-icons/react';
 import type { BodyFacts } from '../../domain/profile/body';
 import { BodyFactsForm } from '../components/me/BodyFactsForm';
-import { errorText } from '../hooks/useSave';
+import { errorText } from '../format';
+import { ErrorLine } from '../components/shared/NoticeLine';
 
 interface FirstRunSetupProps {
   hideNumbers: boolean;
@@ -41,7 +42,7 @@ export function FirstRunSetup({ hideNumbers, currentYear, onSave, onRestoreInste
         <div className="signup-brand"><span className="brand-mark"><Leaf size={24} weight="bold" /></span><span className="brand-name">Health Companion</span><span className="signup-tagline">A little balance, every day.</span></div>
         <h1 id="signup-heading" className="signup-title">Set up your profile</h1>
         <p className="signup-intro">Your height and weight let the app balance your food and training. There is no account, and this stays on this device.</p>
-        {error !== null && <p className="notice notice-error" role="alert">{error}</p>}
+        <ErrorLine error={error} />
         <BodyFactsForm initial={null} hideNumbers={hideNumbers} currentYear={currentYear} saving={saving} submitLabel="Save and continue" onSubmit={save}>
           <button type="button" className="signup-pill signup-pill-secondary" disabled={saving} onClick={onRestoreInstead}>Restore a backup</button>
         </BodyFactsForm>

@@ -9,7 +9,8 @@ import type { PlanResult } from '../../../domain/training/planner';
 import { planFromProposal, type TrainerReply } from '../../../domain/training/trainerPlan';
 import { OptionGroup } from '../shared/OptionGroup';
 import { PlanResultView } from './PlanResultView';
-import { errorText } from '../../hooks/useSave';
+import { errorText } from '../../format';
+import { ErrorLine } from '../shared/NoticeLine';
 
 // The Trainer balances the whole body unless the goal says otherwise
 const ALL_AREAS: readonly Category[] = ['push', 'pull', 'legs', 'core'];
@@ -96,7 +97,7 @@ export function TrainerCard({ entries, profile = EMPTY_PROFILE }: { entries: rea
         <p className="hint">Sends only what's on this card. Your saved profile and diary stay on this device; the device adapts the reply afterwards.</p>
       </form>
 
-      {error !== null && <p className="notice notice-error" role="alert">{error}</p>}
+      <ErrorLine error={error} />
       {busy && <div className="skeleton skeleton-card" role="status" aria-label="The Trainer is choosing exercises" />}
 
       {session !== null && <>

@@ -9,7 +9,8 @@ import { ProfileEditor } from '../components/me/ProfileEditor';
 import { AskCoach } from '../components/me/AskCoach';
 import { BodyCard } from '../components/me/BodyCard';
 import { DURABILITY_TEXT } from './TodayView';
-import { errorText } from '../hooks/useSave';
+import { errorText } from '../format';
+import { NoticeLine } from '../components/shared/NoticeLine';
 
 interface MeViewProps {
   db: IDBDatabase;
@@ -137,9 +138,7 @@ export function MeView({ db, profileSnapshot, onSaveProfile, durability, foodCou
         <p className="status">Your saved profile and diary stay on this device. Optional services receive only the text and choices you submit.</p>
       </header>
 
-      {message !== null && (
-        <p className={`notice notice-${message.kind}`} role={message.kind === 'error' ? 'alert' : 'status'}>{message.text}</p>
-      )}
+      <NoticeLine notice={message} />
 
       <ProfileEditor snapshot={profileSnapshot} onSave={onSaveProfile} />
       <BodyCard db={db} snapshot={profileSnapshot} hideNumbers={hideNumbers} currentYear={new Date().getFullYear()} onSave={onSaveProfile} />

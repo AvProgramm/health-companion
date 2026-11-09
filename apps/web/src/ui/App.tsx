@@ -14,6 +14,8 @@ import { GymView } from './pages/GymView';
 import { MeView } from './pages/MeView';
 import { readHideNumbers, writeHideNumbers } from './preferences';
 import { TodayView } from './pages/TodayView';
+import { errorText } from './format';
+import { ErrorLine } from './components/shared/NoticeLine';
 
 type Tab = 'today' | 'gym' | 'foods' | 'me';
 
@@ -65,7 +67,7 @@ export function App() {
         const current = await readDurability();
         setDurability(current === 'best-effort' ? await requestDurability() : current);
       } catch (problem) {
-        setLoadError(problem instanceof Error ? problem.message : String(problem));
+        setLoadError(errorText(problem));
       }
     }
 
@@ -112,7 +114,7 @@ export function App() {
   // Refresh after another tab changes the profile; remount plan screens by saved revision below.
   useEffect(() => {
     if (db === null) return;
-    const reload = () => { readProfile(db).then(latest => setSavedProfile(previous => JSON.stringify(previous) === JSON.stringify(latest) ? previous : latest), problem => setLoadError(problem instanceof Error ? problem.message : String(problem))); };
+    const reload = () => { readProfile(db).then(latest => setSavedProfile(previous => JSON.stringify(previous) === JSON.stringify(latest) ? previous : latest), problem => setLoadError(errorText(problem))); };
     window.addEventListener('focus', reload);
     return () => window.removeEventListener('focus', reload);
   }, [db]);
@@ -122,7 +124,7 @@ export function App() {
       <main className="page">
         <section className="card">
           <h1 className="title">The diary could not open</h1>
-          <p className="notice notice-error" role="alert">{loadError}</p>
+          <ErrorLine error={loadError} />
         </section>
       </main>
     );

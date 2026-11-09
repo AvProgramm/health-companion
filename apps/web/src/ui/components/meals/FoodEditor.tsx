@@ -2,8 +2,9 @@ import { useState, type FormEvent } from 'react';
 import { buildFoodVersion } from '../../../domain/nutrition/foods';
 import { NUTRIENT_KEYS, type FoodVersion, type NutrientKey, type NutrientValue, type SourceKind } from '../../../domain/nutrition/types';
 import type { Unit } from '../../../domain/shared/units';
-import { NUTRIENT_LABELS } from '../../format';
+import { NUTRIENT_LABELS, errorText } from '../../format';
 import { Sheet } from '../shared/Sheet';
+import { ErrorLine } from '../shared/NoticeLine';
 
 // The label fields, in the order printed on most nutrition panels
 const EDITABLE_NUTRIENTS = NUTRIENT_KEYS;
@@ -75,7 +76,7 @@ export function FoodEditor({ previous, initialFood, initialName, initialUnit, on
         previous,
       );
     } catch (problem) {
-      setError(problem instanceof Error ? problem.message : String(problem));
+      setError(errorText(problem));
       return;
     }
 
@@ -84,7 +85,7 @@ export function FoodEditor({ previous, initialFood, initialName, initialUnit, on
       await onSave(food);
       onClose();
     } catch (problem) {
-      setError(problem instanceof Error ? problem.message : String(problem));
+      setError(errorText(problem));
     } finally {
       setBusy(false);
     }
@@ -151,7 +152,7 @@ export function FoodEditor({ previous, initialFood, initialName, initialUnit, on
         {previous !== undefined && (
           <p className="hint">Saving creates version {previous.version + 1}. Meals saved earlier keep version {previous.version}.</p>
         )}
-        {error !== null && <p className="notice notice-error" role="alert">{error}</p>}
+        <ErrorLine error={error} />
 
         <button type="submit" className="button" disabled={busy}>
           {busy ? 'Saving…' : 'Save food'}

@@ -2,7 +2,8 @@ import { useEffect, useState, type ChangeEvent } from 'react';
 import { Camera } from '@phosphor-icons/react';
 import { dishLabel, type DishFacts, type DishGuess } from '../../../domain/dish/dishModel';
 import { loadDishFacts, modelIsKept, recogniseDish } from '../../../vision/recogniseDish';
-import { errorText } from '../../hooks/useSave';
+import { errorText } from '../../format';
+import { ErrorLine } from '../shared/NoticeLine';
 
 // Below this the first guess was right less than about two times in three on the validation photos (experiments/vision/results/global_bands.json)
 const UNSURE_BELOW = 0.5;
@@ -84,7 +85,7 @@ export function PlatePhoto({ onPick }: { onPick: (dish: string) => void }) {
       <p className="hint">The photo stays on this device. Only the dish you pick is used for an estimate.</p>
       {!kept && <p className="hint">The first photo downloads the food model once, {megabytes(facts.modelBytes)}, and keeps it on this device.</p>}
 
-      {error !== null && <p className="notice notice-error" role="alert">{error}</p>}
+      <ErrorLine error={error} />
       {previewUrl !== null && <img className="plate-preview" src={previewUrl} alt="The photo you chose" />}
 
       {guesses !== null && <div className="ai-reply" aria-live="polite">

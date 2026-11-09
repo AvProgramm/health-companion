@@ -11,10 +11,10 @@ import { PackPicker } from '../components/training/PackPicker';
 import { cardioBurn } from '../../domain/training/cardio';
 import { describeSets, lastPerformed, type WorkoutEntry } from '../../domain/training/workouts';
 import { listWorkouts } from '../../storage/logsRepo';
-import { burnText, formatDiaryDate } from '../format';
+import { burnText, formatDiaryDate, errorText } from '../format';
 import { PlanSession } from '../components/training/PlanSession';
 import { TrainerCard } from '../components/training/TrainerCard';
-import { errorText } from '../hooks/useSave';
+import { ErrorLine } from '../components/shared/NoticeLine';
 
 // Enough history to see a trend on a phone screen without scrolling forever
 const HISTORY_LENGTH = 20;
@@ -123,7 +123,7 @@ export function GymView({ db, profile = EMPTY_PROFILE, hideNumbers = false }: { 
         <div className="gym-planner-column">{choicesReady ? <PlanSession cards={cards} profile={profile} /> : <div className="skeleton skeleton-card" role="status" aria-label="Loading exercise choices" />}<p className="device-note"><ShieldCheck size={20} />Exercise searches and choices stay on this device. Log completed training on Today.</p></div>
       </div>
 
-      {error !== null && <p className="notice notice-error" role="alert">{error}</p>}
+      <ErrorLine error={error} />
 
       {entries !== null && live.length === 0 && (
         <section className="card card-muted">

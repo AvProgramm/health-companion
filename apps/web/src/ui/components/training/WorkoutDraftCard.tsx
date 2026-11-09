@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { buildWorkout, describeSets, lastPerformed, movementKey, type LoadUnit, type WorkoutDraft, type WorkoutEntry, type WorkoutSet } from '../../../domain/training/workouts';
 import { listWorkouts, saveLogEntry } from '../../../storage/logsRepo';
-import { formatDiaryDate, readAmount } from '../../format';
+import { formatDiaryDate, readAmount, errorText } from '../../format';
 import { NoticeLine } from '../shared/NoticeLine';
 import { useSave } from '../../hooks/useSave';
 
@@ -70,7 +70,7 @@ export function WorkoutDraftCard({ db, date, dateLabel, zone, draft, onSaved, on
       buildWorkout(candidate, { id: 'check', operationKey: 'check', localDate: date, zone, savedAt: new Date().toISOString() });
       return null;
     } catch (error) {
-      return error instanceof Error ? error.message : String(error);
+      return errorText(error);
     }
   }
 

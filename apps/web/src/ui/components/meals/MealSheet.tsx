@@ -5,8 +5,9 @@ import type { MealComponent, MealEdit, MealRevision } from '../../../domain/meal
 import { areCompatible, type Unit } from '../../../domain/shared/units';
 import { commitEdit, listRevisions, type SavedMeal } from '../../../storage/mealsRepo';
 import { describeChange, nameOf } from '../../describe';
-import { formatEaten, formatQuantity, formatTime, mealTitle, readAmount } from '../../format';
+import { formatEaten, formatQuantity, formatTime, mealTitle, readAmount, errorText } from '../../format';
 import { Sheet } from '../shared/Sheet';
+import { NoticeLine } from '../shared/NoticeLine';
 
 const ALL_UNITS: readonly Unit[] = ['g', 'kg', 'mL', 'L', 'piece'];
 
@@ -79,7 +80,7 @@ export function MealSheet({ db, meal, foods, currentFoods, onClose, onChanged, o
       }
       await onChanged();
     } catch (problem) {
-      setMessage({ kind: 'error', text: problem instanceof Error ? problem.message : String(problem) });
+      setMessage({ kind: 'error', text: errorText(problem) });
     } finally {
       setBusy(false);
     }
@@ -264,9 +265,7 @@ export function MealSheet({ db, meal, foods, currentFoods, onClose, onChanged, o
         </div>
       )}
 
-      {message !== null && (
-        <p className={`notice notice-${message.kind}`} role={message.kind === 'error' ? 'alert' : 'status'}>{message.text}</p>
-      )}
+      <NoticeLine notice={message} />
 
       <section aria-labelledby="history-heading" className="stack">
         <h3 id="history-heading" className="label">History</h3>

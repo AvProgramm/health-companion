@@ -4,7 +4,7 @@ import { scaleNutrient } from '../../../domain/nutrition/scale';
 import type { FoodVersion } from '../../../domain/nutrition/types';
 import type { MealComponent, MealRevision } from '../../../domain/meals/types';
 import { areCompatible, type Unit } from '../../../domain/shared/units';
-import { readAmount, formatTotal, SOURCE_LABELS } from '../../format';
+import { readAmount, formatTotal, SOURCE_LABELS, errorText } from '../../format';
 import { totalNutrient } from '../../../domain/nutrition/aggregate';
 import { EstimateDraft } from './EstimateDraft';
 
@@ -132,7 +132,7 @@ function checkRow(row: DraftRow, foods: ReadonlyMap<string, FoodVersion>) {
     const protein = scaleNutrient(food.nutrients.protein_g ?? null, food.basis, served, row.eatenFraction);
     return { food, amount, kcal, kcalTotal, protein, error: null };
   } catch (problem) {
-    return { food, amount: null, kcal: null, protein: null, error: problem instanceof Error ? problem.message : String(problem) };
+    return { food, amount: null, kcal: null, protein: null, error: errorText(problem) };
   }
 }
 

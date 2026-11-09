@@ -2,7 +2,8 @@ import { useState, type FormEvent } from 'react';
 import { askNutritionist } from '../../../api/nutritionist';
 import type { NutritionistReply } from '../../../domain/nutrition/nutritionistReply';
 import { SourceLine } from '../shared/SourceLine';
-import { errorText } from '../../hooks/useSave';
+import { errorText } from '../../format';
+import { ErrorLine } from '../shared/NoticeLine';
 
 /**
  * Display food ideas for a typed goal, each grounded in reviewed guidance.
@@ -50,7 +51,7 @@ export function NutritionistCard({ onDraft }: { onDraft: (entry: string) => void
         <p className="hint">Sends only what you type here. Leave out names and personal details. Your diary stays on this device.</p>
       </form>
 
-      {error !== null && <p className="notice notice-error" role="alert">{error}</p>}
+      <ErrorLine error={error} />
 
       {reply !== null && <div className="ai-reply" aria-live="polite">
         <p className="body">{reply.message}</p>

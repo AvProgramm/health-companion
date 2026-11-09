@@ -2,7 +2,8 @@ import { useState, type FormEvent } from 'react';
 import { askCoach } from '../../../api/coach';
 import type { CoachReply } from '../../../domain/coach/coachReply';
 import { SourceLine } from '../shared/SourceLine';
-import { errorText } from '../../hooks/useSave';
+import { errorText } from '../../format';
+import { ErrorLine } from '../shared/NoticeLine';
 
 /**
  * Display a question box answered only from reviewed health guidance.
@@ -50,7 +51,7 @@ export function AskCoach() {
         <p className="hint">Sends only this question. Leave out names and personal details. Your diary stays on this device.</p>
       </form>
 
-      {error !== null && <p className="notice notice-error" role="alert">{error}</p>}
+      <ErrorLine error={error} />
 
       {reply !== null && <div className="ai-reply" aria-live="polite">
         <p className="body">{reply.message}</p>

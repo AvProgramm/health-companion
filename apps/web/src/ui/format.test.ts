@@ -1,5 +1,15 @@
 import { describe, expect, it } from 'vitest';
-import { formatEnergyCell, formatSleepCell } from './format';
+import { errorText, formatEnergyCell, formatSleepCell } from './format';
+
+describe('error text', () => {
+  it('shows an error by its message alone', () => {
+    expect(errorText(new Error('The diary could not open.'))).toBe('The diary could not open.');
+  });
+
+  it('shows anything else that was thrown as text', () => {
+    expect(errorText('Not an error object')).toBe('Not an error object');
+  });
+});
 
 describe('energy in the week view', () => {
   it('shows a dash when no food was logged', () => {

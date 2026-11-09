@@ -21,17 +21,18 @@ import { BalanceCard } from '../components/summary/BalanceCard';
 import { DaySummaryCard } from '../components/summary/DaySummaryCard';
 import { DraftCard, emptyDraftRow, repeatRows, toDraftRow, type DraftRow } from '../components/meals/DraftCard';
 import { FoodEditor } from '../components/meals/FoodEditor';
-import { NUTRIENT_LABELS, formatDiaryDate, formatTotal } from '../format';
+import { NUTRIENT_LABELS, formatDiaryDate, formatTotal, errorText } from '../format';
 import { MealCard } from '../components/meals/MealCard';
 import { MealSheet } from '../components/meals/MealSheet';
 import { SleepCard } from '../components/sleep/SleepCard';
 import { PlatePhoto } from '../components/meals/PlatePhoto';
 import { SleepDraftCard } from '../components/sleep/SleepDraftCard';
-import { errorText, type Notice } from '../hooks/useSave';
+import type { Notice } from '../hooks/useSave';
 import { useToday } from '../hooks/useToday';
 import { WorkoutCard } from '../components/training/WorkoutCard';
 import { WeekCard } from '../components/summary/WeekCard';
 import { WorkoutDraftCard } from '../components/training/WorkoutDraftCard';
+import { NoticeLine } from '../components/shared/NoticeLine';
 
 // What the area under the composer is showing
 type Panel =
@@ -287,9 +288,7 @@ export function TodayView({ db, foods, currentFoods, hideNumbers, durability, di
       </form>
       </details>
 
-      {notice !== null && (
-        <p className={`notice notice-${notice.kind}`} role={notice.kind === 'error' ? 'alert' : 'status'}>{notice.text}</p>
-      )}
+      <NoticeLine notice={notice} />
 
       {panel?.kind === 'draft' && (
         <DraftCard

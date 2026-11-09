@@ -7,7 +7,7 @@ import { reviseMeal } from '../../../domain/meals/revisions';
 import type { FoodVersion } from '../../../domain/nutrition/types';
 import type { MealRevision } from '../../../domain/meals/types';
 import type { SavedMeal } from '../../../storage/mealsRepo';
-import { formatQuantity, mealTitle } from '../../format';
+import { formatQuantity, mealTitle, errorText } from '../../format';
 
 interface CorrectionCardProps {
   date: string;
@@ -143,7 +143,7 @@ function previewChange(target: CorrectionTarget, quantity: ReturnType<typeof cor
       dayAfter: summariseDay(date, afterDay, foods).totals.kcal.known,
     };
   } catch (problem) {
-    return { error: problem instanceof Error ? problem.message : String(problem), itemBefore: empty(), itemAfter: empty(), dayBefore: 0, dayAfter: 0 };
+    return { error: errorText(problem), itemBefore: empty(), itemAfter: empty(), dayBefore: 0, dayAfter: 0 };
   }
 }
 

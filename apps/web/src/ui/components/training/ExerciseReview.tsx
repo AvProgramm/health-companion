@@ -1,7 +1,7 @@
 import { useState, type FormEvent } from 'react';
 import type { MovementCard } from '../../../domain/training/catalogue';
 import { reviewExercise, whyNotAddable, type ExerciseEntry } from '../../../domain/training/exerciseSearch';
-import { CAPABILITY_LABELS, EQUIPMENT_LABELS, LEVEL_LABELS } from '../../format';
+import { CAPABILITY_LABELS, EQUIPMENT_LABELS, LEVEL_LABELS, errorText } from '../../format';
 import { MuscleMap } from './MuscleMap';
 import { Sheet } from '../shared/Sheet';
 
@@ -31,7 +31,7 @@ export function ExerciseReview({ entry, onConfirm, onClose }: ExerciseReviewProp
       await onConfirm(reviewExercise(entry, Number(minutes)));
       onClose();
     } catch (problem) {
-      setError(problem instanceof Error ? problem.message : String(problem));
+      setError(errorText(problem));
     } finally { setBusy(false); }
   }
 

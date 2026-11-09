@@ -6,6 +6,7 @@ import { NUTRIENT_KEYS } from '../../../domain/nutrition/types';
 import type { FoodVersion } from '../../../domain/nutrition/types';
 import { Sparkle } from '@phosphor-icons/react';
 import { EstimateResult } from './EstimateResult';
+import { errorText } from '../../format';
 
 interface EstimateDraftProps {
   name: string;
@@ -40,7 +41,7 @@ export function EstimateDraft({ name: initialName, portionText: initialPortion, 
       const result = await requestEstimate({ name: name.trim(), portionText: portionText.trim() });
       if (mounted.current) setEstimate(result);
     } catch (problem) {
-      if (mounted.current) setError(problem instanceof Error ? problem.message : String(problem));
+      if (mounted.current) setError(errorText(problem));
     } finally {
       if (mounted.current) setBusy(false);
     }
@@ -58,7 +59,7 @@ export function EstimateDraft({ name: initialName, portionText: initialPortion, 
         : estimatedFood(name, estimate!, foodId.current);
       await onUse(food);
     } catch (problem) {
-      if (mounted.current) setError(problem instanceof Error ? problem.message : String(problem));
+      if (mounted.current) setError(errorText(problem));
     } finally {
       if (mounted.current) setBusy(false);
     }

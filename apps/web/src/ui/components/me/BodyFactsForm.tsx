@@ -1,6 +1,7 @@
 import { useState, type FormEvent, type ReactNode } from 'react';
 import { ACTIVITY_LEVELS, SEXES, assertBodyFacts, bmiBand, bodyMassIndex, dailyEnergy, restingEnergy, type ActivityLevel, type BodyFacts, type Sex } from '../../../domain/profile/body';
-import { readAmount } from '../../format';
+import { readAmount, errorText } from '../../format';
+import { ErrorLine } from '../shared/NoticeLine';
 
 // How each activity level reads in the list
 const ACTIVITY_LABELS: Record<ActivityLevel, string> = { sedentary: 'Mostly sitting', light: 'Light, 1 to 3 days a week', moderate: 'Moderate, 3 to 5 days a week', active: 'Hard, 6 to 7 days a week', very_active: 'Very hard or physical work' };
@@ -49,7 +50,7 @@ export function BodyFactsForm({ initial, hideNumbers, currentYear, saving, submi
       setError(null);
       onSubmit(draft);
     } catch (problem) {
-      setError(problem instanceof Error ? problem.message : String(problem));
+      setError(errorText(problem));
     }
   }
 
@@ -69,7 +70,7 @@ export function BodyFactsForm({ initial, hideNumbers, currentYear, saving, submi
       </details>
 
       {usable && !hideNumbers && <BodyNumbers body={draft} currentYear={currentYear} />}
-      {error !== null && <p className="notice notice-error" role="alert">{error}</p>}
+      <ErrorLine error={error} />
 
       <div className="signup-actions">
         {children}

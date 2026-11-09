@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState, type FormEvent } from 'react';
 import { BODY_AREAS, EMPTY_PROFILE, type BodyArea, type Profile, type ProfileSnapshot } from '../../../domain/profile/profile';
 import type { Capability } from '../../../domain/training/catalogue';
-import { errorText } from '../../hooks/useSave';
+import { errorText } from '../../format';
 
 /** Describe the saved version and the sole confirmed-save boundary. */
 interface ProfileEditorProps {

@@ -1,7 +1,8 @@
 import { useState, type ChangeEvent, type FormEvent } from 'react';
 import { lookUpBarcode, readBarcodeDigits } from '../../../api/barcode';
 import type { FoodVersion } from '../../../domain/nutrition/types';
-import { errorText } from '../../hooks/useSave';
+import { errorText } from '../../format';
+import { ErrorLine } from '../shared/NoticeLine';
 
 // The packaged-food barcode formats, which is all a nutrition lookup can use
 const FOOD_FORMATS = ['ean_13', 'ean_8', 'upc_a', 'upc_e'];
@@ -80,7 +81,7 @@ export function BarcodeScan({ onFound }: { onFound: (food: FoodVersion) => void 
         <button type="submit" className="button button-secondary" disabled={busy}>{busy ? 'Looking…' : 'Look up'}</button>
       </form>
       <p className="hint">Only the barcode number is sent. You check the label values before anything is saved.</p>
-      {error !== null && <p className="notice notice-error" role="alert">{error}</p>}
+      <ErrorLine error={error} />
     </section>
   );
 }

@@ -1,4 +1,5 @@
 import { useRef, useState } from 'react';
+import { errorText } from '../format';
 
 export type Notice = { kind: 'saved' | 'conflict' | 'error'; text: string };
 
@@ -37,11 +38,4 @@ export function useSave() {
   }
 
   return { busy, notice, run };
-}
-
-/**
- * Return an error as a sentence the page can show.
- */
-export function errorText(problem: unknown): string {
-  return problem instanceof Error ? problem.message : String(problem);
 }

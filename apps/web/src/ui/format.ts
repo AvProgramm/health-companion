@@ -181,6 +181,12 @@ export function readAmount(text: string): number | null {
   return Number.isFinite(value) && value >= 0 ? value : null;
 }
 
+/**
+ * Return an error as a sentence the page can show.
+ */
+export function errorText(problem: unknown): string {
+  return problem instanceof Error ? problem.message : String(problem);
+}
 
 // Keep very large display-only labels inside the minutes ring; exact totals remain elsewhere.
 const COMPACT_MINUTES = new Intl.NumberFormat('en-AU', { notation: 'compact', maximumFractionDigits: 1 });

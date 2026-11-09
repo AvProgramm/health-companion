@@ -6,6 +6,7 @@ import { OWN_EXERCISE_PREFIX } from '../../../domain/training/customCards';
 import { Choices } from '../shared/Choices';
 import { EQUIPMENT_LABELS } from '../../format';
 import { CATEGORY_CHOICES, PlanResultView } from './PlanResultView';
+import { ErrorLine } from '../shared/NoticeLine';
 
 // Every equipment type the planner understands, as it reads on a chip
 const EQUIPMENT_CHOICES = Object.entries(EQUIPMENT_LABELS) as [Equipment, string][];
@@ -90,7 +91,7 @@ export function PlanSession({ cards, profile = EMPTY_PROFILE }: { cards: readonl
         <button type="submit" className="button">Find a plan</button>
       </form>
 
-      {error !== null && <p className="notice notice-error" role="alert">{error}</p>}
+      <ErrorLine error={error} />
 
       <PlanResultView result={result} minutesText={minutesText} areaCount={categories.length} />
     </section>

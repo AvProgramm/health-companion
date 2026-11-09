@@ -13,3 +13,10 @@ export function NoticeLine({ notice }: { notice: Notice | null }) {
     </p>
   );
 }
+
+/**
+ * Show an error sentence, or nothing when there is no error.
+ */
+export function ErrorLine({ error }: { error: string | null }) {
+  return <NoticeLine notice={error === null ? null : { kind: 'error', text: error }} />;
+}
