@@ -1,0 +1,94 @@
+/* The Gym tab. Loaded after app.css, whose tokens it uses. Depth and highlights without a 3D engine or remote imagery. */
+.gym-masthead { padding: 24px; border: 1px solid #3b5440; border-radius: 24px; background: #203629; color: #f3f8ee; box-shadow: 0 16px 32px rgb(24 44 29 / .14), inset 0 1px 0 rgb(255 255 255 / .12); }
+.gym-masthead .eyebrow, .gym-masthead .status { color: #c1d2ba; }
+.gym-title { display: flex; align-items: center; gap: 16px; }
+.gym-title .page-title { font-size: 30px; line-height: 36px; }
+.gym-emblem { display: grid; place-items: center; width: 64px; height: 64px; flex-shrink: 0; border-radius: 16px; color: #253c28; background: #c6e4ae; box-shadow: inset 0 2px 0 rgb(255 255 255 / .5), 0 8px 16px rgb(0 0 0 / .15); }
+.gym-layout { display: grid; align-items: start; gap: 24px; min-width: 0; }
+.gym-layout > *, .gym-planner-column { min-width: 0; }
+.gym-planner-column { display: grid; gap: 24px; align-content: start; }
+.exercise-library, .plan-session-card, .pack-picker { box-shadow: var(--gym-shadow); }
+.pack-picker { display: grid; gap: 16px; margin-bottom: 24px; }
+.pack-picker .card-head > div { display: grid; gap: 4px; }
+.pack-picker .badge { gap: 4px; }
+.pack-options { display: grid; grid-template-columns: repeat(auto-fit, minmax(96px, 1fr)); gap: 8px; }
+.pack-options .equipment-mode { position: relative; justify-content: center; min-height: 44px; padding: 8px; text-align: center; overflow-wrap: anywhere; }
+.pack-options .equipment-mode input { position: absolute; opacity: 0; pointer-events: none; }
+.pack-option-row { display: grid; gap: 16px; }
+.pack-summary { display: grid; gap: 4px; padding: 12px 16px; border-radius: 12px; background: var(--action-soft); }
+.pack-exercises { display: grid; gap: 8px; }
+.pack-add { justify-self: start; }
+@media (min-width: 1180px) { .pack-option-row { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+.exercise-library .card-head > div, .plan-session-card > div:first-child { display: grid; gap: 4px; }
+.exercise-library .badge { gap: 4px; }
+.exercise-search-box { display: flex; align-items: center; gap: 12px; padding: 0 12px; border: 1px solid var(--line); border-radius: 12px; color: var(--ink-muted); background: var(--paper); box-shadow: inset 0 2px 4px rgb(27 50 32 / .04); }
+.exercise-search-box .input { border: 0; background: transparent; padding-inline: 0; box-shadow: none; }
+.exercise-search-box:focus-within { outline: 2px solid var(--action); outline-offset: 4px; }
+.exercise-search-box .input:focus-visible { outline: 0; }
+.exercise-search-empty { display: grid; justify-items: center; text-align: center; gap: 12px; padding: 24px 16px; color: var(--ink-muted); }
+.exercise-search-empty .body { color: var(--ink); font-weight: 500; }
+.exercise-results { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 280px), 1fr)); gap: 16px; margin: 0; padding: 0; list-style: none; }
+.exercise-result { display: grid; grid-template-columns: 72px minmax(0,1fr); align-items: start; gap: 12px; padding: 16px; border: 1px solid var(--line); border-radius: 16px; background: var(--surface); box-shadow: var(--gym-raised); }
+.exercise-result-content { display: grid; gap: 8px; min-width: 0; }
+.exercise-result-content .heading-small { font-size: 16px; line-height: 24px; overflow-wrap: anywhere; }
+.exercise-result-content .hint { font-size: 12px; line-height: 16px; }
+.exercise-result .button { justify-self: start; font-size: 14px; line-height: 20px; }
+.muscle-map { display: block; width: 100%; max-width: 120px; height: auto; overflow: visible; filter: drop-shadow(0 4px 2px rgb(22 48 26 / .08)); }
+.muscle-map .body-base { fill: #e8eee5; stroke: #c2d0bc; stroke-width: 6; stroke-linejoin: round; stroke-linecap: round; }
+.muscle-map .muscle-rest { fill: #d8e2d3; }
+.muscle-map .muscle-active { fill: var(--gym-target); stroke: #65974d; stroke-width: 1; }
+.muscle-map text { fill: var(--ink-muted); font: 6px 'Geist Variable', sans-serif; letter-spacing: 1px; }
+.category-chip { display: inline-flex; width: fit-content; padding: 4px 8px; border-radius: 8px; font-size: 12px; line-height: 16px; color: #3a5931; background: #e4efdc; }
+.category-push { background: #e8e5f4; color: #594575; }
+.category-pull { background: #e0edf3; color: #37596c; }
+.category-legs { background: #e6efd9; color: #466032; }
+.category-core { background: #f4eada; color: #77552e; }
+.category-uncovered, .category-unknown { background: var(--paper); color: var(--ink-muted); }
+.selected-label { display: inline-flex; align-items: center; gap: 4px; color: var(--action); }
+.my-exercises { padding: 16px; border: 1px solid var(--line); border-radius: 16px; background: var(--paper); }
+.my-exercises > summary { cursor: pointer; display: flex; align-items: center; justify-content: space-between; gap: 8px; font-weight: 500; }
+.my-exercises[open] > .hint, .my-exercises[open] > .items { margin-top: 16px; }
+.chosen-exercise { display: flex; align-items: center; justify-content: space-between; gap: 8px; min-width: 0; }
+.chosen-exercise > div { min-width: 0; overflow-wrap: anywhere; }
+.chosen-exercise strong { font-size: 14px; line-height: 20px; font-weight: 500; }
+.chosen-exercise .button { font-size: 14px; }
+.source-caption { font-size: 12px; line-height: 16px; color: var(--ink-muted); }
+.exercise-review-head { display: grid; grid-template-columns: 80px minmax(0,1fr); align-items: center; gap: 16px; }
+.exercise-review-head > div { display: grid; gap: 8px; }
+.exercise-instructions { font-size: 14px; line-height: 20px; }
+.exercise-instructions > summary { color: var(--action); cursor: pointer; }
+.exercise-instructions[open] > p { margin-top: 12px; }
+.exercise-facts { display: grid; grid-template-columns: repeat(2, minmax(0,1fr)); gap: 8px; margin: 16px 0 8px; }
+.exercise-facts > div { padding: 12px; background: var(--action-soft); border-radius: var(--radius-control); min-width: 0; }
+.exercise-facts dt { font-size: 12px; line-height: 16px; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; color: var(--ink-muted); }
+.exercise-facts dd { margin: 4px 0 0; font-size: 16px; line-height: 24px; font-weight: 600; color: var(--ink); overflow-wrap: anywhere; }
+.exercise-fact-area { text-transform: capitalize; }
+.gym-plan-result { padding-top: 16px; }
+.plan-overview { display: flex; align-items: center; gap: 16px; }
+.plan-overview > div:last-child { display: grid; gap: 8px; }
+.coverage-chips { display: flex; flex-wrap: wrap; gap: 4px; }
+.minutes-ring { width: 120px; height: 120px; position: relative; flex-shrink: 0; }
+.minutes-ring svg { display: block; width: 100%; height: 100%; transform: rotate(-90deg); }
+.minutes-ring circle { fill: none; stroke-width: 8; }
+.ring-track { stroke: var(--gym-target-soft); }
+.ring-value { stroke: var(--action); stroke-linecap: round; }
+.minutes-ring > span { position: absolute; inset: 0; display: flex; flex-direction: column; justify-content: center; align-items: center; }
+.minutes-ring strong { font-size: 30px; line-height: 36px; font-weight: 600; }
+.minutes-ring small { font-size: 12px; line-height: 16px; color: var(--ink-muted); }
+.planned-exercise { display: grid; grid-template-columns: 56px minmax(0,1fr); align-items: center; gap: 12px; padding: 12px; border-radius: 12px; background: var(--paper); box-shadow: inset 0 1px 0 rgb(255 255 255 / .9); }
+.planned-exercise > div { display: grid; gap: 8px; min-width: 0; }
+.planned-exercise .numbers { font-size: 12px; line-height: 16px; color: var(--ink-muted); }
+.plan-session-card .choice { font-size: 14px; line-height: 20px; }
+@media (min-width: 1180px) { .gym-layout { grid-template-columns: minmax(0,1fr) 360px; } }
+@media (max-width: 479px) { .gym-masthead { padding: 16px; border-radius: 16px; } .gym-title { gap: 12px; } .gym-title .page-title { font-size: 24px; line-height: 32px; } .gym-emblem { width: 48px; height: 48px; } .exercise-result { grid-template-columns: 56px minmax(0,1fr); padding: 12px; } .minutes-ring { width: 96px; height: 96px; } .exercise-review-head { grid-template-columns: 56px minmax(0,1fr); } .exercise-review-head .title { font-size: 20px; line-height: 28px; } }
+@media (prefers-reduced-motion: no-preference) { .exercise-result { transition: transform 500ms var(--ease), box-shadow 500ms var(--ease); } .exercise-result:hover { transform: perspective(800px) rotateX(1deg) translateY(-2px); box-shadow: var(--gym-shadow); } }
+
+/* Keep session setup compact, with gear details visible only when requested. */
+.equipment-modes { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+.equipment-mode { display: flex; align-items: center; gap: 8px; padding: 12px; min-height: 56px; border: 1px solid var(--line); border-radius: 12px; background: var(--paper); font-size: 14px; line-height: 20px; cursor: pointer; }
+.equipment-mode input { width: 18px; height: 18px; margin: 0; flex-shrink: 0; accent-color: var(--action); }
+.equipment-mode:has(input:checked) { border-color: var(--action); background: var(--action-soft); box-shadow: inset 0 0 0 1px var(--action); }
+.equipment-mode:focus-within { outline: 2px solid var(--action); outline-offset: 4px; }
+.session-equipment { display: grid; gap: 8px; padding: 12px; border: 1px solid var(--line); border-radius: 12px; }
+.plan-session-card .choice { padding: 8px 12px; border: 1px solid var(--line); border-radius: 12px; cursor: pointer; }
+.plan-session-card .choice:has(input:checked) { background: var(--action-soft); border-color: var(--action); }

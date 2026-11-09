@@ -4,6 +4,7 @@ import { registerServiceWorker } from './sw/register';
 import { App } from './ui/App';
 import '@fontsource-variable/geist/wght.css';
 import './ui/app.css';
+import './ui/gym.css';
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
