@@ -3,13 +3,16 @@ import asyncio
 import httpx
 from .providers import database_estimate, llm_estimate
 from .retrieval import search_nutrition
+from .gemini import gemini_estimate
 from .huggingface import hf_estimate
 from .enrichment import enrich_unknown
 
-# Bound independent lookup stages before trying either model.
+# Bound independent lookup stages before trying any model.
 LOOKUP_DEADLINE = 4.0
 # Model calls include their own socket deadline inside this total stage budget.
 MODEL_DEADLINE = 8.0
+# Asked in this order, so a model that is out of tokens hands over to the next.
+ESTIMATE_MODELS = (llm_estimate, gemini_estimate, hf_estimate)
 
 
 async def attempt(provider, *args, deadline):
@@ -21,14 +24,14 @@ async def attempt(provider, *args, deadline):
         return None
 
 
-async def estimate_food(name, portion_text, database=database_estimate, llm=llm_estimate, retrieval=search_nutrition, hf=hf_estimate):
+async def estimate_food(name, portion_text, database=database_estimate, retrieval=search_nutrition, models=ESTIMATE_MODELS):
     """Return database values first, then evidence-assisted model proposals."""
     result = await attempt(database, name, portion_text, deadline=LOOKUP_DEADLINE)
     if result is not None:
         return await enrich_unknown(name, portion_text, result)
     evidence = await attempt(retrieval, name, portion_text, deadline=LOOKUP_DEADLINE) or []
-    for provider in (llm, hf):
-        result = await attempt(provider, name, portion_text, evidence, deadline=MODEL_DEADLINE)
+    for model in models:
+        result = await attempt(model, name, portion_text, evidence, deadline=MODEL_DEADLINE)
         if result is not None:
             return await enrich_unknown(name, portion_text, result)
     return None

@@ -47,7 +47,7 @@ class RetrievalTests(unittest.TestCase):
         result = Estimate.model_validate(proposal())
         database = AsyncMock(return_value=result)
         retrieval, groq, hf = AsyncMock(), AsyncMock(), AsyncMock()
-        self.assertEqual(asyncio.run(estimate_food('fictional oatcakes', '100 g', database, groq, retrieval, hf)), result)
+        self.assertEqual(asyncio.run(estimate_food('fictional oatcakes', '100 g', database, retrieval, (groq, hf))), result)
         retrieval.assert_not_awaited()
         groq.assert_not_awaited()
         hf.assert_not_awaited()
@@ -59,7 +59,7 @@ class RetrievalTests(unittest.TestCase):
         retrieval = AsyncMock(return_value=evidence)
         groq = AsyncMock(side_effect=httpx.HTTPStatusError('Quota exceeded.', request=httpx.Request('POST', 'https://example.org'), response=httpx.Response(429)))
         hf = AsyncMock(return_value=Estimate.model_validate(proposal()))
-        result = asyncio.run(estimate_food('fictional oatcakes', '100 g', database, groq, retrieval, hf))
+        result = asyncio.run(estimate_food('fictional oatcakes', '100 g', database, retrieval, (groq, hf)))
         self.assertIsNotNone(result)
         groq.assert_awaited_once_with('fictional oatcakes', '100 g', evidence)
         hf.assert_awaited_once_with('fictional oatcakes', '100 g', evidence)
@@ -68,7 +68,7 @@ class RetrievalTests(unittest.TestCase):
         """Keep the fallback chain useful when web search is unavailable."""
         groq = AsyncMock(return_value=Estimate.model_validate(proposal()))
         hf = AsyncMock()
-        result = asyncio.run(estimate_food('fictional oatcakes', '100 g', AsyncMock(return_value=None), groq, AsyncMock(side_effect=TimeoutError()), hf))
+        result = asyncio.run(estimate_food('fictional oatcakes', '100 g', AsyncMock(return_value=None), AsyncMock(side_effect=TimeoutError()), (groq, hf)))
         self.assertIsNotNone(result)
         groq.assert_awaited_once_with('fictional oatcakes', '100 g', [])
         hf.assert_not_awaited()
@@ -98,8 +98,8 @@ class RetrievalTests(unittest.TestCase):
     def test_model_exhaustion_returns_unavailable_without_a_save(self):
         """Leave manual logging available after both model providers fail."""
         result = asyncio.run(estimate_food('fictional oatcakes', '100 g',
-            AsyncMock(return_value=None), AsyncMock(side_effect=TimeoutError()),
-            AsyncMock(return_value=[]), AsyncMock(side_effect=ValueError('No usable proposal.'))))
+            AsyncMock(return_value=None), AsyncMock(return_value=[]),
+            (AsyncMock(side_effect=TimeoutError()), AsyncMock(side_effect=ValueError('No usable proposal.')))))
         self.assertIsNone(result)
 
     def test_rejects_a_model_citation_not_present_in_retrieval(self):

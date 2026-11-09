@@ -1,8 +1,8 @@
 import { readEstimate } from '../domain/nutrition/estimates';
 import { postJson, type ServiceMessages } from './post';
 
-// Leave time for bounded database, web lookup and model fallback stages.
-const ESTIMATE_TIMEOUT_MS = 27000;
+// Outlast the slowest path: database 4 s, web 4 s, three models at 8 s each and a 2 s supplement.
+const ESTIMATE_TIMEOUT_MS = 35000;
 
 // What the user can always do instead, added to every failure message
 const FALLBACK = 'You can add it manually, or log it now and estimate later.';

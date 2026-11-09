@@ -133,7 +133,7 @@ class TrainerEndpointTests(unittest.TestCase):
 
     def test_returns_a_session_from_the_real_library(self):
         """Fall back to library picks when no key is configured."""
-        with patch.dict('os.environ', {'GROQ_API_KEY': ''}):
+        with patch.dict('os.environ', {'GROQ_API_KEY': '', 'GEMINI_API_KEY': ''}):
             response = self.client.post('/api/trainer', json=REQUEST)
         self.assertEqual(response.status_code, 200)
         body = response.json()

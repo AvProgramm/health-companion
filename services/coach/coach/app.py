@@ -8,7 +8,7 @@ from fastapi.responses import JSONResponse
 from starlette.middleware.trustedhost import TrustedHostMiddleware
 from .barcode import look_up_barcode
 from .exercises import load_library
-from .llm import ask_groq
+from .llm import ask_hosted_model
 from .models import BarcodeReply, BarcodeRequest, CoachReply, CoachRequest, EstimateRequest, Estimate, NutritionistReply, NutritionistRequest, TrainerReply, TrainerRequest
 from .nutritionist import suggest_meals
 from .pipeline import estimate_food
@@ -66,7 +66,7 @@ async def estimate(request: Request, item: EstimateRequest):
 async def trainer(request: Request, item: TrainerRequest):
     """Return ranked exercises for the goal, as a proposal the phone still checks."""
     check_local(request)
-    return await plan_session(item, EXERCISES, ask_groq, [evidence_tool(knowledge())])
+    return await plan_session(item, EXERCISES, ask_hosted_model, [evidence_tool(knowledge())])
 
 
 @app.post('/api/nutritionist', response_model=NutritionistReply)
@@ -75,7 +75,7 @@ async def nutritionist(request: Request, item: NutritionistRequest):
     check_local(request)
     if not item.goal.strip():
         raise HTTPException(422, 'Tell the Nutritionist what you are looking for.')
-    return await suggest_meals(item.goal.strip(), knowledge(), ask_groq)
+    return await suggest_meals(item.goal.strip(), knowledge(), ask_hosted_model)
 
 
 @app.post('/api/barcode', response_model=BarcodeReply)
@@ -94,4 +94,4 @@ async def coach(request: Request, item: CoachRequest):
     check_local(request)
     if not item.question.strip():
         raise HTTPException(422, 'Type a question first.')
-    return await answer_question(item.question.strip(), knowledge(), ask_groq)
+    return await answer_question(item.question.strip(), knowledge(), ask_hosted_model)

@@ -142,14 +142,14 @@ class EstimateTests(unittest.TestCase):
         """Use the LLM only after no usable database match remains."""
         database = AsyncMock(return_value=Estimate.model_validate(proposal('database')))
         llm = AsyncMock(return_value=Estimate.model_validate(proposal()))
-        result = asyncio.run(estimate_food('Fictional oats', '50 g', database, llm, AsyncMock(return_value=[]), AsyncMock(return_value=None)))
+        result = asyncio.run(estimate_food('Fictional oats', '50 g', database, AsyncMock(return_value=[]), (llm, AsyncMock(return_value=None))))
         self.assertEqual(result.sourceKind, 'database')
         llm.assert_not_awaited()
         database.side_effect = TimeoutError()
-        result = asyncio.run(estimate_food('Fictional oats', '50 g', database, llm, AsyncMock(return_value=[]), AsyncMock(return_value=None)))
+        result = asyncio.run(estimate_food('Fictional oats', '50 g', database, AsyncMock(return_value=[]), (llm, AsyncMock(return_value=None))))
         self.assertEqual(result.sourceKind, 'ai_estimate')
         llm.side_effect = TimeoutError()
-        self.assertIsNone(asyncio.run(estimate_food('Fictional oats', '50 g', database, llm, AsyncMock(return_value=[]), AsyncMock(return_value=None))))
+        self.assertIsNone(asyncio.run(estimate_food('Fictional oats', '50 g', database, AsyncMock(return_value=[]), (llm, AsyncMock(return_value=None)))))
 
     # Seen on 7 Nov: "nasi lemak, 2" came back as 494.0 kcal (494.0–494.0)
     def test_model_estimate_needs_a_real_range(self):
@@ -238,7 +238,7 @@ class EstimateTests(unittest.TestCase):
             return httpx.Response(200, json={'choices': [{'message': {'content': json.dumps(model_data)}}]})
 
         original_client = httpx.AsyncClient
-        with patch.dict('os.environ', {'GROQ_API_KEY': 'fictional-test-key', 'USDA_API_KEY': 'fictional-test-key', 'TAVILY_API_KEY': '', 'HF_TOKEN': ''}):
+        with patch.dict('os.environ', {'GROQ_API_KEY': 'fictional-test-key', 'USDA_API_KEY': 'fictional-test-key', 'TAVILY_API_KEY': '', 'HF_TOKEN': '', 'GEMINI_API_KEY': ''}):
             os.environ.pop('GROQ_MODEL', None)
             with patch('coach.providers.httpx.AsyncClient', side_effect=lambda **kwargs: original_client(**kwargs, transport=httpx.MockTransport(respond))):
                 response = TestClient(app).post('/api/estimate', json={'name': 'Fictional oats', 'portionText': '50 g'})
