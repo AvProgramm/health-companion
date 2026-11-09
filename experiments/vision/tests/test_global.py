@@ -18,7 +18,7 @@ try:
     from vision.config import STORED_SIZE
     from vision.prepare import DROPPED, SEALED, TRAIN, VALIDATION
     from vision.prepare_global import global_names, isia_splits, label_lookup, main as join_photos
-    from vision.run_global import confidence_bands, names_with_unseen
+    from vision.run_global import confidence_bands, group_scores, in_blocks, names_with_unseen, rounded_evenly, rounded_per_row, rounded_to_half
 except ImportError as missing:
     raise unittest.SkipTest(f'The vision environment is not installed: {missing}.')
 
@@ -79,6 +79,33 @@ class WholeJoinTests(unittest.TestCase):
 class UnseenDishTests(unittest.TestCase):
     def test_a_test_dish_the_phone_already_knows_is_not_offered_twice(self):
         self.assertEqual(names_with_unseen(['rice', 'satay'], ['satay', 'crudo']), ['rice', 'satay', 'crudo'])
+
+    def test_each_group_is_scored_on_its_own_photos(self):
+        # By hand: the first photo is right first time, the second only at its fifth guess, the third never
+        top = torch.tensor([[7, 1, 2, 3, 4], [1, 2, 3, 4, 7], [1, 2, 3, 4, 5]])
+        wanted = torch.tensor([7, 7, 7])
+        groups = {'first': torch.tensor([True, False, False]), 'rest': torch.tensor([False, True, True])}
+        self.assertEqual(group_scores(top, wanted, groups), {'first': {'photos': 1, 'top1': 1.0, 'top5': 1.0}, 'rest': {'photos': 2, 'top1': 0.0, 'top5': 0.5}})
+
+
+class ShrinkingTests(unittest.TestCase):
+    def test_even_rounding_uses_one_scale_for_the_whole_tensor(self):
+        # By hand: 255 steps of 1 from 0 to 255, so 1.4 rounds down to 1 and 1.6 up to 2
+        weight = torch.tensor([0.0, 1.4, 1.6, 255.0])
+        self.assertTrue(torch.allclose(rounded_evenly(weight), torch.tensor([0.0, 1.0, 2.0, 255.0])))
+
+    def test_per_row_rounding_gives_each_row_its_own_scale(self):
+        # By hand: the first row spans 255 and the second 2.55, so only the first loses its small value
+        weight = torch.tensor([[0.0, 0.004, 255.0], [0.0, 0.014, 2.55]])
+        self.assertTrue(torch.allclose(rounded_per_row(weight), torch.tensor([[0.0, 0.0, 255.0], [0.0, 0.01, 2.55]])))
+
+    def test_sixteen_bits_keep_about_three_significant_figures(self):
+        self.assertAlmostEqual(rounded_to_half(torch.tensor([0.1234567])).item(), 0.1234567, places=3)
+
+    def test_block_numbers_are_matched_whole(self):
+        # Block 1 must not catch block 11, which is why the match includes the dots
+        self.assertTrue(in_blocks('encoder.layers.1.mlp.fc1.weight', [1]))
+        self.assertFalse(in_blocks('encoder.layers.11.mlp.fc1.weight', [1]))
 
 
 class HalvingTests(unittest.TestCase):

@@ -1,7 +1,7 @@
 """
 Run the global food model one stage at a time.
 
-From experiments/vision:  python -m vision.run_global zero | lora | bands | final | unseen | malaysian | export
+From experiments/vision:  python -m vision.run_global zero | lora | bands | final | unseen | malaysian | shrink | export
 
 The first stage needs no food training at all: it asks whether SigLIP2 can already name
 food, on the same validation photos as the first model.
@@ -18,6 +18,7 @@ The first sealed run took those numbers for the training dishes, so the ISIA hal
 global_final.json is void. The unseen stage scores those photos with the right names, once,
 with nothing tuned in between: a dish with no training photo is known only by its name.
 """
+import copy
 import json
 import sys
 import tempfile
@@ -26,7 +27,7 @@ import numpy as np
 import torch
 from .config import CHECKPOINTS, GLOBAL_PREPARED, GLOBAL_SETTINGS, PREPARED, RESULTS, Settings
 from .data import make_loader, photo_transform
-from .export import export_onnx, halve_weights, run_onnx, save_result, write_web_files
+from .export import SMALLEST_HALVED, export_onnx, halve_weights, run_onnx, save_result, write_web_files
 from .global_model import FoodMatcher
 from .lora import add_lora, merge_lora
 from .prepare import SEALED, TRAIN, VALIDATION
@@ -43,6 +44,8 @@ SHIP_LINE = 0.893
 GLOBAL_CHECKPOINT = CHECKPOINTS / 'global_lora.pt'
 # The phone's copy must give the full model's first guess at least this often to be installed
 SAME_FIRST_GUESS_LINE = 0.98
+# How many values an 8-bit weight can take
+EIGHT_BIT_LEVELS = 256
 # Where each confidence band ends, for deciding when the photo card should say it is unsure
 BAND_EDGES = [0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8]
 
@@ -239,6 +242,79 @@ def malaysian():
     print(json.dumps(report, indent=2), flush=True)
 
 
+def rounded_evenly(weight):
+    """Return a weight as 8-bit storage would give it back, with one even scale for the whole tensor."""
+    low, high = weight.min(), weight.max()
+    step = (high - low) / (EIGHT_BIT_LEVELS - 1)
+    return low + ((weight - low) / step).round() * step
+
+
+def rounded_per_row(weight):
+    """Return a weight as per-channel 8-bit storage would give it back, with an even scale for each row."""
+    # Ignore a one-dimensional weight, because it has no rows to scale apart
+    if weight.ndim < 2:
+        return rounded_evenly(weight)
+
+    axes = tuple(range(1, weight.ndim))
+    low, high = weight.amin(dim=axes, keepdim=True), weight.amax(dim=axes, keepdim=True)
+    step = (high - low).clamp(min=1e-12) / (EIGHT_BIT_LEVELS - 1)
+    return low + ((weight - low) / step).round() * step
+
+
+def rounded_to_half(weight):
+    """Return a weight as 16-bit storage would give it back."""
+    return weight.half().float()
+
+
+def in_blocks(key, numbers):
+    """Return whether a weight belongs to one of these transformer blocks."""
+    return any(f'layers.{number}.' in key for number in numbers)
+
+
+# Every way of shrinking the weights that was measured: how a weight is rounded, and which weights are
+SHRINK_VARIANTS = {
+    '16-bit, every weight': (rounded_to_half, lambda key: True),
+    '8-bit, every weight': (rounded_evenly, lambda key: True),
+    '8-bit per row, every weight': (rounded_per_row, lambda key: True),
+    '8-bit, feed-forward layers only': (rounded_evenly, lambda key: '.mlp.fc' in key and 'encoder' in key),
+    '8-bit, attention only': (rounded_evenly, lambda key: '_proj' in key and 'encoder' in key),
+    '8-bit, blocks 0 to 5 only': (rounded_evenly, lambda key: in_blocks(key, range(6))),
+    '8-bit, blocks 6 to 11 only': (rounded_evenly, lambda key: in_blocks(key, range(6, 12))),
+}
+
+
+def shrink():
+    """
+    Record what each way of shrinking the weights does to the answers, on validation, with every food name.
+
+    Rounding happens in PyTorch, so this measures only what storing fewer bits costs, on
+    every validation photo. The exported file is then checked against PyTorch separately.
+    """
+    settings, device, dishes = GLOBAL_SETTINGS, 'cuda', read_global_dishes()
+    names = food_names(dishes)
+    matcher = trained_matcher(names, device)
+    loader = make_loader(GLOBAL_PREPARED, VALIDATION, photo_transform(SIGLIP_MEAN, SIGLIP_STD, training=False), settings)
+    top, labels = predict_top(matcher, loader, device)
+    expected = top[:, 0]
+
+    # Only large weights are stored differently, as in the export
+    original = copy.deepcopy(matcher.state_dict())
+    large = [key for key, value in original.items() if value.is_floating_point() and value.numel() >= SMALLEST_HALVED]
+    total = sum(original[key].numel() for key in large)
+
+    # Measure each way from the same starting weights
+    report = {}
+    for name, (rounded, chosen) in SHRINK_VARIANTS.items():
+        picked = {key for key in large if chosen(key)}
+        matcher.load_state_dict({key: (rounded(value) if key in picked else value) for key, value in original.items()})
+        guesses = predict_top(matcher, loader, device)[0][:, 0]
+        report[name] = {'same_first_guess': (guesses == expected).float().mean().item(), 'top1': (guesses == labels).float().mean().item(), 'share_of_weights': sum(original[key].numel() for key in picked) / total}
+        print(name, report[name], flush=True)
+
+    # Record the table the 16-bit decision is read from
+    save_result('global_shrink.json', {'split': 'validation', 'photos': len(labels), 'names': len(names), 'top1_before_shrinking': (expected == labels).float().mean().item(), 'variants': report})
+
+
 def export():
     """Export the fine-tuned model with every known food name, if it passed, and check the phone's copy agrees."""
     # Ignore a model that did not pass, because that decision was fixed before the sealed run
@@ -308,7 +384,7 @@ def bands():
 
 
 # Every stage this script can run; a new one is one more entry here
-STAGES = {'zero': zero, 'lora': lora, 'bands': bands, 'final': final, 'unseen': unseen, 'malaysian': malaysian, 'export': export}
+STAGES = {'zero': zero, 'lora': lora, 'bands': bands, 'final': final, 'unseen': unseen, 'malaysian': malaysian, 'shrink': shrink, 'export': export}
 
 
 if __name__ == '__main__':
