@@ -202,6 +202,13 @@ svg { flex-shrink: 0; }
 .gym-layout > *, .gym-planner-column { min-width: 0; }
 .gym-planner-column { display: grid; gap: 24px; align-content: start; }
 .exercise-library, .plan-session-card, .pack-picker, .ai-card { box-shadow: var(--gym-shadow); }
+.visually-hidden { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+.plate-button { position: relative; display: inline-flex; align-items: center; justify-content: center; gap: 8px; cursor: pointer; }
+.plate-button-busy { opacity: 0.7; cursor: progress; }
+.plate-button:focus-within { outline: 2px solid var(--action); outline-offset: 2px; }
+.plate-preview { width: 100%; max-height: 240px; object-fit: cover; border-radius: 12px; }
+.dish-guesses { display: grid; gap: 8px; }
+.dish-guess { display: flex; align-items: center; justify-content: space-between; gap: 8px; width: 100%; }
 .ai-card { display: grid; gap: 16px; margin-bottom: 24px; }
 .ai-card .card-head > div { display: grid; gap: 4px; }
 .ai-card .badge { gap: 4px; }

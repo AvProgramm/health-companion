@@ -1,12 +1,15 @@
 /// <reference types="vitest/config" />
 import { createHash } from 'node:crypto';
-import { readFileSync } from 'node:fs';
+import { existsSync, readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import react from '@vitejs/plugin-react';
 import { defineConfig, type Plugin } from 'vite';
 
 // Files copied as-is from public/, which Vite does not list in the bundle
 const PUBLIC_FILES = ['/manifest.webmanifest', '/icon.svg'];
+
+// The trained dish model, copied into public/ by the export step; a build without it hides the photo card
+const DISH_MODEL_FILES = ['/models/dish/model.onnx', '/models/dish/labels.json'];
 
 // The service worker source, with placeholders the build fills in
 const SERVICE_WORKER_TEMPLATE = fileURLToPath(new URL('./src/sw/service-worker.js', import.meta.url));
@@ -33,6 +36,13 @@ function precacheServiceWorker(): Plugin {
       for (const [fileName, output] of Object.entries(bundle)) {
         urls.add(`/${fileName}`);
         hash.update(fileName).update(output.type === 'chunk' ? output.code : output.source);
+      }
+      for (const url of DISH_MODEL_FILES) {
+        const path = fileURLToPath(new URL(`./public${url}`, import.meta.url));
+        if (existsSync(path)) {
+          urls.add(url);
+          hash.update(url).update(readFileSync(path));
+        }
       }
       const sortedUrls = [...urls].sort();
 

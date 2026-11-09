@@ -23,6 +23,7 @@ import { NUTRIENT_LABELS, formatDiaryDate, formatTotal } from './format';
 import { MealCard } from './MealCard';
 import { MealSheet } from './MealSheet';
 import { SleepCard } from './SleepCard';
+import { PlatePhoto } from './PlatePhoto';
 import { SleepDraftCard } from './SleepDraftCard';
 import { errorText, type Notice } from './useSave';
 import { useToday } from './useToday';
@@ -232,6 +233,12 @@ export function TodayView({ db, foods, currentFoods, hideNumbers, durability, di
 
       <div className="today-layout">
       <div className="today-main">
+      {panel === null && <PlatePhoto onPick={(dish) => {
+        // Fill the entry box only; the normal review and confirmation still decide what is saved
+        setText(`${dish} 1 plate`);
+        document.getElementById('composer')?.focus();
+      }} />}
+
       <details className="composer-card card" open={panel === null}>
       <summary><span className="composer-symbol"><Plus size={20} /></span><span><strong>Quick entry</strong><span className="hint">{panel === null ? 'Food, movement or rest' : 'Your entry is ready to review'}</span></span><span className="composer-toggle">{panel === null ? 'Start here' : 'Expand'}</span></summary>
       <form className="composer" onSubmit={handleSubmit}>
