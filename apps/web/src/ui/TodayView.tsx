@@ -19,7 +19,7 @@ import type { Durability } from '../storage/persistence';
 import { CorrectionCard } from './CorrectionCard';
 import { BalanceCard } from './BalanceCard';
 import { DaySummaryCard } from './DaySummaryCard';
-import { DraftCard, emptyDraftRow, toDraftRow, type DraftRow } from './DraftCard';
+import { DraftCard, emptyDraftRow, repeatRows, toDraftRow, type DraftRow } from './DraftCard';
 import { FoodEditor } from './FoodEditor';
 import { NUTRIENT_LABELS, formatDiaryDate, formatTotal } from './format';
 import { MealCard } from './MealCard';
@@ -126,6 +126,18 @@ export function TodayView({ db, foods, currentFoods, hideNumbers, durability, di
     setPanel(next);
     setNotice(null);
     operationKey.current = crypto.randomUUID();
+  }
+
+  /**
+   * Start a draft of a saved meal for today, which still has to be confirmed.
+   */
+  function logAgain(meal: SavedMeal) {
+    setOpenMealId(null);
+    setDate(today);
+    showPanel({ kind: 'draft', rows: repeatRows(meal.latest, currentFoods) });
+
+    // The draft opens above the diary, so bring it into view
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   }
 
   /**
@@ -400,6 +412,7 @@ export function TodayView({ db, foods, currentFoods, hideNumbers, durability, di
           currentFoods={currentFoods}
           onClose={() => setOpenMealId(null)}
           onChanged={reloadDay}
+          onLogAgain={() => logAgain(openMeal)}
         />
       )}
 

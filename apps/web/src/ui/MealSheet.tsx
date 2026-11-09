@@ -26,6 +26,8 @@ interface MealSheetProps {
   currentFoods: readonly FoodVersion[];
   onClose: () => void;
   onChanged: () => Promise<void>;
+  // Starts a new draft of this meal for today; nothing is saved until it is confirmed
+  onLogAgain: () => void;
 }
 
 type Message = { kind: 'saved' | 'conflict' | 'error'; text: string };
@@ -35,7 +37,7 @@ type Message = { kind: 'saved' | 'conflict' | 'error'; text: string };
  * undo the last change, delete or restore the meal, and read its history.
  * Every action saves a new revision through commitEdit.
  */
-export function MealSheet({ db, meal, foods, currentFoods, onClose, onChanged }: MealSheetProps) {
+export function MealSheet({ db, meal, foods, currentFoods, onClose, onChanged, onLogAgain }: MealSheetProps) {
   const { header, latest } = meal;
   const [history, setHistory] = useState<MealRevision[]>([]);
   const [editing, setEditing] = useState<{ componentId: string; mode: 'change' | 'replace' } | null>(null);
@@ -247,6 +249,7 @@ export function MealSheet({ db, meal, foods, currentFoods, onClose, onChanged }:
           )}
 
           <div className="row">
+            <button type="button" className="button button-secondary" disabled={busy} onClick={onLogAgain}>Log again today</button>
             {latest.revision > 1 && (
               <button type="button" className="button button-secondary" disabled={busy} onClick={undoLastChange}>Undo last change</button>
             )}

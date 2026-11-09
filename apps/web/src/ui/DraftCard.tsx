@@ -2,7 +2,7 @@ import { foodKey } from '../domain/nutrition/aggregate';
 import type { DraftItem } from '../domain/parsing/types';
 import { scaleNutrient } from '../domain/nutrition/scale';
 import type { FoodVersion } from '../domain/nutrition/types';
-import type { MealComponent } from '../domain/meals/types';
+import type { MealComponent, MealRevision } from '../domain/meals/types';
 import { areCompatible, type Unit } from '../domain/shared/units';
 import { readAmount, formatTotal, SOURCE_LABELS } from './format';
 import { totalNutrient } from '../domain/nutrition/aggregate';
@@ -55,6 +55,37 @@ export function toDraftRow(item: DraftItem): DraftRow {
  */
 export function emptyDraftRow(): DraftRow {
   return { key: crypto.randomUUID(), text: '', foodKey: '', amountText: '', unit: 'g', eatenFraction: 1, problem: null };
+}
+
+/**
+ * Return draft rows that repeat a saved meal, for the person to check and confirm.
+ *
+ * Each row uses the food's newest version, the same as typing its name today.
+ */
+export function repeatRows(meal: MealRevision, currentFoods: readonly FoodVersion[]): DraftRow[] {
+  const rows: DraftRow[] = [];
+  for (const component of meal.components) {
+    const food = currentFoods.find((candidate) => candidate.id === component.foodId);
+
+    // Ignore a removed item or one left uneaten, because it was not part of what was eaten
+    if (food === undefined || !component.active || component.eatenFraction === 0) {
+      continue;
+    }
+
+    // Leave the amount blank if the food is now measured another way, because converting would be a guess
+    const fits = areCompatible(component.served.unit, food.basis.unit);
+    rows.push({
+      key: crypto.randomUUID(),
+      text: food.name,
+      foodKey: foodKey(food.id, food.version),
+      amountText: fits ? String(component.served.amount) : '',
+      unit: fits ? component.served.unit : food.basis.unit,
+      // The draft offers only a few shares, and must show exactly what will be saved
+      eatenFraction: EATEN_CHOICES.some((choice) => choice.value === component.eatenFraction) ? component.eatenFraction : 1,
+      problem: null,
+    });
+  }
+  return rows;
 }
 
 /**
