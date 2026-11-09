@@ -40,7 +40,10 @@ Organised by feature, one reason to change per module. Domain never imports stor
 - `apps/web/src/storage/`: `connection` (open, schema upgrades, `runTransaction`), `foodsRepo`, `mealsRepo`, `logsRepo`, `customCardsRepo` (immutable exercise-choice snapshots, schema v4), `profileRepo` (immutable device-only adaptations, schema v5), `persistence`, and `backup/` (`format`, `validate` with one checker per store, `transfer` for export/restore/erase).
 - `apps/web/src/api/`: HTTP boundary to the optional coach service, with response validation.
 - `apps/web/src/vision/`: the Web Worker that runs the dish model on the device with `onnxruntime-web`. The model is too large to precache, so the service worker keeps it after its first download.
-- `apps/web/src/ui/`: responsive React screens, local Geist/Phosphor assets, compact draft/result presentation. They call domain and storage and never compute totals themselves.
+- `apps/web/src/ui/`: responsive React screens, local Geist/Phosphor assets, compact draft/result presentation. They call domain and storage and never compute totals themselves. `App.tsx` is the shell, `format.ts` holds display text and rounding, and `app.css` loads before `gym.css`.
+  - `pages/`: one file per screen (`TodayView`, `GymView`, `FoodsView`, `MeView`, `FirstRunSetup`). A page connects its parts.
+  - `components/`: the parts of a screen, one folder per feature (`today`, `meals`, `training`, `sleep`, `summary`, `me`). `shared/` holds pieces more than one feature uses (`Sheet`, `NoticeLine`, `Choices`).
+  - `hooks/`: screen state with a job of its own (`useSave`, `useToday`, `useDiaryDay`, `useEntryPanel`).
 - `apps/web/src/test/`: test-only helpers (`goldenFixture`, `testFoods`). Never imported by app code.
 - `eval/fixtures/`: fictional golden cases. `ledger_golden.json` is the source of truth for totals.
 - `docs/`: ADRs, milestone walkthroughs, the device test log and the AI contribution log.
@@ -48,6 +51,7 @@ Organised by feature, one reason to change per module. Domain never imports stor
 ## Design rules
 - **SOLID where it pays:** single-purpose modules, extension by adding to a list (parsers, backup checkers, `MealEdit` cases), and dependencies pointing inward (UI → storage → domain).
 - **YAGNI:** no interface with one implementation, no wrapper or export without a caller in app code, no speculative options. Delete code the app stopped using.
+- **One job per file, at most 300 lines.** Split a file by job before it grows past that. A test file may run longer, because one module's cases belong together.
 - **Responsive UI:** `ui/app.css` owns the spacing/type/surface tokens. The app uses a sidebar and two columns on laptops, and an edge-to-edge single column with a bottom dock on phones. Do not restore a narrow fixed-width wrapper around the whole app. Sources and secondary explanations stay expandable; confirmation remains explicit.
 
 ## Invariants (never break these)
