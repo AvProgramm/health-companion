@@ -42,15 +42,13 @@ Use `.claude/skills/schema-migration` to add a profile store at schema v5: injur
 
 Add `loads` and `positions` tags in the importer and starter cards. Add `ineligibleReason` rules with an exhaustive oracle sweep, seated cards, and packs and the Trainer respecting the profile. Unknown facts exclude an exercise, never pass it.
 
-### 2. Nutritionist (B5)
+### 2. Nutritionist (B5) — implemented, phone gate pending
 
-Foods tab. By default it uses only what the person types; ask Yash before sending any logged data, which is his open decision. Suggestions become drafts and never save. Diabetes view shows carbohydrate, added sugar and fibre first, with a glucose note and no dosing.
+See `coach/nutritionist.py`, `ui/NutritionistCard.tsx` and `docs/milestones/m5-walkthrough.md`. It uses only what the person types. Sending logged data remains Yash's open decision.
 
-### 3. Dish photo (C1–C6)
+### 3. Dish photo (C1–C6) — implemented, phone gate pending
 
-`experiments/vision/`, mirroring `experiments/router/`: folder dataset with a sources and licences file, split by source, sealed test, DINOv2-small and DeiT-small frozen baselines, staged fine-tune, hand-written LoRA, final run once, ONNX export. Tests on a tiny fake config only. Yash runs the real training.
-
-Then `npm --prefix apps/web install onnxruntime-web@1.31.1`, inference in a Worker, top-5 chips, pick the dish and portion range, then call the existing estimate with text only. The image never leaves the device. Gate the feature on the model file being present.
+See `experiments/vision/README.md` and `docs/milestones/m6-walkthrough.md`. The sealed test has run; do not run it again.
 
 ### 4. Docs
 
@@ -67,3 +65,16 @@ npm --prefix apps/web run preview
 Start the coach using `services/coach/README.md`. Retrieval evaluation runs from `services/coach`: `python -m coach.rag.evaluate dev`.
 
 The phone check is still pending: `chrome://inspect` shows "Pending authentication". Tomorrow try File Transfer USB mode, Auto Blocker off, and toggling USB debugging. Do not start `adb`.
+
+## After Milestone 5: core requirement from Yash (9 Nov)
+
+Build after the phone test. Follow the same rules as above.
+
+1. **Cardio logging in Gym.** How far and how long, and similar, to estimate calories burnt. His example is a treadmill screen: 13:40, 1.551 km, 6.81 km/h, 125.3 kcal.
+2. **First-run setup.** Height and weight are required, and other details optional. Calculate BMI and other metrics, used to balance nutrition and gym.
+
+Constraints:
+- Unknown is not zero, so never assume a default weight. No weight means no calorie estimate.
+- The treadmill's 125.3 kcal is reproduced exactly by the ACSM running equation at a default 70 kg: (0.2 x 113.5 m/min + 3.5) x 70 / 1000 x 5 x 13.667 min. The walking equation gives about 71 kcal, so the estimate needs body weight and walk or run. Check the equations against a source when building.
+- The app has no accounts (invariant 5), so "sign up" means an on-device first-run setup unless Yash decides otherwise. A schema change needs the schema-migration skill.
+- A calorie figure is an estimate and must be shown as one.

@@ -13,6 +13,18 @@ Written by Claude Code at Yash's request on 9 Nov 2026, following his FIT3181 Vi
 
 Top-1 decides. Top-5 is reported too, because the phone shows five dishes to choose from. Results are also reported for the Malaysian photos and for the eight dishes only the Malaysian set covers, because a good overall score could hide a poor score on what Yash actually eats.
 
+## Result
+
+Scored once on 25,862 sealed photos, 9 Nov 2026 (`results/final.json`). LoRA on DINOv2-small ships.
+
+| | Frozen head | LoRA |
+|---|---|---|
+| All photos, top-1 / top-5 | 88.3% / 97.9% | **91.3% / 98.5%** |
+| Malaysian photos (1,278), top-1 | 87.2% | **91.8%** |
+| Malaysian-only dishes (1,161), top-1 | 86.7% | **91.6%** |
+
+The phone's 8-bit copy is 23.0 MB. On 500 validation photos it scored 86.0% against 86.8% for full PyTorch, with the same first guess on 95.8%. Real plates have not been tested. Walkthrough: `docs/milestones/m6-walkthrough.md`.
+
 ## Why LoRA
 
 The lab froze a ViT and tuned prompts or adapters. LoRA is in the same family: the pretrained weights `W` stay frozen, and each linear layer learns a small correction `(alpha / rank) U D`, so it computes `(W + (alpha / rank) U D) x`. At rank 16 that is about 5% of the weights.

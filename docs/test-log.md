@@ -240,3 +240,20 @@ Check and build pass. Browser: 31/31, 60/60 (four rounds), 90/90 and 241/241 fro
 Check and build pass, including 120 coach and 33 router tests. Unit/fake-IDB: v4-to-v5 preservation, whole-diary backup round trip with a profile, retries/conflicts/collisions/concurrent writes/corrupt reads and 1,536 body-area/seated combinations. Throwaway seated-only mutant rejected, then restored. Trainer privacy and stale replies checked with mocked requests.
 
 Browser: profile stays draft until confirmation, survives reload, excludes unknown/blocked movement facts and yields a seated arm-only plan under the synthetic seated/knee-avoidance profile. Existing three meals remain. Diabetes priorities keep Unknown apart from a real zero. At 375 px no horizontal overflow; laptop layout checked. Cached cold reload and the same seated plan pass with preview stopped; preview restarted. Test settings were cleared with a new confirmed version, no diary entry changed. Physical phone: NOT TESTED. Follow docs/milestones/m5-profile-walkthrough.md.
+
+## Dish photo and M5 features (9 Nov 2026, Claude Code)
+
+Laptop only so far: unit tests, the browser pane and real GPU training. Details are in the m5 and m6 walkthroughs.
+
+**Phone checks still to run (NOT TESTED on the phone):**
+1. Reload twice on the same localhost:4173 origin, and confirm the old diary is intact.
+2. Today: take a photo of a real plate; note the top five, the time taken and whether the photo is the right way up.
+3. Tap a dish; check only the entry box fills, then review, estimate and confirm.
+4. Airplane mode: close and reopen, then read a photo again.
+5. Gym: Ask the Trainer for 120 minutes with no kit (needs the laptop service).
+6. Gym: search for something missing, add it as your own, plan with it, delete it.
+7. Foods: ask the Nutritionist, use a suggestion as a draft, and confirm nothing saves by itself.
+8. Me: ask the Coach a normal question, then a dosing question that must be refused.
+9. Stop the laptop service: Trainer, Coach and Nutritionist must say so, and the diary must keep working.
+10. Me: the profile checks from `docs/milestones/m5-profile-walkthrough.md`.
+
