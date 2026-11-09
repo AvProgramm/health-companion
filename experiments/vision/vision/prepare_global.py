@@ -50,8 +50,9 @@ def main():
     old_dishes = json.loads((PREPARED / 'dishes.json').read_text(encoding='utf-8'))
     old_labels, old_origins, old_splits = np.load(PREPARED / 'labels.npy'), np.load(PREPARED / 'origins.npy'), np.load(PREPARED / 'splits.npy')
     old_images = np.load(PREPARED / 'images.npy', mmap_mode='r')
-    isia_named = {int(key): value for key, value in json.loads((BLOCKS / 'names.json').read_text(encoding='utf-8')).items()}
-    dishes = global_names(old_dishes, isia_named.values())
+    isia_named = {split: {int(key): value for key, value in names.items()} for split, names in json.loads((BLOCKS / 'names.json').read_text(encoding='utf-8')).items()}
+    dishes = global_names(old_dishes, isia_named['train'].values())
+    test_dishes = sorted({readable(name) for name in isia_named['test'].values()})
 
     # Count the ISIA photos, then make one fixed-size slot per photo
     paths = block_paths()
@@ -67,18 +68,22 @@ def main():
     old_lookup = label_lookup(old_dishes, dishes)
     new_old_labels = np.where(old_labels >= 0, old_lookup[old_labels.clip(min=0)], -1)
     position_of = {dish: index for index, dish in enumerate(dishes)}
+    position_of_test = {dish: index for index, dish in enumerate(test_dishes)}
 
     # Copy the ISIA photos, leaving out any whose dish never received a name
     position = len(old_labels)
     isia_labels, isia_sealed, isia_hashes = [], [], []
     for path, categories in zip(paths, rows):
+        # A test photo's label counts along the test dishes, because those are different dishes
+        is_test = path.name.startswith('test')
+        named, lookup = (isia_named['test'], position_of_test) if is_test else (isia_named['train'], position_of)
         with np.load(path) as block:
             photos, hashes = block['photos'], block['hashes']
         for index, category in enumerate(categories.tolist()):
-            if category in isia_named:
+            if category in named:
                 images[position] = photos[index]
-                isia_labels.append(position_of[readable(isia_named[category])])
-                isia_sealed.append(path.name.startswith('test'))
+                isia_labels.append(lookup[readable(named[category])])
+                isia_sealed.append(is_test)
                 isia_hashes.append(hashes[index])
                 position += 1
     images.flush()
@@ -96,9 +101,10 @@ def main():
     np.save(GLOBAL_PREPARED / 'origins.npy', np.concatenate([old_origins, np.full(len(labels_array) + unused, ISIA_ORIGIN, dtype=np.int8)]))
     np.save(GLOBAL_PREPARED / 'splits.npy', np.concatenate([old_splits, splits, np.full(unused, DROPPED, dtype=np.int8)]))
     (GLOBAL_PREPARED / 'dishes.json').write_text(json.dumps(dishes), encoding='utf-8')
+    (GLOBAL_PREPARED / 'test_dishes.json').write_text(json.dumps(test_dishes), encoding='utf-8')
 
     # Record the counts
-    counts = {'dishes': len(dishes), 'isia_dish_names': len(isia_named), 'isia_blocks': len(paths), 'isia_photos': len(labels_array), 'isia_train': int((splits == 0).sum()), 'isia_validation': int((splits == 1).sum()), 'isia_sealed': int((splits == 2).sum()), 'isia_sealed_dropped_as_copies': int((sealed_array & (splits == DROPPED)).sum()), 'photos_in_total': int(position)}
+    counts = {'dishes': len(dishes), 'isia_dish_names': len(isia_named['train']), 'isia_test_dishes': len(test_dishes), 'isia_blocks': len(paths), 'isia_photos': len(labels_array), 'isia_train': int((splits == 0).sum()), 'isia_validation': int((splits == 1).sum()), 'isia_sealed': int((splits == 2).sum()), 'isia_sealed_dropped_as_copies': int((sealed_array & (splits == DROPPED)).sum()), 'photos_in_total': int(position)}
     (RESULTS / 'prepare_global.json').write_text(json.dumps(counts, indent=2) + '\n', encoding='utf-8')
     print(counts, flush=True)
 

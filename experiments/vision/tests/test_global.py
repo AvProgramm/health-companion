@@ -12,12 +12,13 @@ try:
     import torch
     from torch import nn
     from vision.global_model import FoodMatcher
-    from vision.isia import blocks_to_fetch, names_seen, split_of
+    from vision.export import halve_weights, run_onnx
+    from vision.isia import blocks_to_fetch, names_by_split, names_seen, split_of
     from vision.lora import LoRALinear, add_lora, merge_lora
     from vision.config import STORED_SIZE
     from vision.prepare import DROPPED, SEALED, TRAIN, VALIDATION
     from vision.prepare_global import global_names, isia_splits, label_lookup, main as join_photos
-    from vision.run_global import confidence_bands
+    from vision.run_global import confidence_bands, names_with_unseen
 except ImportError as missing:
     raise unittest.SkipTest(f'The vision environment is not installed: {missing}.')
 
@@ -55,21 +56,41 @@ class WholeJoinTests(unittest.TestCase):
             np.save(old / 'origins.npy', np.array([0, 1, 0], dtype=np.int8))
             np.save(old / 'splits.npy', np.array([TRAIN, VALIDATION, SEALED], dtype=np.int8))
 
-            # Three ISIA photos in two blocks, one of a dish that never received a name
+            # Three ISIA photos in two blocks, one of a dish that never received a name; number 0 means a different dish in each split
             new_photos = fake_photos(3, seed=2)
-            (blocks / 'names.json').write_text(json.dumps({'0': 'Apple_pie', '5': 'Abalone'}), encoding='utf-8')
-            np.savez(blocks / 'test_000_000.npz', photos=new_photos[:1], categories=np.array([5]), hashes=np.array([11], dtype=np.uint64))
+            (blocks / 'names.json').write_text(json.dumps({'train': {'0': 'Apple_pie'}, 'test': {'0': 'Zucchini_bread', '1': 'Abalone'}}), encoding='utf-8')
+            np.savez(blocks / 'test_000_000.npz', photos=new_photos[:1], categories=np.array([0]), hashes=np.array([11], dtype=np.uint64))
             np.savez(blocks / 'train_000_000.npz', photos=new_photos[1:], categories=np.array([0, 7]), hashes=np.array([12, 13], dtype=np.uint64))
 
             with patch.multiple('vision.prepare_global', PREPARED=old, GLOBAL_PREPARED=joined, RESULTS=results, BLOCKS=blocks), patch('builtins.print'):
                 join_photos()
 
-            # By hand: the dishes sort to abalone, apple pie, satay, and the unnamed photo's slot stays unused
+            # By hand: the trained dishes are apple pie and satay, the test dishes sort to abalone and
+            # zucchini bread, so the test photo is label 1 of those, and the unnamed photo's slot stays unused
             images = np.load(joined / 'images.npy')
             self.assertTrue((images[:3] == old_photos).all() and (images[3:5] == new_photos[:2]).all() and (images[5] == 0).all())
-            self.assertEqual(np.load(joined / 'labels.npy').tolist(), [1, 2, 1, 0, 1, -1])
+            self.assertEqual(json.loads((joined / 'dishes.json').read_text(encoding='utf-8')), ['apple pie', 'satay'])
+            self.assertEqual(json.loads((joined / 'test_dishes.json').read_text(encoding='utf-8')), ['abalone', 'zucchini bread'])
+            self.assertEqual(np.load(joined / 'labels.npy').tolist(), [0, 1, 0, 1, 0, -1])
             self.assertEqual(np.load(joined / 'origins.npy').tolist(), [0, 1, 0, 2, 2, 2])
             self.assertEqual(np.load(joined / 'splits.npy').tolist(), [TRAIN, VALIDATION, SEALED, SEALED, VALIDATION, DROPPED])
+
+
+class UnseenDishTests(unittest.TestCase):
+    def test_a_test_dish_the_phone_already_knows_is_not_offered_twice(self):
+        self.assertEqual(names_with_unseen(['rice', 'satay'], ['satay', 'crudo']), ['rice', 'satay', 'crudo'])
+
+
+class HalvingTests(unittest.TestCase):
+    def test_the_answers_stay_the_same_and_the_file_shrinks(self):
+        with tempfile.TemporaryDirectory(ignore_cleanup_errors=True) as folder:
+            full, small = Path(folder) / 'full.onnx', Path(folder) / 'small.onnx'
+            torch.onnx.export(nn.Linear(64, 32).eval(), torch.zeros(1, 64), str(full), input_names=['pixels'], output_names=['logits'], opset_version=18, dynamo=False)
+            halve_weights(full, small)
+
+            inputs = torch.randn(3, 64, generator=torch.Generator().manual_seed(1)).numpy()
+            self.assertTrue(np.allclose(run_onnx(small, inputs), run_onnx(full, inputs), atol=1e-2))
+            self.assertLess(small.stat().st_size, full.stat().st_size * 0.7)
 
 
 class ConfidenceBandTests(unittest.TestCase):
@@ -118,6 +139,11 @@ class SamplingTests(unittest.TestCase):
 
     def test_only_rows_with_a_name_teach_a_name(self):
         self.assertEqual(names_seen([2, 2, 5], ['satay', None, None]), {2: 'satay'})
+
+    def test_each_split_keeps_its_own_numbers(self):
+        # Found on 9 Nov: ISIA's test files number 100 different dishes from zero, so 0 means two dishes
+        found = [('test', {0: 'Crudo'}), ('train', {0: 'Abalone'}), ('train', {1: 'Aligot'})]
+        self.assertEqual(names_by_split(found), {'train': {0: 'Abalone', 1: 'Aligot'}, 'test': {0: 'Crudo'}})
 
     def test_the_split_comes_from_the_file_name(self):
         self.assertEqual((split_of('x/test-00.parquet'), split_of('x/train-00.parquet')), ('test', 'train'))

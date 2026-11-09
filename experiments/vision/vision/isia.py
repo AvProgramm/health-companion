@@ -4,6 +4,9 @@ Fetch an even sample of ISIA Food-500, one block of 100 photos at a time.
 All 44 GB would take nearly five hours on this connection. The files are sorted by dish and
 stored in blocks of 100 photos, so taking every fourth block keeps every dish represented
 at about a quarter of the cost. The rest can be fetched later by lowering SAMPLE_EVERY.
+
+The test files hold 100 dishes that the training files do not, numbered from zero in a list
+of their own, so a category number only means something together with its split.
 """
 import json
 import random
@@ -47,23 +50,29 @@ def names_seen(categories, names):
     return {int(category): name for category, name in zip(categories, names) if name is not None}
 
 
+def names_by_split(found):
+    """Return each split's dish names from (split, names) pairs, keeping the two numberings apart."""
+    merged = {'train': {}, 'test': {}}
+    for split, names in found:
+        merged[split].update(names)
+    return merged
+
+
 def fetch_names(paths):
-    """Save the dish name of every category, read from two small columns of each file."""
+    """Save the dish name of every category in each split, read from two small columns of each file."""
     BLOCKS.mkdir(parents=True, exist_ok=True)
 
     def read_one(path):
-        """Return the names found in one file."""
+        """Return the split and the names found in one file."""
         with HfFileSystem(skip_instance_cache=True).open(path, 'rb', block_size=READ_AHEAD) as handle:
             table = pq.ParquetFile(handle).read(columns=['category', 'cat'])
-        return names_seen(table.column('category').to_pylist(), table.column('cat').to_pylist())
+        return split_of(path), names_seen(table.column('category').to_pylist(), table.column('cat').to_pylist())
 
     # Merge what every file knows, because only some rows carry a name
-    found = {}
     with ThreadPoolExecutor(max_workers=CONNECTIONS) as pool:
-        for names in pool.map(read_one, paths):
-            found.update(names)
+        found = names_by_split(pool.map(read_one, paths))
     (BLOCKS / 'names.json').write_text(json.dumps(found), encoding='utf-8')
-    print('dish names', len(found), flush=True)
+    print('dish names', {split: len(names) for split, names in found.items()}, flush=True)
 
 
 def fetch_block(parquet, block, target):

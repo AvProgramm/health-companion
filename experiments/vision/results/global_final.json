@@ -1,0 +1,31 @@
+{
+  "ship_line": 0.893,
+  "ships": true,
+  "note": "The first experiment sealed photos were already scored once, so this is a second look.",
+  "reports": {
+    "siglip2_alone": {
+      "first_experiment_sealed_109_names": {
+        "photos": 25862,
+        "top1": 0.9165571331977844,
+        "top5": 0.9889026284217834
+      },
+      "isia_sealed_all_dishes": {
+        "photos": 14199,
+        "top1": 0.00042256497545167804,
+        "top5": 0.004859497305005789
+      }
+    },
+    "siglip2_lora": {
+      "first_experiment_sealed_109_names": {
+        "photos": 25862,
+        "top1": 0.9398345351219177,
+        "top5": 0.9924599528312683
+      },
+      "isia_sealed_all_dishes": {
+        "photos": 14199,
+        "top1": 0.0003521374601405114,
+        "top5": 0.002817099681124091
+      }
+    }
+  }
+}
