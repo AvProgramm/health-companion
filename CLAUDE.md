@@ -7,9 +7,10 @@ A free, local-first diary for balancing food, exercise and sleep. It remembers w
   - Diary in IndexedDB.
   - Hand-written service worker (`src/sw/service-worker.js`, filled in by the build).
   - No backend for the diary.
-- `services/coach`: optional FastAPI nutrition estimates on 127.0.0.1:8000, proxied as `/api`. USDA/Open Food Facts first, Tavily public nutrition retrieval on a miss, then Groq with Hugging Face hosted inference as a final optional fallback. It also serves the AI Trainer (`trainer.py`, bounded agent in `agent.py`), the grounded Coach (`rag/`, `safety.py`: fused BM25 and MiniLM over reviewed cards, sealed result in `eval/results/retrieval_final.json`) and an MCP stdio server (`mcp_server.py`); the diary never depends on this service.
+- `services/coach`: optional FastAPI nutrition estimates on 127.0.0.1:8000, proxied as `/api`. USDA/Open Food Facts first, Tavily public nutrition retrieval on a miss, then Groq with Hugging Face hosted inference as a final optional fallback. It also serves the AI Trainer (`trainer.py`, bounded agent in `agent.py`), the AI Nutritionist (`nutritionist.py`, ideas that only become drafts), the grounded Coach (`rag/`, `safety.py`: fused BM25 and MiniLM over reviewed cards, sealed result in `eval/results/retrieval_final.json`) and an MCP stdio server (`mcp_server.py`); the diary never depends on this service.
   - Model output is never trusted for arithmetic or certainty: a model estimate needs a real low-high range, its energy must agree with 4 × protein + 4 × carbohydrate + 9 × fat within 25%, and a count of servings is asked as one serving and multiplied in code (`model_client.py`). Sources are shown as plain text, not links.
 - `experiments/router` (M4, FIT3181, finished 8 Nov): fictional family-split data, baselines, frozen MiniLM encoder, `Linear(384, 6)` head and runner. The sealed test ran once and the head did not beat the keyword rules, so it does **not** ship; `results/final.json` is the record and `run final` refuses a second run. Its own `.venv` reuses `fit3181` packages read-only. Explain-back: `docs/milestones/m4-walkthrough.md`.
+- `experiments/vision` (M6, FIT3181, 9 Nov): dish-photo classifier. Two ViT-Small backbones with a frozen head, then hand-written LoRA (`lora.py`); the sealed test runs once, and the winner is merged into an ordinary ViT and exported to ONNX in `apps/web/public/models/dish/`. Its own `.venv` reuses `fit3181`; photos and checkpoints stay in `~/hc-vision`. The rule and the data licences are in its `README.md`; the record is `results/final.json`.
 
 ## Commands
 ```bash
@@ -28,11 +29,14 @@ Organised by feature, one reason to change per module. Domain never imports stor
   - `training/planner`: bounded target-duration DP (up to twelve distinct cards); ranking updated with Yash's approval on 7 Nov. Explain-back: `docs/milestones/m4-target-duration-walkthrough.md`. `eligibility` hard rules (never suggest, ability, equipment, chosen area, time); `rounds` repeats a round, spreading extra blocks evenly.
   - `training/exerciseSearch`, `training/packs`: library facts are fixed (`whyNotAddable`, only the planning block is the person's); ready-made days are reviewed library lists cut by difficulty and setting. Explain-back: `docs/milestones/m4-gym-fixes-walkthrough.md`.
   - `profile/profile`: validated local adaptations; `training/seated` supplies reviewed local fallback movements. `loads`/`positions` are explicit annotations in `data/exercises/adaptations.json`; unknown facts fail closed for relevant active restrictions. Explain-back: `docs/milestones/m5-profile-walkthrough.md`.
+  - `training/customCards`: chosen exercises and the person's own (`own:` IDs; blank facts stay unknown).
+  - `dish/dishModel`: everything around the photo model that must match training (crop placement, normalisation, top guesses).
   - `training/workouts`, `sleep/sleep`: build and describe workout and sleep entries.
   - `parsing/`: the composer grammar. `parseEntry` tries an ordered list of small parsers (`question`, `correction`, `sleepEntry`, `workoutEntry`, `meal`); a new kind of entry is a new parser in that list.
 - `data/exercises/`, `scripts/import-exercises.mjs`, `apps/web/src/data/`: pinned Unlicense exercise source and reproducible offline search index; see `docs/data/exercise-dataset.md`.
 - `apps/web/src/storage/`: `connection` (open, schema upgrades, `runTransaction`), `foodsRepo`, `mealsRepo`, `logsRepo`, `customCardsRepo` (immutable exercise-choice snapshots, schema v4), `profileRepo` (immutable device-only adaptations, schema v5), `persistence`, and `backup/` (`format`, `validate` with one checker per store, `transfer` for export/restore/erase).
-- `apps/web/src/api/`: food-only HTTP boundary and response validation.
+- `apps/web/src/api/`: HTTP boundary to the optional coach service, with response validation.
+- `apps/web/src/vision/`: the Web Worker that runs the dish model on the device with `onnxruntime-web`.
 - `apps/web/src/ui/`: responsive React screens, local Geist/Phosphor assets, compact draft/result presentation. They call domain and storage and never compute totals themselves.
 - `apps/web/src/test/`: test-only helpers (`goldenFixture`, `testFoods`). Never imported by app code.
 - `eval/fixtures/`: fictional golden cases. `ledger_golden.json` is the source of truth for totals.
@@ -48,7 +52,7 @@ Organised by feature, one reason to change per module. Domain never imports stor
 2. **Snapshots are immutable.** Corrections, undo and deletes add a revision; nothing is edited in place.
 3. **One write = one IndexedDB transaction.** Every write carries an operation key (replay on retry) and an expected revision (conflict on a stale screen).
 4. **Nothing saves without the user confirming.** The parser, and any future AI, only fill drafts.
-5. **No diary history leaves the device.** Optional services may send only what the person typed or picked for that request: food name and portion text for a lookup; goal, minutes, kit, areas and level for the Trainer; the question for the Coach. No accounts, telemetry or other personal-data uploads. Fixtures are fictional only.
+5. **No diary history leaves the device.** Optional services may send only what the person typed or picked for that request: food name and portion text for a lookup; goal, minutes, kit, areas and level for the Trainer; the goal for the Nutritionist; the question for the Coach. A plate photo never leaves the device. No accounts, telemetry or other personal-data uploads. Fixtures are fictional only.
 6. **Round for display only** (`ui/format.ts`).
 
 ## Working rules

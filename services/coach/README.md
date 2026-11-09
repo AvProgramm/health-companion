@@ -42,3 +42,11 @@ Sources: [USDA API guide](https://fdc.nal.usda.gov/api-guide/), [Open Food Facts
 Tavily/Hugging Face configuration is documented in `docs/handoff/integrations.md`. Both stages are optional: blank tokens skip their requests. Hugging Face currently returns HTTP 402 on this laptop; the adapter is covered by synthetic tests, but live hosted inference is unavailable. No model weights are downloaded.
 
 Each lookup stage has a 4-second total deadline, followed by up to 8 seconds per model; the browser allows 27 seconds overall. The model sees only the selected name/portion and bounded public source excerpts. Source IDs are checked against those excerpts before real URLs are attached. A cited web page does not make an AI proposal database-verified. Never log provider exception URLs because USDA keys are query parameters.
+
+## Trainer, Coach and Nutritionist
+
+`POST /api/trainer`, `/api/coach` and `/api/nutritionist` accept only what the person typed or picked on that card, and use `GROQ_API_KEY`. With no key or a busy provider, the Trainer falls back to a balanced library set, and the Coach and Nutritionist show the reviewed cards themselves.
+
+Retrieval reads `knowledge/cards.json`, and fuses word search with the MiniLM encoder. The encoder comes from the pinned Hugging Face cache by default; set `MINILM_DIR` to a folder holding `tokenizer.json` and `onnx/model_quint8_avx2.onnx` to use another copy. If it is missing, the service carries on with word search alone. `python -m coach.rag.evaluate dev` compares the designs on the development questions; the sealed result is in `eval/results/retrieval_final.json`.
+
+`python -m coach.mcp_server` serves two read-only tools over stdio (see the root `.mcp.json`).
