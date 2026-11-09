@@ -75,6 +75,43 @@ python -m vision.run export
 
 Photos, checkpoints and logs stay in `~/hc-vision`, outside OneDrive and Git. `export` writes to `apps/web/public/models/dish/`, which Git ignores.
 
+## The global model
+
+One food model for the world, in `vision/run_global.py`: SigLIP2 ViT-B/16 with LoRA, whose head is the fixed text vectors of food names, so a food is a name. The phone knows 686 names and fetches the 187 MB model once, on first use. Written and run by Claude Code on 9 Nov 2026 at Yash's request, for him to cross-check. Walkthrough: `docs/milestones/m7-walkthrough.md`.
+
+The rule, fixed before the sealed run: it ships only if its top-1 on the first experiment's sealed photos, against those 109 names, is at least 89.3%. Those photos were already scored once, so this is a second look.
+
+| | SigLIP2 alone | With LoRA (shipped) | First model |
+|---|---|---|---|
+| First sealed photos, 109 names, top-1 / top-5 | 91.7% / 98.9% | **94.0% / 99.2%** | 91.3% / 98.5% |
+| Validation, trained dishes, 686 names, top-1 / top-5 | 62.7% / 86.0% | **79.7% / 94.7%** | |
+| ISIA test, 95 dishes never trained, 777 names, top-1 / top-5 | **49.8% / 80.9%** | 35.5% / 71.0% | |
+
+Fine-tuning buys 17 points on the dishes it saw and costs 14 on the ones it did not. The ISIA half of `results/global_final.json` is void: ISIA's test files number 100 dishes of their own, and that first run took them for the training dishes. `results/global_unseen.json` replaces it.
+
+Weights are stored in 16 bits, because 8-bit weights changed the first guess on 18% of validation photos (`results/global_shrink.json`).
+
+| Dataset or weights | Revision | Size used | Licence |
+|---|---|---|---|
+| ISIA Food-500, Hugging Face mirror, pinned in `config.py` | See `LARGE_DATASETS` | 71,701 photos, every fourth block of 93 of 131 files | None stated. Decide before publicly hosting |
+| `google/siglip2-base-patch16-224` | Pinned in `config.py` | 1.5 GB | Apache-2.0 |
+
+Then, from `experiments/vision`, with `PYTHONPATH=.`:
+
+```bash
+python -m vision.isia
+python -m vision.prepare_global
+python -m vision.run_global zero
+python -m vision.run_global lora
+python -m vision.run_global bands
+python -m vision.run_global final
+python -m vision.run_global unseen
+python -m vision.run_global malaysian
+python -m vision.run_global compare
+python -m vision.run_global shrink
+python -m vision.run_global export
+```
+
 ## Later
 
-Yash's direction is one global food transformer, with regional or per-country fine-tunes on top. LoRA suits that: a region is a small set of corrections and extra dishes on a shared base. Nothing here builds that yet.
+Regional or per-country fine-tunes on the global model, as Yash intends: a region is a small set of corrections and extra names on a shared base. Before building one, test on dishes held out of training, because the first fine-tune cost the dishes it never saw.

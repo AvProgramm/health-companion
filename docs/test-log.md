@@ -264,3 +264,21 @@ Laptop only so far: unit tests, the browser pane and real GPU training. Details 
 | 2. Photo of a real plate | PASS for capture; model limit | Yash photographed almonds in a steel bowl. Preview was the right way up. The card said "Not sure": Popiah 13%, Roti canai 12%, Nasi lemak 12%, Kaya toast 10%, Breakfast burrito 5%. Almonds are not one of the 109 trained dishes, so this is the model's limit, not a pipeline fault |
 | Known photos on the phone | PASS | Validation photos sent through the real file input on the phone over DevTools: nasi lemak 81%, roti canai 95%, laksa 99%, about 560 to 780 ms each, matching the laptop browser |
 | 1, 3 to 10 | NOT TESTED | |
+
+## Global food model (9 Nov 2026, Claude Code)
+
+Laptop only so far. The browser pane was hidden, so the times may read slightly high. Validation photos only, through the real file input and worker on localhost:4173.
+
+| Check | Result | What was observed |
+|---|---|---|
+| Warning before the first photo | PASS | "The first photo downloads the food model once, 187 MB, and keeps it on this device." Gone after the first photo |
+| First download | PASS | The button counted 0% to 99%, then "Looking at your plate…". 8.4 s in all over localhost. The model landed in its own `health-companion-model-` cache |
+| 16-bit `Cast` in `onnxruntime-web/wasm` | PASS | The model loads and runs on one thread |
+| Browser matches desktop ONNX on the same file | PASS | Sushi 52%, aloo gobi 44%, nasi lemak 62% in the browser; 51.9%, 43.8%, 62.2% on desktop from the same JPEG, so the phone's pixel pipeline is faithful. Scored from the stored pixels before the JPEG re-save, the same photos read 75.1%, 35.0%, 57.4%: a re-save changing pixels by about 2 out of 255 moved sushi by 23 points, so confidence is only a rough guide |
+| Unsure message | PASS | Roti canai came back "Not sure": nasi lemak 9%, roti canai 7%, nasi dagang 5%. Aloo gobi at 44% is also unsure, correctly under the 0.5 line |
+| Time per photo, model loaded | 1.9 to 2.0 s | One thread, laptop. The first model took about 290 ms |
+| Fresh load from the cache | 3.1 to 3.3 s | Reading the model and one photo. No download label appeared |
+| Offline | PASS | Server stopped, page reloaded from the service worker, model read from its cache, same answer (satay 80%) |
+| Phone width, 375 px | PASS | No horizontal overflow. A picked dish filled the entry box with "aloo gobi 1 plate", waiting at Review entry |
+
+**Phone checks for this model (NOT TESTED on the phone):** the warning; the download finishing; the time per photo and how long the first load takes; memory on a real phone; a real plate; almonds, which are now one of the names; airplane mode after the download.

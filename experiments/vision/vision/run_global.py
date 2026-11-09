@@ -1,7 +1,7 @@
 """
 Run the global food model one stage at a time.
 
-From experiments/vision:  python -m vision.run_global zero | lora | bands | final | unseen | malaysian | shrink | export
+From experiments/vision:  python -m vision.run_global zero | lora | bands | final | unseen | malaysian | compare | shrink | export
 
 The first stage needs no food training at all: it asks whether SigLIP2 can already name
 food, on the same validation photos as the first model.
@@ -242,6 +242,27 @@ def malaysian():
     print(json.dumps(report, indent=2), flush=True)
 
 
+def compare():
+    """
+    Record SigLIP2 alone and with LoRA on validation, with every food name the phone knows.
+
+    Every validation photo is of a dish with training photos, so this shows what fine-tuning
+    buys, to set beside what the unseen stage shows it costs.
+    """
+    settings, device, dishes = GLOBAL_SETTINGS, 'cuda', read_global_dishes()
+    names = food_names(dishes)
+    loader = make_loader(GLOBAL_PREPARED, VALIDATION, photo_transform(SIGLIP_MEAN, SIGLIP_STD, training=False), settings)
+
+    # Score both versions over the same photos
+    report = {}
+    for label, build in versions(device).items():
+        top, labels = predict_top(build(names), loader, device)
+        report[label] = {'top1': top_k_accuracy(top, labels, 1), 'top5': top_k_accuracy(top, labels, 5)}
+        torch.cuda.empty_cache()
+    save_result('global_compare.json', {'split': 'validation', 'photos': len(labels), 'names': len(names), 'reports': report})
+    print(json.dumps(report, indent=2), flush=True)
+
+
 def rounded_evenly(weight):
     """Return a weight as 8-bit storage would give it back, with one even scale for the whole tensor."""
     low, high = weight.min(), weight.max()
@@ -384,7 +405,7 @@ def bands():
 
 
 # Every stage this script can run; a new one is one more entry here
-STAGES = {'zero': zero, 'lora': lora, 'bands': bands, 'final': final, 'unseen': unseen, 'malaysian': malaysian, 'shrink': shrink, 'export': export}
+STAGES = {'zero': zero, 'lora': lora, 'bands': bands, 'final': final, 'unseen': unseen, 'malaysian': malaysian, 'compare': compare, 'shrink': shrink, 'export': export}
 
 
 if __name__ == '__main__':

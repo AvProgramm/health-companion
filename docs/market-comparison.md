@@ -25,7 +25,7 @@ Sources are at the end. Most market comparisons online are written by app makers
 4. **A correction never overwrites history.** Every change is a new version.
 5. **AI output is checked by ordinary code.** A Coach claim is dropped if a number in it is not in the card it cites. The Trainer can only pick from a shortlist, and the phone re-checks every pick.
 6. **It reports its own failures.** Decision rules are committed before sealed tests, and results are published even when a design loses. The first router did not ship, because it did not beat keyword rules.
-7. **A food is a name** (in progress). The global model matches photos against food names, so a new dish needs no retraining, and a country can get its own small LoRA on a shared base.
+7. **A food is a name.** The global model matches photos against 686 food names, so a new dish needs no photos and no retraining, and a country can later get its own small LoRA on a shared base. The honest limit: fine-tuning helped the dishes it saw (79.7% against 62.7% among those 686 names) and cost the ones it did not (35.5% against 49.8% on 95 dishes known only by name).
 
 ## Where it is behind
 

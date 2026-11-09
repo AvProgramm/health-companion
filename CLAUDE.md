@@ -11,6 +11,7 @@ A free, local-first diary for balancing food, exercise and sleep. It remembers w
   - Model output is never trusted for arithmetic or certainty: a model estimate needs a real low-high range, its energy must agree with 4 × protein + 4 × carbohydrate + 9 × fat within 25%, and a count of servings is asked as one serving and multiplied in code (`model_client.py`). Sources are shown as plain text, not links.
 - `experiments/router` (M4, FIT3181, finished 8 Nov): fictional family-split data, baselines, frozen MiniLM encoder, `Linear(384, 6)` head and runner. The sealed test ran once and the head did not beat the keyword rules, so it does **not** ship; `results/final.json` is the record and `run final` refuses a second run. Its own `.venv` reuses `fit3181` packages read-only. Explain-back: `docs/milestones/m4-walkthrough.md`.
 - `experiments/vision` (M6, FIT3181, 9 Nov): dish-photo classifier. Two ViT-Small backbones with a frozen head, then hand-written LoRA (`lora.py`); the sealed test runs once, and the winner is merged into an ordinary ViT and exported to ONNX in `apps/web/public/models/dish/`. Its own `.venv` reuses `fit3181`; photos and checkpoints stay in `~/hc-vision`. LoRA shipped: 91.3% top-1 on the sealed photos against 88.3% for the frozen head. The rule and the data licences are in its `README.md`; the record is `results/final.json`. Explain-back: `docs/milestones/m6-walkthrough.md`.
+- `experiments/vision`, global model (M7, 9 Nov, `run_global.py`): SigLIP2 ViT-B/16 with LoRA, whose head is fixed text vectors of food names (`global_model.py`), so a food is a name. 686 names on the phone, exported with 16-bit weights (187 MB, `halve_weights`, because 8-bit weights changed the first guess on 18% of photos). It shipped by its rule: 94.0% top-1 on the first sealed photos against their 109 names (a second look). Among the phone's 686 names, fine-tuning buys the dishes it saw 79.7% against 62.7% on validation, and costs the dishes it never saw: 35.5% against 49.8% for SigLIP2 alone. Records: `results/global_*.json`. Explain-back: `docs/milestones/m7-walkthrough.md`.
 
 ## Commands
 ```bash
@@ -38,7 +39,7 @@ Organised by feature, one reason to change per module. Domain never imports stor
 - `data/exercises/`, `scripts/import-exercises.mjs`, `apps/web/src/data/`: pinned Unlicense exercise source and reproducible offline search index; see `docs/data/exercise-dataset.md`.
 - `apps/web/src/storage/`: `connection` (open, schema upgrades, `runTransaction`), `foodsRepo`, `mealsRepo`, `logsRepo`, `customCardsRepo` (immutable exercise-choice snapshots, schema v4), `profileRepo` (immutable device-only adaptations, schema v5), `persistence`, and `backup/` (`format`, `validate` with one checker per store, `transfer` for export/restore/erase).
 - `apps/web/src/api/`: HTTP boundary to the optional coach service, with response validation.
-- `apps/web/src/vision/`: the Web Worker that runs the dish model on the device with `onnxruntime-web`.
+- `apps/web/src/vision/`: the Web Worker that runs the dish model on the device with `onnxruntime-web`. The model is too large to precache, so the service worker keeps it after its first download.
 - `apps/web/src/ui/`: responsive React screens, local Geist/Phosphor assets, compact draft/result presentation. They call domain and storage and never compute totals themselves.
 - `apps/web/src/test/`: test-only helpers (`goldenFixture`, `testFoods`). Never imported by app code.
 - `eval/fixtures/`: fictional golden cases. `ledger_golden.json` is the source of truth for totals.
@@ -68,4 +69,4 @@ Organised by feature, one reason to change per module. Domain never imports stor
 
 Current repeated-round planner and wrap-up: read `docs/handoff/claude-code.md` and `docs/milestones/m4-repeated-rounds-walkthrough.md`. Repetition is explicitly selectable; the earlier distinct-only duration notes are historical.
 
-Current work: finish the global food model, `docs/handoff/codex-m7.md`. Earlier rules and later ideas: `docs/handoff/codex-m5.md`.
+Current work: test the global food model and the features still untested on the phone (`docs/test-log.md`). Earlier rules and later ideas: `docs/handoff/codex-m5.md`.
