@@ -4,6 +4,7 @@ import type { MovementCard } from '../domain/training/catalogue';
 import { MAX_CUSTOM_CARDS, type CustomCardSelection } from '../domain/training/customCards';
 import { searchExercises, whyNotAddable, type ExerciseEntry } from '../domain/training/exerciseSearch';
 import { ExerciseReview } from './ExerciseReview';
+import { OwnExerciseSheet } from './OwnExerciseSheet';
 import { MuscleMap } from './MuscleMap';
 
 interface ExerciseSearchProps {
@@ -19,6 +20,8 @@ export function ExerciseSearch({ entries, chosen, busy, onAdd, onRemove }: Exerc
   // Search the bundled entries without an HTTP boundary.
   const [query, setQuery] = useState('');
   const [reviewing, setReviewing] = useState<ExerciseEntry | null>(null);
+  // The name to start an own exercise from; null while the form is closed
+  const [ownName, setOwnName] = useState<string | null>(null);
   const matches = useMemo(() => searchExercises(entries, query), [entries, query]);
   // Exclude removed snapshots from the current pool and its display count.
   const active = chosen.filter(choice => !choice.deleted);
@@ -37,11 +40,14 @@ export function ExerciseSearch({ entries, chosen, busy, onAdd, onRemove }: Exerc
           <button className="button button-secondary" type="button" disabled={busy || selected.has(entry.id) || active.length >= MAX_CUSTOM_CARDS || whyNotAddable(entry) !== null} onClick={() => setReviewing(entry)}>Review and add</button>
           {whyNotAddable(entry) !== null && <p className="hint">{whyNotAddable(entry)}</p>}</div>
       </li>)}</ul>
+      {matches.length === 0 && <button type="button" className="button button-secondary" disabled={busy || active.length >= MAX_CUSTOM_CARDS} onClick={() => setOwnName(query.trim())}>Add “{query.trim()}” as my own</button>}
     </>}
     <details className="my-exercises" open={active.length > 0 && active.length <= 4}><summary><span>My added exercises</span><span className="badge">{active.length}/{MAX_CUSTOM_CARDS}</span></summary>
-      {active.length === 0 ? <p className="hint">Nothing added yet. The eight reviewed starter cards remain available.</p> : <ul className="items">{active.map(choice => <li className="chosen-exercise" key={choice.id}><div><strong>{choice.card.name}</strong><p className="hint">{choice.card.minutes} min · {choice.card.category}</p></div><button type="button" className="button button-quiet" disabled={busy} aria-label={`Remove ${choice.card.name}`} onClick={() => onRemove(choice)}>Remove</button></li>)}</ul>}
+      {active.length === 0 ? <p className="hint">Nothing added yet. The eight reviewed starter cards remain available.</p> : <ul className="items">{active.map(choice => <li className="chosen-exercise" key={choice.id}><div><strong>{choice.card.name}</strong><p className="hint">{choice.card.minutes} min · {choice.card.category}{choice.source.dataset === 'own' && ' · my own'}</p></div><button type="button" className="button button-quiet" disabled={busy} aria-label={`${choice.source.dataset === 'own' ? 'Delete' : 'Remove'} ${choice.card.name}`} onClick={() => onRemove(choice)}>{choice.source.dataset === 'own' ? 'Delete' : 'Remove'}</button></li>)}</ul>}
+      <button type="button" className="button button-secondary" disabled={busy || active.length >= MAX_CUSTOM_CARDS} onClick={() => setOwnName('')}>Add my own exercise</button>
     </details>
     <p className="source-caption">Exercise text: free-exercise-db · Unlicense. Illustrations are bundled SVGs. Equipment and needs come from the source; read the instructions before you train.</p>
     {reviewing && <ExerciseReview key={reviewing.id} entry={reviewing} onClose={() => setReviewing(null)} onConfirm={onAdd} />}
+    {ownName !== null && <OwnExerciseSheet initialName={ownName} onClose={() => setOwnName(null)} onConfirm={onAdd} />}
   </section>;
 }

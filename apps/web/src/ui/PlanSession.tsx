@@ -2,6 +2,8 @@ import { EMPTY_PROFILE, type Profile } from '../domain/profile/profile';
 import { useEffect, useState, type FormEvent } from 'react';
 import { type Category, type MovementCard, type Equipment } from '../domain/training/catalogue';
 import { bestPlan, type PlanResult } from '../domain/training/planner';
+import { OWN_EXERCISE_PREFIX } from '../domain/training/customCards';
+import { Choices } from './Choices';
 import { EQUIPMENT_LABELS } from './format';
 import { CATEGORY_CHOICES, PlanResultView } from './PlanResultView';
 
@@ -26,7 +28,7 @@ export function PlanSession({ cards, profile = EMPTY_PROFILE }: { cards: readonl
 
   // Suggest gear from explicitly added exercises, while offering only gear used by the pool.
   const equipmentChoices = EQUIPMENT_CHOICES.filter(([value]) => cards.some(card => card.equipment.includes(value)));
-  const suggestedEquipment = [...new Set(cards.filter(card => card.id.startsWith('free-exercise-db:')).flatMap(card => card.equipment))];
+  const suggestedEquipment = [...new Set(cards.filter(card => card.id.startsWith('free-exercise-db:') || card.id.startsWith(OWN_EXERCISE_PREFIX)).flatMap(card => card.equipment))];
   const equipment = (selectedEquipment ?? suggestedEquipment).filter(value => equipmentChoices.some(([option]) => option === value));
 
 
@@ -95,33 +97,3 @@ export function PlanSession({ cards, profile = EMPTY_PROFILE }: { cards: readonl
   );
 }
 
-interface ChoicesProps<T extends string> {
-  legend: string;
-  choices: readonly [T, string][];
-  selected: readonly T[];
-  onChange: (selected: T[]) => void;
-}
-
-/**
- * Display a labelled group of checkboxes over a fixed list of choices.
- */
-function Choices<T extends string>({ legend, choices, selected, onChange }: ChoicesProps<T>) {
-  return (
-    <fieldset className="fieldset">
-      <legend className="label">{legend}</legend>
-      <div className="row">
-        {choices.map(([value, label]) => (
-          <label key={value} className="choice">
-            <input
-              type="checkbox"
-              value={value}
-              checked={selected.includes(value)}
-              onChange={(event) => onChange(event.target.checked ? [...selected, value] : selected.filter((item) => item !== value))}
-            />
-            {label}
-          </label>
-        ))}
-      </div>
-    </fieldset>
-  );
-}

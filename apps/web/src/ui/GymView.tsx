@@ -3,7 +3,7 @@ import { Barbell, ShieldCheck } from '@phosphor-icons/react';
 import { EMPTY_PROFILE, type Profile } from '../domain/profile/profile';
 import { SEATED_CARDS } from '../domain/training/seated';
 import { MOVEMENT_CARDS, type MovementCard } from '../domain/training/catalogue';
-import type { CustomCardSelection } from '../domain/training/customCards';
+import { OWN_EXERCISE_PREFIX, type CustomCardSelection, type ExerciseOrigin } from '../domain/training/customCards';
 import { listCustomCards, saveCustomCard } from '../storage/customCardsRepo';
 import { ExerciseSearch } from './ExerciseSearch';
 import { PackPicker } from './PackPicker';
@@ -46,10 +46,18 @@ export function GymView({ db, profile = EMPTY_PROFILE }: { db: IDBDatabase; prof
 
   useEffect(() => { reloadChoices().catch(problem => setError(errorText(problem))); }, [reloadChoices]);
 
-  /** Confirm one choice change through the versioned repository path. */
-  async function persistChoice(card: MovementCard, removed: boolean) {
+  /** Return where a card's facts came from, so its saved snapshot can say so. */
+  function originOf(card: MovementCard): ExerciseOrigin {
+    if (card.id.startsWith(OWN_EXERCISE_PREFIX)) return { dataset: 'own' };
+
     // Ignore a confirmation before loading because its source revision is not available yet.
     if (library === null) throw new Error('Wait for the bundled exercise library to load.');
+    return library.EXERCISE_SOURCE;
+  }
+
+  /** Confirm one choice change through the versioned repository path. */
+  async function persistChoice(card: MovementCard, removed: boolean) {
+    const source = originOf(card);
     // Retain the operation key until a confirmed transaction has been read back.
     const previous = choices.find(choice => choice.id === card.id);
     const expectedVersion = previous?.version ?? 0;
@@ -60,7 +68,7 @@ export function GymView({ db, profile = EMPTY_PROFILE }: { db: IDBDatabase; prof
     setError(null);
     try {
       // Append a version and refresh the pool, including conflicts from another tab.
-      const result = await saveCustomCard(db, { id: card.id, card, source: library.EXERCISE_SOURCE,
+      const result = await saveCustomCard(db, { id: card.id, card, source,
         version: expectedVersion + 1, deleted: removed, operationKey, savedAt: new Date().toISOString() }, expectedVersion);
       await reloadChoices();
       if (result.status === 'conflict') throw new Error('This exercise choice changed in another screen. Review the updated list and try again.');
