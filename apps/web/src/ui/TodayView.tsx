@@ -30,6 +30,7 @@ import { SleepDraftCard } from './SleepDraftCard';
 import { errorText, type Notice } from './useSave';
 import { useToday } from './useToday';
 import { WorkoutCard } from './WorkoutCard';
+import { WeekCard } from './WeekCard';
 import { WorkoutDraftCard } from './WorkoutDraftCard';
 
 // What the area under the composer is showing
@@ -386,6 +387,7 @@ export function TodayView({ db, foods, currentFoods, hideNumbers, durability, di
       <aside className="day-sidebar" aria-label="Daily overview">
         <DaySummaryCard diabetes={diabetes} summary={summary} dateLabel={dateLabel} hideNumbers={hideNumbers} />
         {!hideNumbers && summary.coverage === 'some_entries' && <BalanceCard summary={summary} workouts={workouts} body={body} currentYear={new Date().getFullYear()} />}
+        {!hideNumbers && <WeekCard db={db} today={today} foods={foods} reloadKey={`${date}:${meals.length}:${workouts.length}:${sleeps.length}:${meals.map(meal => meal.latest.revision).join()}`} />}
         <div className="device-note"><ShieldCheck size={22} /><div><strong>Made for your everyday</strong><details><summary>Saved on this device</summary><p>{DURABILITY_TEXT[durability]}</p></details></div></div>
       </aside>
       </div>
