@@ -33,6 +33,8 @@ export function App() {
   const [allFoods, setAllFoods] = useState<FoodVersion[]>([]);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [tab, setTab] = useState<Tab>('today');
+  // Text the Nutritionist handed to the entry box; moving between tabs clears it
+  const [draftEntry, setDraftEntry] = useState('');
   const [durability, setDurability] = useState<Durability>('unknown');
   const [hideNumbers, setHideNumbers] = useState(readHideNumbers);
   // Bumped after a restore or erase, so the Today screen reloads from scratch
@@ -141,10 +143,10 @@ export function App() {
       </header>
       <main id="main-content" className="page">
         {tab === 'today' && (
-          <TodayView key={diaryVersion} db={db} foods={foods} currentFoods={currentFoods} hideNumbers={hideNumbers} durability={durability} diabetes={profile.diabetes} onSaveFood={handleSaveFood} />
+          <TodayView key={diaryVersion} db={db} foods={foods} currentFoods={currentFoods} hideNumbers={hideNumbers} durability={durability} diabetes={profile.diabetes} initialEntry={draftEntry} onSaveFood={handleSaveFood} />
         )}
         {tab === 'gym' && <GymView key={`${diaryVersion}:${savedProfile?.version ?? 0}`} db={db} profile={profile} />}
-        {tab === 'foods' && <FoodsView currentFoods={currentFoods} hideNumbers={hideNumbers} onSaveFood={handleSaveFood} />}
+        {tab === 'foods' && <FoodsView currentFoods={currentFoods} hideNumbers={hideNumbers} onSaveFood={handleSaveFood} onDraftEntry={(entry) => { setDraftEntry(entry); setTab('today'); }} />}
         {tab === 'me' && (
           <MeView
             db={db}
@@ -170,7 +172,7 @@ export function App() {
             type="button"
             className="tab"
             aria-current={tab === item.id ? 'page' : undefined}
-            onClick={() => setTab(item.id)}
+            onClick={() => { setDraftEntry(''); setTab(item.id); }}
           >
             {item.id === 'today' && <House size={22} weight={tab === item.id ? 'fill' : 'regular'} />}
             {item.id === 'gym' && <Barbell size={22} weight={tab === item.id ? 'fill' : 'regular'} />}

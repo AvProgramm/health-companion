@@ -1,14 +1,8 @@
 import { useState, type FormEvent } from 'react';
 import { askCoach } from '../api/coach';
-import type { CoachReply, CoachSource } from '../domain/coach/coachReply';
+import type { CoachReply } from '../domain/coach/coachReply';
+import { SourceLine } from './SourceLine';
 import { errorText } from './useSave';
-
-/**
- * Display one reviewed card as plain text, so its source can be read but not followed.
- */
-function SourceLine({ source }: { source: CoachSource }) {
-  return <li className="hint"><strong>[{source.number}] {source.title}.</strong> {source.excerpt} {source.source}, {source.sourceDate}. {source.url}</li>;
-}
 
 /**
  * Display a question box answered only from reviewed health guidance.

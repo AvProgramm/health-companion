@@ -92,6 +92,7 @@ svg { flex-shrink: 0; }
 .button-danger:hover { background: #802824; }
 :is(.input,.button,.tab,summary,a):focus-visible, .choice input:focus-visible, .file-button:focus-within { outline: 2px solid var(--action); outline-offset: 4px; }
 .file-button { position: relative; }
+.suggestion { display: grid; gap: 8px; }
 .visually-hidden { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
 .skip-link { position: fixed; top: -96px; left: 16px; z-index: 40; padding: 12px 16px; background: var(--surface); border-radius: 8px; }
 .skip-link:focus { top: 16px; }

@@ -1,18 +1,20 @@
 import { useState } from 'react';
 import type { FoodVersion } from '../domain/nutrition/types';
 import { FoodEditor } from './FoodEditor';
+import { NutritionistCard } from './NutritionistCard';
 import { SOURCE_LABELS, formatQuantity, formatValue } from './format';
 
 interface FoodsViewProps {
   currentFoods: readonly FoodVersion[];
   hideNumbers: boolean;
   onSaveFood: (food: FoodVersion) => Promise<void>;
+  onDraftEntry: (entry: string) => void;
 }
 
 /**
  * Saved foods: the labels the composer can recognise, each editable as a new version.
  */
-export function FoodsView({ currentFoods, hideNumbers, onSaveFood }: FoodsViewProps) {
+export function FoodsView({ currentFoods, hideNumbers, onSaveFood, onDraftEntry }: FoodsViewProps) {
   // undefined: editor closed; null: adding a new food; a food: editing that food
   const [editing, setEditing] = useState<FoodVersion | null | undefined>(undefined);
 
@@ -22,6 +24,8 @@ export function FoodsView({ currentFoods, hideNumbers, onSaveFood }: FoodsViewPr
         <h1 className="title">Foods</h1>
         <p className="status">Labels you save here are what the composer recognises by name.</p>
       </header>
+
+      <NutritionistCard onDraft={onDraftEntry} />
 
       <button type="button" className="button" onClick={() => setEditing(null)}>Add a food</button>
 

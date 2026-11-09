@@ -8,7 +8,8 @@ from fastapi.responses import JSONResponse
 from starlette.middleware.trustedhost import TrustedHostMiddleware
 from .exercises import load_library
 from .llm import ask_groq
-from .models import CoachReply, CoachRequest, EstimateRequest, Estimate, TrainerReply, TrainerRequest
+from .models import CoachReply, CoachRequest, EstimateRequest, Estimate, NutritionistReply, NutritionistRequest, TrainerReply, TrainerRequest
+from .nutritionist import suggest_meals
 from .pipeline import estimate_food
 from .rag.answer import answer_question
 from .rag.cards import load_cards
@@ -65,6 +66,15 @@ async def trainer(request: Request, item: TrainerRequest):
     """Return ranked exercises for the goal, as a proposal the phone still checks."""
     check_local(request)
     return await plan_session(item, EXERCISES, ask_groq, [evidence_tool(knowledge())])
+
+
+@app.post('/api/nutritionist', response_model=NutritionistReply)
+async def nutritionist(request: Request, item: NutritionistRequest):
+    """Return checked food ideas for the typed goal, which only ever become drafts."""
+    check_local(request)
+    if not item.goal.strip():
+        raise HTTPException(422, 'Tell the Nutritionist what you are looking for.')
+    return await suggest_meals(item.goal.strip(), knowledge(), ask_groq)
 
 
 @app.post('/api/coach', response_model=CoachReply)

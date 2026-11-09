@@ -26,14 +26,14 @@ export interface CoachReply {
 const MODES: readonly string[] = ['answer', 'excerpts', 'no_evidence', 'refused'];
 
 /** Return whether a value is one displayable source. */
-function isSource(value: unknown): value is CoachSource {
+export function isSource(value: unknown): value is CoachSource {
   const source = value as Partial<CoachSource> | null;
   return source !== null && typeof source === 'object' && typeof source.number === 'number' && typeof source.title === 'string'
     && typeof source.source === 'string' && typeof source.sourceDate === 'string' && typeof source.url === 'string' && typeof source.excerpt === 'string';
 }
 
 /** Return whether a value is one displayable claim. */
-function isClaim(value: unknown): value is CoachClaim {
+export function isClaim(value: unknown): value is CoachClaim {
   const claim = value as Partial<CoachClaim> | null;
   return claim !== null && typeof claim === 'object' && typeof claim.text === 'string' && Array.isArray(claim.cites) && claim.cites.every(cite => typeof cite === 'number');
 }

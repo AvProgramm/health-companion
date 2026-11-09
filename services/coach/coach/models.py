@@ -59,6 +59,26 @@ class CoachReply(StrictModel):
     sources: list[CoachSource] = Field(max_length=3)
 
 
+class NutritionistRequest(StrictModel):
+    """Accept only the goal the person typed."""
+    goal: str = Field(min_length=1, max_length=200)
+
+
+class NutritionistSuggestion(StrictModel):
+    """Hold one idea: text for the entry box, and the checked reason behind it."""
+    title: str = Field(min_length=1, max_length=60)
+    entry: str = Field(min_length=1, max_length=100)
+    why: CoachClaim
+
+
+class NutritionistReply(StrictModel):
+    """Return checked food ideas, the evidence itself, or an honest reason for neither."""
+    mode: Literal['suggestions', 'excerpts', 'no_evidence', 'refused']
+    message: str = Field(min_length=1, max_length=400)
+    suggestions: list[NutritionistSuggestion] = Field(max_length=3)
+    sources: list[CoachSource] = Field(max_length=3)
+
+
 class EstimateRequest(StrictModel):
     """Accept only the food name and portion text."""
     name: str = Field(min_length=1, max_length=80)

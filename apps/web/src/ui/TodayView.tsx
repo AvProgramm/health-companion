@@ -47,6 +47,8 @@ export const DURABILITY_TEXT: Record<Durability, string> = {
 };
 
 interface TodayViewProps {
+  // Text handed over by the Nutritionist, which only fills the entry box
+  initialEntry?: string;
   db: IDBDatabase;
   foods: ReadonlyMap<string, FoodVersion>;
   currentFoods: readonly FoodVersion[];
@@ -62,7 +64,7 @@ interface TodayViewProps {
  * Typed text goes through the grammar parser only. Nothing is saved until the
  * user confirms a draft or a correction.
  */
-export function TodayView({ db, foods, currentFoods, hideNumbers, durability, diabetes = false, onSaveFood }: TodayViewProps) {
+export function TodayView({ db, foods, currentFoods, hideNumbers, durability, diabetes = false, initialEntry = '', onSaveFood }: TodayViewProps) {
   const today = useToday();
   const [date, setDate] = useState(today);
 
@@ -77,7 +79,7 @@ export function TodayView({ db, foods, currentFoods, hideNumbers, durability, di
   const [meals, setMeals] = useState<SavedMeal[]>([]);
   const [workouts, setWorkouts] = useState<WorkoutEntry[]>([]);
   const [sleeps, setSleeps] = useState<SleepEntry[]>([]);
-  const [text, setText] = useState('');
+  const [text, setText] = useState(initialEntry);
   const [panel, setPanel] = useState<Panel | null>(null);
   const [openMealId, setOpenMealId] = useState<string | null>(null);
   const [creatingFood, setCreatingFood] = useState<{ name: string; rowKey: string; unit: Unit; initialFood?: FoodVersion; previous?: FoodVersion } | null>(null);
