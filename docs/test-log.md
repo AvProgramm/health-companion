@@ -283,6 +283,26 @@ Laptop only so far. The browser pane was hidden, so the times may read slightly 
 
 **Phone checks for this model (NOT TESTED on the phone):** the warning; the download finishing; the time per photo and how long the first load takes; memory on a real phone; a real plate; almonds, which are now one of the names; airplane mode after the download.
 
+### Global food model on the phone (10 Nov 2026, 11:00, Samsung SM-S918B, Chrome 156.0.8078.79)
+
+Yash's own photos over USB (`adb reverse tcp:4173`). The top guesses below are taken from his screenshots.
+
+| Photo | Result | Top guesses shown |
+|---|---|---|
+| Almonds in a steel bowl | PASS | "Which is it?": Almonds 72%, Payasam 3%, Almond biscuit 2%. An earlier, darker shot of the same bowl said "Not sure": Almonds 18%, Popiah 12% |
+| Laddu (photo of a menu screen) | PASS | Laddu 91% |
+| Mixed rice plate | PASS | Mixed rice 53%, Nasi campur 15% |
+| Banana leaf meal | PASS, unsure | Banana leaf rice 29%, Nasi briyani 17%, Mixed rice 10% |
+| Fried chicken, rice and a cola | Partial | Fried chicken 45%. It gave one dish only; the rice and the drink are not named |
+| Rice bowl with egg, fish and pickles | FAIL | Bibimbap 20%, Chazuke 5%, Nasi lemak 4% |
+| Kuih held in the hand | Unsure | Kuih lapis 28%, Carrot cake 14%, Kuih 9% |
+| Paratha, dal and raita | FAIL | Roti canai 30%, Thosai 5%, Naan 4% |
+| Paratha, chickpeas and curry | Partial | Roti canai 25%, Chickpeas 8%, Murtabak 6% |
+| Milk carton label | FAIL | Protein shake 21%, Soy milk 17%, Energy drink 8% |
+| Almonds → "almonds 1 plate" → lookup | PASS for the flow | The guess only filled the entry box. The draft was "Not saved yet", with an AI estimate of about 160 kcal (150–170) for one typical serving, from Tavily web and Groq |
+
+**What Yash found:** one name per photo, so a plate with several foods gets only its largest dish; it cannot count items, such as the number of almonds; most confidences are low; and the names lean Malaysian. Not tested yet: the download time, the time per photo, the Nutritionist, the Coach, the Trainer, adding your own exercise, and airplane mode.
+
 ## Whichever model is available, and who answered (9 Nov 2026, Claude Code)
 
 Laptop only, generic text only. For the hand-over checks Groq was given a fake key in that one process, so it really refused. The browser-pane checks used the laptop's real keys.
