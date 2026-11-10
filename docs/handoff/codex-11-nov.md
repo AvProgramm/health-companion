@@ -73,3 +73,34 @@ Yash shared a list of seven kinds of agent memory and asked which fit this app. 
 ## Estimate bug fixed last (10 Nov, 11:55)
 
 On the phone "almonds, 7 piece" gave 1155 kcal: the model answered one 28 g serving for "1 piece" and the code multiplied by 7. `prompts.py` now says small counted foods are counted by the single item. Checked live through the proxy: almonds 7 piece gives 49 kcal (42-56) twice, grapes 10 piece 34 kcal, nasi lemak 2 piece still 1300 kcal. One almond request in three returned 503 "No estimate is available", so tiny per-item values may sometimes fail a check in `model_client.py`; worth a look. A stronger fix is to ask the model for the grams of one item and scale a per-100 g record in code.
+
+## One job per tab (Yash, 10 Nov)
+
+Each tab has one job, except AI, which may act across all of them. Done: the barcode scan moved from Foods to Today, under the photo card, so both ways of capturing food sit together (unit tests pass, not seen on the phone). Foods is now only the saved-food list. Check the other tabs against the same rule.
+
+## Photo backups when Gemini is out of tokens (not built)
+
+`PHOTO_MODELS` in `llm.py` is `('Gemini',)`. To add Groq and Hugging Face as backups, `HostedModel` needs its own photo model setting (for example `photo_model_setting` and `default_photo_model`), because the text default on Groq cannot read images. Pick a vision model each provider currently hosts and confirm it in their docs first; do not guess a model ID. Tavily cannot read a photo: it stays where it is, as the search step of the nutrition estimate. Last fallback is the on-device model, which needs no key at all.
+
+## A model that sees every food on the plate (Yash's idea; written from memory, not checked online)
+
+His idea: like the claim extractor in Veritaserum, first *extract* each food region, then *name* each one. That is the right shape, and it reuses the M7 model instead of replacing it.
+
+**Pipeline: segment, crop, classify.**
+1. Find regions with a model that needs no food labels: SAM or SAM 2 (masks for everything), or an open-vocabulary detector prompted with "food" (Grounding DINO, OWLv2, YOLO-World).
+2. Crop each region, and classify each crop with the existing SigLIP2 LoRA model (`global_model.py`). A crop of one food is exactly what that model was trained on, which is why it did well on almonds alone and badly on a full plate.
+3. Count regions with the same name ("7 almonds"), and send the list through the same entry-text path the Gemini reader uses (`photo.py`'s format), so nothing downstream changes.
+
+**Data for fine-tuning or evaluating (check each licence before downloading; downloads need Yash's approval):**
+- FoodSeg103: about 7,000 images with ingredient-level masks, 103 classes. The usual segmentation benchmark; FoodSAM is SAM combined with a segmenter trained on it.
+- UECFood-256 and UECFood-100: bounding boxes for multi-dish Japanese meals.
+- UNIMIB2016: canteen trays with every food segmented.
+- Nutrition5k: plates with measured weight and nutrients, useful later for portions.
+- FoodSG-233: Singapore dishes, closest to Malaysian food; Yash has access under individual non-commercial terms, but the download was slow.
+- None of these is Malaysian with boxes. The honest plan is 100 to 200 of his own plate photos, labelled with boxes, used as a sealed test and a small fine-tune.
+
+**How to train on the laptop:** keep the segmenter frozen (no training at all for SAM or Grounding DINO). Only the per-crop classifier is trained, which M7 already does with LoRA. If a detector must be tuned, YOLO-World or a small YOLO on UECFood boxes is the one that fits a laptop GPU.
+
+**Costs to say out loud:** SAM is hundreds of MB and slow in a browser, so this likely runs in the service, not on the phone, which changes the privacy story the same way Gemini does. Portion size (grams) is still unsolved; counting pieces is the only quantity this gives.
+
+**Rule before any of it ships:** the same sealed-test discipline as M6 and M7. Write the ship rule first: for example, on his own sealed plates, the pipeline must name more of the foods correctly than the Gemini reader's list, or it stays an experiment. For Friday, Gemini is the demo; this is the FIT3181 story of what comes next and why.

@@ -1,6 +1,5 @@
 import { useState } from 'react';
 import type { FoodVersion } from '../../domain/nutrition/types';
-import { BarcodeScan } from '../components/meals/BarcodeScan';
 import { FoodEditor } from '../components/meals/FoodEditor';
 import { SOURCE_LABELS, formatQuantity, formatValue } from '../format';
 
@@ -16,8 +15,6 @@ interface FoodsViewProps {
 export function FoodsView({ currentFoods, hideNumbers, onSaveFood }: FoodsViewProps) {
   // undefined: editor closed; null: adding a new food; a food: editing that food
   const [editing, setEditing] = useState<FoodVersion | null | undefined>(undefined);
-  // A food found by barcode, waiting to be reviewed before it is saved
-  const [scanned, setScanned] = useState<FoodVersion | null>(null);
 
   return (
     <>
@@ -25,10 +22,6 @@ export function FoodsView({ currentFoods, hideNumbers, onSaveFood }: FoodsViewPr
         <h1 className="title">Foods</h1>
         <p className="status">Labels you save here are what the composer recognises by name.</p>
       </header>
-
-      <BarcodeScan onFound={setScanned} />
-
-      {scanned !== null && <FoodEditor key={scanned.id} initialFood={scanned} onSave={onSaveFood} onClose={() => setScanned(null)} />}
 
       <button type="button" className="button" onClick={() => setEditing(null)}>Add a food</button>
 
