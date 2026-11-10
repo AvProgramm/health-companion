@@ -3,7 +3,7 @@ import { act, createElement } from 'react';
 import { createRoot } from 'react-dom/client';
 import { expect, it, vi } from 'vitest';
 import { IDBFactory } from 'fake-indexeddb';
-import { openDiary } from '../../storage/connection';
+import { openDiary } from '../../data/storage/connection';
 import { MeView } from './MeView';
 
 // Isolate the page boundary from unrelated editable profile forms.

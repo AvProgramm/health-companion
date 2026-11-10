@@ -7,7 +7,7 @@ This is the single interview script and feature/code tour for the MVP. Older mil
 - `ui/pages`: the rooms you visit, such as Today and Gym.
 - `ui/components`: reusable building blocks, such as buttons, cards and editors.
 - `data/api`: the messengers that ask the laptop service for information.
-- `data`: the home for loading/saving work and bundled facts. Existing `storage` still holds the local diary filing cabinet while we migrate one folder at a time.
+- `data`: the home for loading/saving work and bundled facts. `data/storage` holds the local diary filing cabinet.
 - `domain`: the rulebook and calculator, with no screen or database calls.
 - `ui/hooks`: the screen's short-term memory and action state.
 - `services/coach`: the optional laptop helpers for food and coaching.
@@ -41,19 +41,19 @@ For each phone step record PASS, FAIL or NOT TESTED in `docs/test-log.md`. A lap
 | Feature | Where to look | Explain-back point |
 |---|---|---|
 | Typed entries | `domain/parsing/`, `ui/hooks/useEntryPanel.ts` | Ordered grammar fills drafts; ambiguous input does not invent quantities. |
-| Food labels and aliases | `domain/nutrition/foods.ts`, `storage/foodsRepo.ts` | Versioned food facts preserve what an old meal used. |
+| Food labels and aliases | `domain/nutrition/foods.ts`, `data/storage/foodsRepo.ts` | Versioned food facts preserve what an old meal used. |
 | Nutrition/day totals | `domain/nutrition/{scale,aggregate,day}.ts` | Compatible units only; known totals and unknown counts remain distinct. |
-| Corrections/history/undo | `domain/meals/`, `storage/mealsRepo.ts` | A correction adds a revision, with an operation key and expected revision. |
+| Corrections/history/undo | `domain/meals/`, `data/storage/mealsRepo.ts` | A correction adds a revision, with an operation key and expected revision. |
 | Exercise library/search/own exercises | `domain/training/{exerciseSearch,customCards,packs}.ts` | Bundled search is offline; chosen cards and custom facts require confirmation. Unknown adaptation facts do not become safe facts. |
 | Session planning | `domain/training/{eligibility,planner,rounds}.ts` | Hard filters first, bounded duration search, optional repeated rounds and truthful shortfalls. Yash owns ranking changes. |
 | Workouts and cardio | `domain/training/{workouts,cardio}.ts` | Log what was actually performed; cardio energy is a code-calculated range. A suggested session is not a workout log. |
-| Sleep | `domain/sleep/sleep.ts`, `storage/logsRepo.ts` | Parse times, handle an overnight interval and confirm before logging. |
+| Sleep | `domain/sleep/sleep.ts`, `data/storage/logsRepo.ts` | Parse times, handle an overnight interval and confirm before logging. |
 | Body/profile/adaptations | `domain/profile/`, `ui/components/me/` | Body estimates require known inputs; limitations filter locally. Diabetes display changes nutrient priority, not medication advice. |
 | Weight and weekly overview | `profile/weightTrend.ts`, `domain/week/` | Saved versions and date-based aggregates show trends; missing dates remain gaps. |
 | Capture and estimation | Detailed section below | Typed text, photo and barcode converge on review and explicit confirmation. |
 | Coach/Nutritionist/Trainer | Detailed section below | Separate responsibilities, bounded requests, local checks and visible uncertainty. |
-| Backup/restore/erase | `storage/backup/`, Me | Validate a backup before one transactional restore. Erase requires explicit confirmation; do not demonstrate with real data. |
-| Offline PWA | `sw/service-worker.js`, `storage/connection.ts` | Cache the app shell; keep diary records in IndexedDB; bypass `/api` cache. The large local model caches only after download. |
+| Backup/restore/erase | `data/storage/backup/`, Me | Validate a backup before one transactional restore. Erase requires explicit confirmation; do not demonstrate with real data. |
+| Offline PWA | `sw/service-worker.js`, `data/storage/connection.ts` | Cache the app shell; keep diary records in IndexedDB; bypass `/api` cache. The large local model caches only after download. |
 | MCP | `services/coach/coach/mcp_server.py` | Two read-only tools: reviewed evidence and a fictional demo day, not unrestricted diary access. |
 
 ## Reliability and experiments: questions the interviewer may ask

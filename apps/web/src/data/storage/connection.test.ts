@@ -1,8 +1,8 @@
 import { IDBFactory } from 'fake-indexeddb';
 import 'fake-indexeddb/auto';
 import { describe, expect, it } from 'vitest';
-import { startMeal } from '../domain/meals/revisions';
-import { MILK, TEST_FOOD_MAP } from '../test/testFoods';
+import { startMeal } from '../../domain/meals/revisions';
+import { MILK, TEST_FOOD_MAP } from '../../test/testFoods';
 import { DB_VERSION, openDiary } from './connection';
 import { confirmMeal, mealsOn } from './mealsRepo';
 

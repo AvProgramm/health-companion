@@ -1,7 +1,7 @@
 import { foodKey } from '../../../domain/nutrition/aggregate';
 import { scaleNutrient } from '../../../domain/nutrition/scale';
 import type { FoodVersion } from '../../../domain/nutrition/types';
-import type { SavedMeal } from '../../../storage/mealsRepo';
+import type { SavedMeal } from '../../../data/storage/mealsRepo';
 import { NUTRIENT_LABELS, SOURCE_LABELS, describeSource, formatEaten, formatQuantity, formatTime, formatValue, mealTitle } from '../../format';
 
 interface MealCardProps {

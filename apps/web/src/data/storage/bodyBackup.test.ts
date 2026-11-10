@@ -1,8 +1,8 @@
 import { IDBFactory } from 'fake-indexeddb';
 import 'fake-indexeddb/auto';
 import { beforeEach, describe, expect, it } from 'vitest';
-import type { BodyFacts } from '../domain/profile/body';
-import { EMPTY_PROFILE } from '../domain/profile/profile';
+import type { BodyFacts } from '../../domain/profile/body';
+import { EMPTY_PROFILE } from '../../domain/profile/profile';
 import { exportDiary, restoreDiary, wipeDiary } from './backup/transfer';
 import { validateBackup } from './backup/validate';
 import { openDiary } from './connection';

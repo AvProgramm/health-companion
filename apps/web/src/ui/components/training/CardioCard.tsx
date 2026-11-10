@@ -3,7 +3,7 @@ import { Sneaker } from '@phosphor-icons/react';
 import { localDateIn, deviceZone } from '../../../domain/shared/dates';
 import { cardioBurn } from '../../../domain/training/cardio';
 import { buildWorkout, type WorkoutDraft } from '../../../domain/training/workouts';
-import { saveLogEntry } from '../../../storage/logsRepo';
+import { saveLogEntry } from '../../../data/storage/logsRepo';
 import { burnText, readAmount } from '../../format';
 import { OptionGroup } from '../shared/OptionGroup';
 import { useSave } from '../../hooks/useSave';

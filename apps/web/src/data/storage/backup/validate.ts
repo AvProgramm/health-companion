@@ -1,4 +1,4 @@
-import { assertProfileSnapshot } from '../../domain/profile/profile';
+import { assertProfileSnapshot } from '../../../domain/profile/profile';
 /**
  * Checking a backup file before anything is written.
  *
@@ -6,10 +6,10 @@ import { assertProfileSnapshot } from '../../domain/profile/profile';
  * refer to earlier ones (a revision points at food versions, a meal at a revision),
  * so a new kind of record means adding one checker, not editing the others.
  */
-import { assertCustomCard, latestCustomCards, MAX_CUSTOM_CARDS, type CustomCardSelection } from '../../domain/training/customCards';
-import { validateRanges } from '../../domain/nutrition/estimates';
-import type { FoodVersion } from '../../domain/nutrition/types';
-import { isUnit } from '../../domain/shared/units';
+import { assertCustomCard, latestCustomCards, MAX_CUSTOM_CARDS, type CustomCardSelection } from '../../../domain/training/customCards';
+import { validateRanges } from '../../../domain/nutrition/estimates';
+import type { FoodVersion } from '../../../domain/nutrition/types';
+import { isUnit } from '../../../domain/shared/units';
 import { DB_VERSION, STORE_NAMES, type StoreName } from '../connection';
 import { BACKUP_FORMAT, BACKUP_FORMAT_VERSION, OPTIONAL_LISTS, countBackup, type BackupCheck, type DiaryBackup } from './format';
 

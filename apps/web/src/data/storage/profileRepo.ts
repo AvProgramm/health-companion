@@ -1,4 +1,4 @@
-import { assertProfileSnapshot, type ProfileSnapshot } from '../domain/profile/profile';
+import { assertProfileSnapshot, type ProfileSnapshot } from '../../domain/profile/profile';
 import { resultOf, runTransaction } from './connection';
 
 /** Return the last confirmed profile, or null when none has been saved. */

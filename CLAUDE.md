@@ -8,7 +8,7 @@ Read this file first in every new chat. When explaining the app, start with a 10
 
 - Screens belong in `ui/pages/`: one screen per file.
 - Reusable UI belongs in `ui/components/`: check existing components first and reuse them.
-- Saving, loading and API logic belong in `data/`: check existing data modules before writing new code. API requests now live in `data/api/`. The existing `storage/` repositories and UI loading helpers are legacy locations to migrate separately, one folder at a time; do not duplicate them in `data/` meanwhile.
+- Saving, loading and API logic belong in `data/`: check existing data modules before writing new code. API requests now live in `data/api/`. The existing `data/storage/` repositories and UI loading helpers are legacy locations to migrate separately, one folder at a time; do not duplicate them in `data/` meanwhile.
 - Keep pure calculations and rules in `domain/`; UI state belongs in hooks, not data services.
 - Give each file one job and keep authored code files at or under 300 lines. Do not grow a file past the limit; split it by responsibility.
 - Before changes, suggest a Git save point. Refactor one folder at a time without changing behaviour, then confirm checks/build and relevant UI behaviour before the next folder. Keep explicit-path staging and green commits.
@@ -50,7 +50,7 @@ Organised by feature, one reason to change per module. Domain never imports stor
   - `week/weekOverview`: one line per day of food, training and sleep; a day with nothing logged stays a gap.
   - `parsing/`: the composer grammar. `parseEntry` tries an ordered list of small parsers (`question`, `correction`, `sleepEntry`, `workoutEntry`, `meal`); a new kind of entry is a new parser in that list.
 - `data/exercises/`, `scripts/import-exercises.mjs`, `apps/web/src/data/`: pinned Unlicense exercise source and reproducible offline search index; see `docs/data/exercise-dataset.md`.
-- `apps/web/src/storage/`: `connection` (open, schema upgrades, `runTransaction`), `foodsRepo`, `mealsRepo`, `logsRepo`, `customCardsRepo` (immutable exercise-choice snapshots, schema v4), `profileRepo` (immutable device-only adaptations, schema v5), `persistence`, and `backup/` (`format`, `validate` with one checker per store, `transfer` for export/restore/erase).
+- `apps/web/src/data/storage/`: `connection` (open, schema upgrades, `runTransaction`), `foodsRepo`, `mealsRepo`, `logsRepo`, `customCardsRepo` (immutable exercise-choice snapshots, schema v4), `profileRepo` (immutable device-only adaptations, schema v5), `persistence`, and `backup/` (`format`, `validate` with one checker per store, `transfer` for export/restore/erase).
 - `apps/web/src/data/api/`: HTTP boundary to the optional coach service, with response validation.
 - `apps/web/src/vision/`: the Web Worker that runs the dish model on the device with `onnxruntime-web`. The model is too large to precache, so the service worker keeps it after its first download.
 - `apps/web/src/ui/`: responsive React screens, local Geist/Phosphor assets, compact draft/result presentation. They call domain and storage and never compute totals themselves. `App.tsx` is the shell, `format.ts` holds display text and rounding, and `app.css` loads before `gym.css`.

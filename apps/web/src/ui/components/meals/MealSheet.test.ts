@@ -6,10 +6,10 @@ import type { MealComponent, MealEdit, MealRevision } from '../../../domain/meal
 import { foodKey } from '../../../domain/nutrition/aggregate';
 import type { FoodVersion } from '../../../domain/nutrition/types';
 import type { Unit } from '../../../domain/shared/units';
-import { commitEdit, listRevisions, type SavedMeal } from '../../../storage/mealsRepo';
+import { commitEdit, listRevisions, type SavedMeal } from '../../../data/storage/mealsRepo';
 import { MealSheet } from './MealSheet';
 
-vi.mock('../../../storage/mealsRepo', () => ({ commitEdit: vi.fn(), listRevisions: vi.fn() }));
+vi.mock('../../../data/storage/mealsRepo', () => ({ commitEdit: vi.fn(), listRevisions: vi.fn() }));
 
 // The sheet only hands the database to the storage functions, which are mocked here
 const DB = {} as IDBDatabase;

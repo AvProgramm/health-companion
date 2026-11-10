@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import type { BodyFacts } from '../../../domain/profile/body';
 import type { Profile, ProfileSnapshot } from '../../../domain/profile/profile';
 import { weightTrend, type WeightPoint } from '../../../domain/profile/weightTrend';
-import { listProfileVersions } from '../../../storage/profileRepo';
+import { listProfileVersions } from '../../../data/storage/profileRepo';
 import { BodyFactsForm, BodyNumbers } from './BodyFactsForm';
 import { formatDiaryDate, errorText } from '../../format';
 

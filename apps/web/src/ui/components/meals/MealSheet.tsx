@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import type { FoodVersion } from '../../../domain/nutrition/types';
 import type { MealEdit, MealRevision } from '../../../domain/meals/types';
-import { commitEdit, listRevisions, type SavedMeal } from '../../../storage/mealsRepo';
+import { commitEdit, listRevisions, type SavedMeal } from '../../../data/storage/mealsRepo';
 import { nameOf } from '../../describe';
 import { errorText, formatTime, mealTitle } from '../../format';
 import type { Notice } from '../../hooks/useSave';

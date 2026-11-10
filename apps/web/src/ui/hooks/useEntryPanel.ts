@@ -9,7 +9,7 @@ import { deviceZone } from '../../domain/shared/dates';
 import { areCompatible } from '../../domain/shared/units';
 import type { ClockTime } from '../../domain/sleep/sleep';
 import type { WorkoutDraft } from '../../domain/training/workouts';
-import { commitEdit, confirmMeal, type CommitResult } from '../../storage/mealsRepo';
+import { commitEdit, confirmMeal, type CommitResult } from '../../data/storage/mealsRepo';
 import type { DraftRow } from '../components/meals/DraftCard';
 import { errorText } from '../format';
 import type { Notice } from './useSave';

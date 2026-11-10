@@ -5,8 +5,8 @@ import type { SleepEntry } from '../../domain/sleep/sleep';
 import type { WorkoutEntry } from '../../domain/training/workouts';
 import { weekLines } from '../../domain/week/weekLines';
 import { dayOverview, lastSevenDates } from '../../domain/week/weekOverview';
-import { logsOn } from '../../storage/logsRepo';
-import { mealsOn } from '../../storage/mealsRepo';
+import { logsOn } from '../../data/storage/logsRepo';
+import { mealsOn } from '../../data/storage/mealsRepo';
 
 /**
  * Return the last seven days as plain lines for the AI, read from this device's diary.

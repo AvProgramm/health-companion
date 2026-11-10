@@ -1,9 +1,9 @@
 import { useEffect, useState, type ChangeEvent } from 'react';
-import type { BackupCheck } from '../../storage/backup/format';
-import { exportDiary, restoreDiary, wipeDiary } from '../../storage/backup/transfer';
-import { validateBackup } from '../../storage/backup/validate';
-import { countMeals } from '../../storage/mealsRepo';
-import type { Durability } from '../../storage/persistence';
+import type { BackupCheck } from '../../data/storage/backup/format';
+import { exportDiary, restoreDiary, wipeDiary } from '../../data/storage/backup/transfer';
+import { validateBackup } from '../../data/storage/backup/validate';
+import { countMeals } from '../../data/storage/mealsRepo';
+import type { Durability } from '../../data/storage/persistence';
 import type { Profile, ProfileSnapshot } from '../../domain/profile/profile';
 import { ProfileEditor } from '../components/me/ProfileEditor';
 import { BodyCard } from '../components/me/BodyCard';

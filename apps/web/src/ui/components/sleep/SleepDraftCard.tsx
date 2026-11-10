@@ -1,7 +1,7 @@
 import { useRef, useState } from 'react';
 import { Field } from '../shared/Field';
 import { buildSleep, formatDuration, resolveSleep, type ClockTime, type SleepInterval } from '../../../domain/sleep/sleep';
-import { saveLogEntry } from '../../../storage/logsRepo';
+import { saveLogEntry } from '../../../data/storage/logsRepo';
 import { formatDiaryDate, readAmount } from '../../format';
 import { NoticeLine } from '../shared/NoticeLine';
 import { useSave } from '../../hooks/useSave';

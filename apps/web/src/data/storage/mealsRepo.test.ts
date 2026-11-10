@@ -1,10 +1,10 @@
 import { IDBFactory } from 'fake-indexeddb';
 import 'fake-indexeddb/auto';
 import { beforeEach, describe, expect, it } from 'vitest';
-import { startMeal } from '../domain/meals/revisions';
-import type { MealEditRequest, MealRevision } from '../domain/meals/types';
-import type { Quantity } from '../domain/shared/units';
-import { MILK, TEST_FOOD_MAP } from '../test/testFoods';
+import { startMeal } from '../../domain/meals/revisions';
+import type { MealEditRequest, MealRevision } from '../../domain/meals/types';
+import type { Quantity } from '../../domain/shared/units';
+import { MILK, TEST_FOOD_MAP } from '../../test/testFoods';
 import { openDiary } from './connection';
 import { saveFoodVersion } from './foodsRepo';
 import { commitEdit, confirmMeal, countMeals, listRevisions, mealsOn } from './mealsRepo';

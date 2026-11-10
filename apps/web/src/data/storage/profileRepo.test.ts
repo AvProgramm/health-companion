@@ -1,7 +1,7 @@
 import { IDBFactory } from 'fake-indexeddb';
 import 'fake-indexeddb/auto';
 import { expect, it } from 'vitest';
-import { EMPTY_PROFILE, type ProfileSnapshot } from '../domain/profile/profile';
+import { EMPTY_PROFILE, type ProfileSnapshot } from '../../domain/profile/profile';
 import { openDiary } from './connection';
 import { readProfile, saveProfile } from './profileRepo';
 import { exportDiary, restoreDiary, wipeDiary } from './backup/transfer';

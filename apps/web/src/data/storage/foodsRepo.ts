@@ -1,7 +1,7 @@
 /**
  * Saved food labels. A label is never overwritten: editing saves the next version.
  */
-import type { FoodVersion } from '../domain/nutrition/types';
+import type { FoodVersion } from '../../domain/nutrition/types';
 import { resultOf, runTransaction } from './connection';
 
 /**

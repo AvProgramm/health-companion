@@ -2,8 +2,8 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { followToday } from '../../domain/shared/dates';
 import type { SleepEntry } from '../../domain/sleep/sleep';
 import type { WorkoutEntry } from '../../domain/training/workouts';
-import { logsOn } from '../../storage/logsRepo';
-import { mealsOn, type SavedMeal } from '../../storage/mealsRepo';
+import { logsOn } from '../../data/storage/logsRepo';
+import { mealsOn, type SavedMeal } from '../../data/storage/mealsRepo';
 import { errorText } from '../format';
 import type { Notice } from './useSave';
 

@@ -4,8 +4,8 @@ import type { FoodVersion } from '../../../domain/nutrition/types';
 import type { SleepEntry } from '../../../domain/sleep/sleep';
 import type { WorkoutEntry } from '../../../domain/training/workouts';
 import { dayOverview, lastSevenDates, type DayOverview } from '../../../domain/week/weekOverview';
-import { logsOn } from '../../../storage/logsRepo';
-import { mealsOn } from '../../../storage/mealsRepo';
+import { logsOn } from '../../../data/storage/logsRepo';
+import { mealsOn } from '../../../data/storage/mealsRepo';
 import { formatEnergyCell, formatSleepCell, formatTotal } from '../../format';
 
 // The short name of each day, read from the date alone so the device's zone cannot shift it

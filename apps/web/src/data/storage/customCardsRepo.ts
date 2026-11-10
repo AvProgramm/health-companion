@@ -1,4 +1,4 @@
-import { assertCustomCard, latestCustomCards, MAX_CUSTOM_CARDS, type CustomCardSelection } from '../domain/training/customCards';
+import { assertCustomCard, latestCustomCards, MAX_CUSTOM_CARDS, type CustomCardSelection } from '../../domain/training/customCards';
 import { resultOf, runTransaction } from './connection';
 
 /** Describe a confirmed write or a stale selection conflict. */

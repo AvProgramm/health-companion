@@ -1,8 +1,8 @@
 import { IDBFactory } from 'fake-indexeddb';
 import 'fake-indexeddb/auto';
 import { beforeEach, describe, expect, it } from 'vitest';
-import { buildSleep, resolveSleep, type SleepEntry } from '../domain/sleep/sleep';
-import { buildWorkout, type WorkoutEntry } from '../domain/training/workouts';
+import { buildSleep, resolveSleep, type SleepEntry } from '../../domain/sleep/sleep';
+import { buildWorkout, type WorkoutEntry } from '../../domain/training/workouts';
 import { openDiary } from './connection';
 import { logsOn, saveLogEntry, setLogDeleted } from './logsRepo';
 

@@ -401,3 +401,8 @@ The single interview document is `docs/milestones/interview-walkthrough.md` (146
 ## Organisation checkpoint 1: API folder (10 Nov, Codex)
 
 Rollback point suggested before work: 7d33b80, clean and pushed. Baseline check/build passed. Moved the existing request tests first; they failed because the new location had no implementation yet. Moved all eight API files into data/api and adjusted relative imports only. Mechanical comparison against Git confirms identical contents apart from domain import paths. Post-move full check/build passed, including existing UI request/privacy and queue cases. No endpoint, payload, timeout, model route or saving behaviour changed. Phone NOT TESTED for this organisation-only change. Rules are saved in CLAUDE.md; storage is a separate next folder.
+
+
+## Organisation checkpoint 2: local storage (10 Nov, Codex)
+
+Started from pushed db60917. Moved the existing connection/migration test first; it failed at the new location until the implementation moved. Relocated all 17 storage files into data/storage and retargeted imports. Mechanical comparison against Git confirms no changes beyond module paths; every moved file is under 300 lines. Full check/build passed, including original revision, operation-key, rollback, schema-upgrade and backup tests. Database name, DB_VERSION, stores, indexes and schema steps are unchanged: this is a source-folder move, not a diary data migration. Phone NOT TESTED. Updated the rule/checklist file paths so future agents find the existing code.

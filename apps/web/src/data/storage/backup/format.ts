@@ -1,12 +1,12 @@
-import type { ProfileSnapshot } from '../../domain/profile/profile';
+import type { ProfileSnapshot } from '../../../domain/profile/profile';
 /**
  * The backup file format: what it contains and how its contents are counted.
  */
-import type { CustomCardSelection } from '../../domain/training/customCards';
-import type { MealRevision } from '../../domain/meals/types';
-import type { FoodVersion } from '../../domain/nutrition/types';
-import type { SleepEntry } from '../../domain/sleep/sleep';
-import type { WorkoutEntry } from '../../domain/training/workouts';
+import type { CustomCardSelection } from '../../../domain/training/customCards';
+import type { MealRevision } from '../../../domain/meals/types';
+import type { FoodVersion } from '../../../domain/nutrition/types';
+import type { SleepEntry } from '../../../domain/sleep/sleep';
+import type { WorkoutEntry } from '../../../domain/training/workouts';
 import type { MealHeader, OperationRecord } from '../mealsRepo';
 
 // Identifies our backup files, so a random JSON file is rejected straight away

@@ -3,7 +3,7 @@ import 'fake-indexeddb/auto';
 import { beforeEach, describe, expect, it } from 'vitest';
 import { openDiary } from './connection';
 import { listCustomCards, saveCustomCard } from './customCardsRepo';
-import type { CustomCardSelection } from '../domain/training/customCards';
+import type { CustomCardSelection } from '../../domain/training/customCards';
 import { exportDiary, restoreDiary, wipeDiary } from './backup/transfer';
 import { validateBackup } from './backup/validate';
 

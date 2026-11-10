@@ -2,7 +2,7 @@ import { Leaf } from '@phosphor-icons/react';
 import type { FoodVersion } from '../../../domain/nutrition/types';
 import type { SleepEntry } from '../../../domain/sleep/sleep';
 import type { WorkoutEntry } from '../../../domain/training/workouts';
-import type { SavedMeal } from '../../../storage/mealsRepo';
+import type { SavedMeal } from '../../../data/storage/mealsRepo';
 import { MealCard } from '../meals/MealCard';
 import { SleepCard } from '../sleep/SleepCard';
 import { WorkoutCard } from '../training/WorkoutCard';

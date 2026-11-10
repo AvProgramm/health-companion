@@ -1,13 +1,13 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { House, Barbell, BowlFood, UserCircle, Leaf, ShieldCheck, Sparkle } from '@phosphor-icons/react';
 import { EMPTY_PROFILE, type Profile, type ProfileSnapshot } from '../domain/profile/profile';
-import { readProfile, saveProfile } from '../storage/profileRepo';
+import { readProfile, saveProfile } from '../data/storage/profileRepo';
 import { foodKey } from '../domain/nutrition/aggregate';
 import { latestVersions } from '../domain/nutrition/foods';
 import type { FoodVersion } from '../domain/nutrition/types';
-import { listFoods, saveFoodVersion } from '../storage/foodsRepo';
-import { openDiary } from '../storage/connection';
-import { readDurability, requestDurability, type Durability } from '../storage/persistence';
+import { listFoods, saveFoodVersion } from '../data/storage/foodsRepo';
+import { openDiary } from '../data/storage/connection';
+import { readDurability, requestDurability, type Durability } from '../data/storage/persistence';
 import { AiView } from './pages/AiView';
 import { FirstRunSetup } from './pages/FirstRunSetup';
 import { FoodsView } from './pages/FoodsView';

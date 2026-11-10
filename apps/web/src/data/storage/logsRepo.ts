@@ -5,8 +5,8 @@
  * change is a delete flag that can be undone. Both are versioned, so a stale
  * screen gets a conflict instead of overwriting a newer change.
  */
-import type { SleepEntry } from '../domain/sleep/sleep';
-import type { WorkoutEntry } from '../domain/training/workouts';
+import type { SleepEntry } from '../../domain/sleep/sleep';
+import type { WorkoutEntry } from '../../domain/training/workouts';
 import { resultOf, runTransaction } from './connection';
 
 export type LogStore = 'workouts' | 'sleep';

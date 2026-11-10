@@ -6,7 +6,7 @@ import type { ParsedAmount } from '../../../domain/parsing/types';
 import { reviseMeal } from '../../../domain/meals/revisions';
 import type { FoodVersion } from '../../../domain/nutrition/types';
 import type { MealRevision } from '../../../domain/meals/types';
-import type { SavedMeal } from '../../../storage/mealsRepo';
+import type { SavedMeal } from '../../../data/storage/mealsRepo';
 import { formatQuantity, mealTitle, errorText } from '../../format';
 
 interface CorrectionCardProps {

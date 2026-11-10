@@ -3,7 +3,7 @@ import type { NutrientKey, NutrientValue, SourceKind } from '../domain/nutrition
 import type { Quantity } from '../domain/shared/units';
 import type { Capability, Equipment } from '../domain/training/catalogue';
 import type { ExerciseLevel } from '../domain/training/exerciseSearch';
-import type { Durability } from '../storage/persistence';
+import type { Durability } from '../data/storage/persistence';
 
 // What the status line says for each answer the browser gives about keeping the diary
 export const DURABILITY_TEXT: Record<Durability, string> = {

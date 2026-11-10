@@ -35,4 +35,4 @@ Frontend hosting: Vercel; backend: Render, planned for 11 Nov. The redundant Me-
 
 ## Beginner-readable refactoring rules
 
-Read CLAUDE.md first in every new chat. Its latest architecture rules place screens in ui/pages, shared UI in ui/components and saving/loading/API work in data (API now data/api). Check existing components/data first. Suggest a Git save point, change one folder at a time without behaviour changes, and confirm checks/build before continuing. Start app explanations with a 10-year-old-friendly folder map. Legacy storage/loading locations move only in separate verified checkpoints.
+Read CLAUDE.md first in every new chat. Its latest architecture rules place screens in ui/pages, shared UI in ui/components and saving/loading/API work in data (API now data/api; persistence now data/storage). Check existing components/data first. Suggest a Git save point, change one folder at a time without behaviour changes, and confirm checks/build before continuing. Start app explanations with a 10-year-old-friendly folder map. Remaining legacy loading helpers move only in separate verified checkpoints.

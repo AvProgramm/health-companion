@@ -1,4 +1,4 @@
-import { setLogDeleted, type LogEntry, type LogStore } from '../../../storage/logsRepo';
+import { setLogDeleted, type LogEntry, type LogStore } from '../../../data/storage/logsRepo';
 import { NoticeLine } from './NoticeLine';
 import { useSave } from '../../hooks/useSave';
 

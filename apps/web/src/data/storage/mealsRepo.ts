@@ -6,11 +6,11 @@
  * The domain decides what to write (reviseMeal); this file reads the current state
  * and stores the result.
  */
-import { reviseMeal } from '../domain/meals/revisions';
-import type { MealEditRequest, MealRevision } from '../domain/meals/types';
-import { totalNutrient } from '../domain/nutrition/aggregate';
-import { NUTRIENT_KEYS } from '../domain/nutrition/types';
-import type { FoodVersion } from '../domain/nutrition/types';
+import { reviseMeal } from '../../domain/meals/revisions';
+import type { MealEditRequest, MealRevision } from '../../domain/meals/types';
+import { totalNutrient } from '../../domain/nutrition/aggregate';
+import { NUTRIENT_KEYS } from '../../domain/nutrition/types';
+import type { FoodVersion } from '../../domain/nutrition/types';
 import { resultOf, runTransaction } from './connection';
 
 /**

@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { Field } from '../shared/Field';
 import { buildWorkout, describeSets, lastPerformed, movementKey, type LoadUnit, type WorkoutDraft, type WorkoutEntry, type WorkoutSet } from '../../../domain/training/workouts';
-import { listWorkouts, saveLogEntry } from '../../../storage/logsRepo';
+import { listWorkouts, saveLogEntry } from '../../../data/storage/logsRepo';
 import { formatDiaryDate, readAmount, errorText } from '../../format';
 import { NoticeLine } from '../shared/NoticeLine';
 import { useSave } from '../../hooks/useSave';
