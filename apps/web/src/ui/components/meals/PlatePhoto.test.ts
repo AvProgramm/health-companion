@@ -174,7 +174,7 @@ describe('Photo of your plate', () => {
     await act(async () => ask.click());
     expect(fetchMock).toHaveBeenCalledTimes(1);
     expect(JSON.parse(String((fetchMock.mock.calls[0] as unknown as [string, RequestInit])[1].body))).toEqual({ image: SHRUNK });
-    expect(container.textContent).toContain('Answered by Gemini');
+    expect(container.textContent).toContain('AI photo reader');
 
     // The list goes to the entry box, never straight into the diary
     expect(onEntry).not.toHaveBeenCalled();

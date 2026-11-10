@@ -4,7 +4,6 @@ import { readPhotoFoods } from '../../../api/photo';
 import { photoEntry, type PhotoReply } from '../../../domain/dish/photoReply';
 import { shrinkPhoto } from '../../../vision/shrinkPhoto';
 import { useBusy } from '../../hooks/useBusy';
-import { AnsweredBy } from '../shared/AnsweredBy';
 import { ErrorLine } from '../shared/NoticeLine';
 
 /**
@@ -31,11 +30,11 @@ export function PhotoFoodsReader({ photo, onEntry }: { photo: Blob; onEntry: (en
       <button type="button" className="button button-secondary" disabled={busy} onClick={handleAsk}>
         <Sparkle size={18} />{busy ? 'Reading every food…' : 'List every food with AI'}
       </button>
-      <p className="hint">Sends a small copy of this photo, and nothing else, to Gemini on Google's servers. Only when you tap.</p>
+      <p className="hint">Sends a small copy of this photo, and nothing else, to a hosted AI model. Only when you tap.</p>
       <ErrorLine error={error} />
 
       {reply !== null && <>
-        {reply.mode === 'foods' && <AnsweredBy name={reply.answeredBy} />}
+        {reply.mode === 'foods' && <span className="badge badge-estimate">AI photo reader</span>}
         <p className="body">{reply.message}</p>
         {reply.foods.length > 0 && <>
           <ul className="items">{reply.foods.map(food => <li key={food.entry} className="body">{food.entry}</li>)}</ul>

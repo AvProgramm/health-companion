@@ -1,8 +1,6 @@
 import { useEffect, useState } from 'react';
 import type { Profile } from '../../domain/profile/profile';
-import { AskCoach } from '../components/me/AskCoach';
-import { NutritionistCard } from '../components/meals/NutritionistCard';
-import { TrainerCard } from '../components/training/TrainerCard';
+import { AiChat } from '../components/ai/AiChat';
 import { ErrorLine } from '../components/shared/NoticeLine';
 
 interface AiViewProps {
@@ -11,16 +9,16 @@ interface AiViewProps {
 }
 
 /**
- * Every AI helper in one place: the Coach, the Nutritionist and the Trainer.
+ * Every AI helper in one chat: the Coach, who also plans sessions, and the Nutritionist.
  *
- * Each sends only what is typed or picked on its own card, and none of them can save
- * anything: their answers become drafts or plans the person still checks.
+ * Only the typed message is sent, and nothing here can save anything: an answer becomes
+ * a draft or a plan the person still checks.
  */
 export function AiView({ profile, onDraftEntry }: AiViewProps) {
   const [library, setLibrary] = useState<typeof import('../../data/exerciseLibrary') | null>(null);
   const [error, setError] = useState<string | null>(null);
 
-  // Load the bundled exercise library the Trainer chooses from, as the Gym tab does
+  // Load the bundled exercise library a session is chosen from, as the Gym tab does
   useEffect(() => {
     let cancelled = false;
     import('../../data/exerciseLibrary').then(value => { if (!cancelled) setLibrary(value); }, () => { if (!cancelled) setError('The bundled exercise library could not load. Reload this tab.'); });
@@ -31,13 +29,11 @@ export function AiView({ profile, onDraftEntry }: AiViewProps) {
     <>
       <header className="masthead">
         <h1 className="title">AI</h1>
-        <p className="status">Ask, plan and get ideas. Each card sends only what you type on it, and your diary stays on this device.</p>
+        <p className="status">One chat for questions, food ideas and sessions. Your diary stays on this device.</p>
       </header>
 
-      <AskCoach />
-      <NutritionistCard onDraft={onDraftEntry} />
       <ErrorLine error={error} />
-      {library !== null && <TrainerCard entries={library.EXERCISE_ENTRIES} profile={profile} />}
+      {library !== null && <AiChat context={{ entries: library.EXERCISE_ENTRIES, profile }} onDraft={onDraftEntry} />}
     </>
   );
 }
