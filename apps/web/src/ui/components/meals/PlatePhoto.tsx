@@ -20,18 +20,18 @@ function megabytes(bytes: number): string {
 }
 
 /**
- * Suggest dishes from a photo of a plate, using a model that runs on this device.
+ * Offer a checked food list from a photo, with an optional on-device fallback.
  *
  * The suggestions never send the photo anywhere. Listing every food with AI sends a small
  * copy, and only when tapped. Either way a pick only fills the entry box, and the normal
- * review and confirmation still decide whether anything is saved. The card stays hidden
- * in a build with no model.
+ * review and confirmation still decide whether anything is saved. A hosted request does not
+ * need the local model to be bundled or downloaded.
  */
 export function PlatePhoto({ onPick, onEntry }: { onPick: (dish: string) => void; onEntry: (entry: string) => void }) {
   const [facts, setFacts] = useState<DishFacts | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   // The chosen photo, kept so it can be sent on request
-  const [photo, setPhoto] = useState<Blob | null>(null);
+  const [photo, setPhoto] = useState<{ file: Blob; revision: number } | null>(null);
   const [guesses, setGuesses] = useState<DishGuess[] | null>(null);
   const { busy, error, run } = useBusy();
   const [kept, setKept] = useState(true);
@@ -48,53 +48,62 @@ export function PlatePhoto({ onPick, onEntry }: { onPick: (dish: string) => void
   // Release the preview's memory when it is replaced or the card goes away
   useEffect(() => () => { if (previewUrl !== null) URL.revokeObjectURL(previewUrl); }, [previewUrl]);
 
-  /** Read the chosen photo, and show the suggestions. */
-  async function handlePhoto(event: ChangeEvent<HTMLInputElement>) {
+  /** Preview the chosen photo without downloading a model or uploading the image. */
+  function handlePhoto(event: ChangeEvent<HTMLInputElement>) {
     const photo = event.target.files?.[0];
     // Allow choosing the same photo again later
     event.target.value = '';
 
     // Ignore a cancelled camera, because there is nothing to read
-    if (photo === undefined || facts === null) return;
+    if (photo === undefined) return;
     setGuesses(null);
     setDownloaded(null);
-    setPhoto(photo);
+    setPhoto(previous => ({ file: photo, revision: (previous?.revision ?? 0) + 1 }));
     setPreviewUrl(URL.createObjectURL(photo));
+  }
+
+  /** Read the plate locally only when the fallback is requested. */
+  async function handleLocal() {
+    // Ignore an absent photo or model because local recognition needs both.
+    if (photo === null || facts === null) return;
     await run(async () => {
-      setGuesses(await recogniseDish(photo, facts, setDownloaded));
+      setGuesses(await recogniseDish(photo.file, facts, setDownloaded));
       // The model has now been fetched, so the warning no longer applies
       setKept(true);
     });
   }
-
-  // Stay out of the way until a model is confirmed to be here
-  if (facts === null) return null;
 
   // A kept model passes through the download step too, so only a real download is announced
   const busyLabel = !kept && downloaded !== null && downloaded < 100 ? `Downloading the food model, ${downloaded}%` : 'Looking at your plate…';
 
   return (
     <section className="card ai-card" aria-labelledby="plate-heading">
-      <div><p className="eyebrow">ON THIS DEVICE</p><h2 id="plate-heading" className="heading">Photo of your plate</h2></div>
+      <div><p className="eyebrow">FOOD FROM A PHOTO</p><h2 id="plate-heading" className="heading">Photo of your plate</h2></div>
       <label className={`button plate-button${busy ? ' plate-button-busy' : ''}`}>
-        <Camera size={20} />{busy ? busyLabel : 'Take or choose a photo'}
+        <Camera size={20} />Take or choose a photo
         <input className="visually-hidden" type="file" accept="image/*" disabled={busy} onChange={handlePhoto} />
       </label>
-      <p className="hint">Suggestions run on this device, so the photo stays here. Only the dish you pick is used for an estimate.</p>
-      {!kept && <p className="hint">The first photo downloads the food model once, {megabytes(facts.modelBytes)}, and keeps it on this device.</p>}
-
-      <ErrorLine error={error} />
+      <p className="hint">Choose a photo, then ask AI to list its foods. Check the names and amounts before using them. Nothing is saved here.</p>
       {previewUrl !== null && <img className="plate-preview" src={previewUrl} alt="The photo you chose" />}
 
-      {guesses !== null && <div className="ai-reply" aria-live="polite">
-        <p className="body">{guesses[0]!.probability < UNSURE_BELOW ? 'Not sure about this one. Pick the closest, or type it yourself.' : 'Which is it?'}</p>
-        <div className="dish-guesses">{guesses.map(guess => <button type="button" key={guess.dish} className="button button-secondary dish-guess" onClick={() => onPick(guess.dish.replace(/_/g, ' '))}>
-          <span>{dishLabel(guess.dish)}</span><span className="hint numbers">{percent(guess.probability)}</span>
-        </button>)}</div>
-        <p className="hint">Suggestions only, from {facts.dishes.length} food names. If yours is not here, type it in the box below.</p>
-      </div>}
+      {photo !== null && <PhotoFoodsReader key={photo.revision} photo={photo.file} onEntry={onEntry} />}
+      {facts !== null && <details>
+        <summary>On-device fallback: one dish at a time</summary>
+        <p className="hint">This model keeps the photo on this device. It suggests one dish, so it cannot list every food or count pieces.</p>
+        {!kept && <p className="hint">The on-device fallback downloads the food model once, {megabytes(facts.modelBytes)}, and keeps it on this device.</p>}
+        {photo !== null && <button type="button" className="button button-secondary local-photo-button" disabled={busy} onClick={() => void handleLocal()}>
+          {busy ? busyLabel : 'Suggest a dish on this device'}
+        </button>}
+        <ErrorLine error={error} />
+        {guesses !== null && <div className="ai-reply" aria-live="polite">
+          <p className="body">{guesses[0]!.probability < UNSURE_BELOW ? 'Not sure about this one. Pick the closest, or type it yourself.' : 'Which is it?'}</p>
+          <div className="dish-guesses">{guesses.map(guess => <button type="button" key={guess.dish} className="button button-secondary dish-guess" onClick={() => onPick(guess.dish.replace(/_/g, ' '))}>
+            <span>{dishLabel(guess.dish)}</span><span className="hint numbers">{percent(guess.probability)}</span>
+          </button>)}</div>
+          <p className="hint">Suggestions only, from {facts.dishes.length} food names. If yours is not here, type it in the box below.</p>
+        </div>}
 
-      {photo !== null && !busy && <PhotoFoodsReader photo={photo} onEntry={onEntry} />}
+      </details>}
     </section>
   );
 }

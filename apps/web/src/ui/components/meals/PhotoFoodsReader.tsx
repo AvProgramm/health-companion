@@ -27,7 +27,7 @@ export function PhotoFoodsReader({ photo, onEntry }: { photo: Blob; onEntry: (en
 
   return (
     <div className="ai-reply" aria-live="polite">
-      <button type="button" className="button button-secondary" disabled={busy} onClick={handleAsk}>
+      <button type="button" className="button" disabled={busy} onClick={handleAsk}>
         <Sparkle size={18} />{busy ? 'Reading every food…' : 'List every food with AI'}
       </button>
       <p className="hint">Sends a small copy of this photo, and nothing else, to a hosted AI model. Only when you tap.</p>

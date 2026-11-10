@@ -29,10 +29,11 @@ async function show() {
 }
 
 /** Choose the fictional photo and let the suggestions settle. */
-async function choosePhoto() {
+async function choosePhoto(runLocal = true) {
   const input = container.querySelector<HTMLInputElement>('input[type="file"]')!;
   Object.defineProperty(input, 'files', { value: [PHOTO], configurable: true });
   await act(async () => input.dispatchEvent(new Event('change', { bubbles: true })));
+  if (runLocal) await act(async () => container.querySelector<HTMLButtonElement>('.local-photo-button')!.click());
 }
 
 beforeEach(() => {
@@ -50,10 +51,35 @@ beforeEach(() => {
 afterEach(async () => { await act(async () => root.unmount()); container.remove(); vi.unstubAllGlobals(); });
 
 describe('Photo of your plate', () => {
-  it('stays hidden in a build with no model', async () => {
+  it('offers AI immediately without starting the large local model', async () => {
+    await show();
+    await choosePhoto(false);
+    expect(container.textContent).toContain('List every food with AI');
+    expect(recogniseDish).not.toHaveBeenCalled();
+    expect(shrinkPhoto).not.toHaveBeenCalled();
+  });
+
+  it('forgets a late AI list when another photo is chosen', async () => {
+    let finish!: (response: Response) => void;
+    vi.stubGlobal('fetch', vi.fn(() => new Promise<Response>(resolve => { finish = resolve; })));
+    await show();
+    await choosePhoto(false);
+    const ask = [...container.querySelectorAll('button')].find(button => button.textContent?.includes('List every food'))!;
+    await act(async () => ask.click());
+    await choosePhoto(false);
+    await act(async () => finish(new Response(JSON.stringify({ mode: 'foods', message: 'Old plate.',
+      foods: [{ name: 'rice', entry: '1 bowl of rice' }] }), { status: 200 })));
+    expect(container.textContent).not.toContain('Old plate.');
+    expect(container.textContent).not.toContain('Put these in the entry box');
+    expect(onEntry).not.toHaveBeenCalled();
+  });
+
+  it('offers the hosted reader in a build with no local model', async () => {
     vi.mocked(loadDishFacts).mockResolvedValue(null);
     await show();
-    expect(container.textContent).toBe('');
+    await choosePhoto(false);
+    expect(container.textContent).toContain('List every food with AI');
+    expect(recogniseDish).not.toHaveBeenCalled();
   });
 
   it('shows the suggestions best first, with whole percentages', async () => {
@@ -76,7 +102,7 @@ describe('Photo of your plate', () => {
   it('warns about the one-off download before the first photo, with the real size', async () => {
     vi.mocked(modelIsKept).mockResolvedValue(false);
     await show();
-    expect(container.textContent).toContain('The first photo downloads the food model once, 187 MB, and keeps it on this device.');
+    expect(container.textContent).toContain('The on-device fallback downloads the food model once, 187 MB, and keeps it on this device.');
   });
 
   it('says nothing about a download when the model is already here', async () => {
@@ -92,7 +118,7 @@ describe('Photo of your plate', () => {
     });
     await show();
     await choosePhoto();
-    expect(container.querySelector('.plate-button')?.textContent).toBe('Downloading the food model, 42%');
+    expect(container.querySelector('.local-photo-button')?.textContent).toBe('Downloading the food model, 42%');
   });
 
   it('stops warning once the first photo has fetched the model', async () => {
@@ -110,7 +136,7 @@ describe('Photo of your plate', () => {
     });
     await show();
     await choosePhoto();
-    expect(container.querySelector('.plate-button')?.textContent).toBe('Looking at your plate…');
+    expect(container.querySelector('.local-photo-button')?.textContent).toBe('Looking at your plate…');
   });
 
   it('does not claim every name was trained on', async () => {
@@ -166,8 +192,9 @@ describe('Photo of your plate', () => {
     vi.stubGlobal('fetch', fetchMock);
     vi.mocked(recogniseDish).mockResolvedValue([{ dish: 'satay', probability: 0.9 }]);
     await show();
-    await choosePhoto();
+    await choosePhoto(false);
     expect(fetchMock).not.toHaveBeenCalled();
+    expect(recogniseDish).not.toHaveBeenCalled();
 
     // Ask, and check that only the shrunk photo was sent
     const ask = [...container.querySelectorAll('button')].find(button => button.textContent?.includes('List every food'))!;

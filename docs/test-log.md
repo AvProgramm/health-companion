@@ -315,3 +315,15 @@ Laptop only, generic text only. For the hand-over checks Groq was given a fake k
 | Gemini leaving a nutrient unknown | Bug found, then fixed | 12 real estimates over 4 generic foods: 4 were thrown away, because Gemini left added sugar null and still wrote a range such as 0 to 5. After the fix, 11 of 12 were kept, with that nutrient still unknown. The one rejection was correct: the model misspelled a range key as `added_standard_g` |
 | Label on the real cards | PASS | Browser pane, rebuilt app on localhost:4173, real service and real Groq. The Trainer, Nutritionist and Coach each showed "Answered by Groq" above the reply. The first two were clicked through; the Coach form was submitted by script in a background tab, because the pane was in use. No service errors |
 | Phone | NOT TESTED | The phone needs the rebuilt preview to show the label and the 35-second wait |
+
+
+## Photo-first flow and unified chat (10 Nov 2026, Codex)
+
+Fresh production preview on localhost:4173 with the restarted real coach service. Browser pane only; no phone claim.
+
+- Coach: "Hi" returned a friendly answer.
+- Nutritionist: "Breakfast ideas with more fibre" returned two sourced ideas with "Use as draft" actions. Neither was saved.
+- Trainer: "A 30 minute workout with no equipment" returned six 5-minute blocks, 30 of 30 minutes. Nothing was logged.
+- Photo: selecting a generated blank JPEG immediately showed the AI action without running or downloading the local model. The explicit AI tap returned "No foods could be read" with the manual-entry fallback. This verifies the empty-image path, not recognition accuracy on a real plate.
+- Automated: failing regressions first, then all checks and the production build passed. The photo card has 18 passing cases, including a late reply after replacing a photo. Coach 200, router 33, vision 92 and importer 9 also passed. The existing large-chunk build warning remains.
+- Phone still needed: new photo flow, barcode on Today, all three chat routes, local fallback after download, and airplane mode.
