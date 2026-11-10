@@ -7,7 +7,7 @@ from unittest.mock import patch
 import httpx
 from fastapi.testclient import TestClient
 from coach.app import app
-from coach.rag.answer import ANSWERED, EXCERPTS_ONLY, NO_EVIDENCE, answer_question, build_context, numbers_in, validate_citations
+from coach.rag.answer import ANSWERED, EXCERPTS_ONLY, GENERAL, NO_EVIDENCE, answer_question, build_context, numbers_in, validate_citations
 from coach.safety import RULES, check_safety
 
 # The fictional messages and the refusal each one should get
@@ -34,6 +34,24 @@ def answering(reply):
     async def ask(_messages):
         return reply
     return ask
+
+
+class FailingConversation:
+    """Stand in for a conversation where no hosted model can be reached."""
+
+    def __init__(self, *_names):
+        self.answered_by = None
+
+    async def __call__(self, _messages):
+        raise httpx.ConnectError('Fictional failure.')
+
+
+class GeneralConversation(FailingConversation):
+    """Stand in for a model that gives one general answer."""
+
+    async def __call__(self, _messages):
+        self.answered_by = 'Fictional model'
+        return {'claims': [{'text': 'A fictional general answer.'}]}
 
 
 def run(question, retriever, ask):
@@ -92,12 +110,26 @@ class AnswerTests(unittest.TestCase):
         self.assertEqual(reply.mode, 'refused')
         self.assertFalse(retriever.searched)
 
-    def test_no_close_card_means_no_model_call(self):
-        async def never(_messages):
-            raise AssertionError('The model must not be called.')
+    def test_no_close_card_gets_a_labelled_general_answer(self):
+        # Asked for on 10 Nov: a question outside the cards should still be answered
+        reply = run('Fictional question', FakeRetriever([]), answering({'claims': [{'text': 'A fictional general answer.'}]}))
+        self.assertEqual((reply.mode, reply.message, reply.sources), ('general', GENERAL, []))
+        self.assertEqual([(claim.text, claim.cites) for claim in reply.claims], [('A fictional general answer.', [])])
 
-        reply = run('Fictional question', FakeRetriever([]), never)
+    def test_no_close_card_and_no_model_says_so_plainly(self):
+        async def failing(_messages):
+            raise httpx.ConnectError('Fictional failure.')
+
+        reply = run('Fictional question', FakeRetriever([]), failing)
         self.assertEqual((reply.mode, reply.message), ('no_evidence', NO_EVIDENCE))
+
+    def test_a_malformed_general_answer_is_not_shown(self):
+        reply = run('Fictional question', FakeRetriever([]), answering({'claims': [{'text': ''}, 'nonsense', {'text': 'x' * 301}]}))
+        self.assertEqual(reply.mode, 'no_evidence')
+
+    def test_a_refused_question_never_gets_a_general_answer(self):
+        retriever = FakeRetriever([])
+        self.assertEqual(run('How much insulin should I take?', retriever, answering({'claims': [{'text': 'Fictional.'}]})).mode, 'refused')
 
     def test_a_checked_answer_comes_with_its_sources(self):
         reply = run('Fictional question', FakeRetriever(CARDS), answering({'claims': [{'text': 'Below 2,000 mg.', 'cites': [1]}]}))
@@ -118,8 +150,13 @@ class AnswerTests(unittest.TestCase):
     def test_a_reply_without_claims_shows_the_cards_themselves(self):
         self.assertEqual(run('Fictional question', FakeRetriever(CARDS), answering({'nonsense': True})).mode, 'excerpts')
 
-    def test_the_model_saying_no_answer_is_respected(self):
-        self.assertEqual(run('Fictional question', FakeRetriever(CARDS), answering({'claims': []})).mode, 'no_evidence')
+    def test_cards_that_do_not_answer_lead_to_a_general_answer(self):
+        replies = iter([{'claims': []}, {'claims': [{'text': 'A fictional general answer.'}]}])
+
+        async def ask(_messages):
+            return next(replies)
+
+        self.assertEqual(run('Fictional question', FakeRetriever(CARDS), ask).mode, 'general')
 
 
 class CoachEndpointTests(unittest.TestCase):
@@ -130,8 +167,14 @@ class CoachEndpointTests(unittest.TestCase):
         self.assertEqual(TestClient(app).post('/api/coach', json={'question': 'Fictional?'}, headers={'origin': 'https://example.org'}).status_code, 403)
 
     def test_a_question_is_answered_end_to_end(self):
-        with patch('coach.app.knowledge', return_value=FakeRetriever([])):
+        # No real model is asked, so the general answer is unavailable and the reply says so
+        with patch('coach.app.knowledge', return_value=FakeRetriever([])), patch('coach.app.HostedConversation', FailingConversation):
             self.assertEqual(TestClient(app).post('/api/coach', json={'question': 'Fictional?'}).json()['mode'], 'no_evidence')
+
+    def test_a_general_answer_names_the_model(self):
+        with patch('coach.app.knowledge', return_value=FakeRetriever([])), patch('coach.app.HostedConversation', GeneralConversation):
+            reply = TestClient(app).post('/api/coach', json={'question': 'Fictional?'}).json()
+        self.assertEqual((reply['mode'], reply['answeredBy']), ('general', 'Fictional model'))
 
 
 if __name__ == '__main__':

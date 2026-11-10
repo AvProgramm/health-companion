@@ -3,10 +3,15 @@ import { act, createElement } from 'react';
 import { createRoot, type Root } from 'react-dom/client';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { loadDishFacts, modelIsKept, recogniseDish } from '../../../vision/recogniseDish';
+import { shrinkPhoto } from '../../../vision/shrinkPhoto';
 import { PlatePhoto } from './PlatePhoto';
 
 // The worker cannot run under test, so its entry points are replaced
 vi.mock('../../../vision/recogniseDish', () => ({ loadDishFacts: vi.fn(), modelIsKept: vi.fn(), recogniseDish: vi.fn() }));
+// jsdom has no canvas, so shrinking is replaced by a fixed small JPEG
+vi.mock('../../../vision/shrinkPhoto', () => ({ shrinkPhoto: vi.fn() }));
+// What the shrink step would hand over
+const SHRUNK = 'data:image/jpeg;base64,/9j/4AAQ';
 
 // Facts shaped like the ones the export step writes
 const FACTS = { dishes: ['nasi_lemak', 'satay'], mean: [0.5, 0.5, 0.5], std: [0.5, 0.5, 0.5], storedSize: 256, imageSize: 224, modelBytes: 187_123_456 };
@@ -16,10 +21,11 @@ const PHOTO = new File(['fictional'], 'plate.jpg', { type: 'image/jpeg' });
 let root: Root;
 let container: HTMLDivElement;
 const onPick = vi.fn();
+const onEntry = vi.fn();
 
 /** Display the card and let the model check settle. */
 async function show() {
-  await act(async () => root.render(createElement(PlatePhoto, { onPick })));
+  await act(async () => root.render(createElement(PlatePhoto, { onPick, onEntry })));
 }
 
 /** Choose the fictional photo and let the suggestions settle. */
@@ -36,6 +42,7 @@ beforeEach(() => {
   vi.clearAllMocks();
   vi.mocked(loadDishFacts).mockResolvedValue(FACTS);
   vi.mocked(modelIsKept).mockResolvedValue(true);
+  vi.mocked(shrinkPhoto).mockResolvedValue(SHRUNK);
   container = document.createElement('div');
   document.body.append(container);
   root = createRoot(container);
@@ -150,5 +157,40 @@ describe('Photo of your plate', () => {
     Object.defineProperty(input, 'files', { value: [], configurable: true });
     await act(async () => input.dispatchEvent(new Event('change', { bubbles: true })));
     expect(recogniseDish).not.toHaveBeenCalled();
+  });
+
+  it('sends the photo only when asked, and only fills the entry box with the list', async () => {
+    // Asked for on 10 Nov after real plates: one name per photo missed the rice and the drink
+    const fetchMock = vi.fn(async () => new Response(JSON.stringify({ mode: 'foods', message: 'What the photo seems to show.', answeredBy: 'Gemini',
+      foods: [{ name: 'fried chicken', entry: '2 fried chicken' }, { name: 'cola', entry: '1 can of cola' }] }), { status: 200 }));
+    vi.stubGlobal('fetch', fetchMock);
+    vi.mocked(recogniseDish).mockResolvedValue([{ dish: 'satay', probability: 0.9 }]);
+    await show();
+    await choosePhoto();
+    expect(fetchMock).not.toHaveBeenCalled();
+
+    // Ask, and check that only the shrunk photo was sent
+    const ask = [...container.querySelectorAll('button')].find(button => button.textContent?.includes('List every food'))!;
+    await act(async () => ask.click());
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    expect(JSON.parse(String((fetchMock.mock.calls[0] as unknown as [string, RequestInit])[1].body))).toEqual({ image: SHRUNK });
+    expect(container.textContent).toContain('Answered by Gemini');
+
+    // The list goes to the entry box, never straight into the diary
+    expect(onEntry).not.toHaveBeenCalled();
+    const use = [...container.querySelectorAll('button')].find(button => button.textContent === 'Put these in the entry box')!;
+    await act(async () => use.click());
+    expect(onEntry).toHaveBeenCalledWith('2 fried chicken, 1 can of cola');
+  });
+
+  it('says plainly when the AI could read no foods', async () => {
+    vi.stubGlobal('fetch', vi.fn(async () => new Response(JSON.stringify({ mode: 'nothing', message: 'No foods could be read from this photo.', foods: [] }), { status: 200 })));
+    vi.mocked(recogniseDish).mockResolvedValue([{ dish: 'satay', probability: 0.9 }]);
+    await show();
+    await choosePhoto();
+    const ask = [...container.querySelectorAll('button')].find(button => button.textContent?.includes('List every food'))!;
+    await act(async () => ask.click());
+    expect(container.textContent).toContain('No foods could be read');
+    expect(container.textContent).not.toContain('Put these in the entry box');
   });
 });

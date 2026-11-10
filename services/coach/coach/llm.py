@@ -10,13 +10,16 @@ COACH_TIMEOUT = 12.0
 # The models a coach can ask. Hugging Face is left out, because its hosted inference returns
 # HTTP 402 on this laptop and it has never been checked on a coach's prompt.
 COACH_MODELS = ('Groq', 'Gemini')
+# The models that can read a photo; Groq's default model reads text only
+PHOTO_MODELS = ('Gemini',)
 
 
 class HostedConversation:
     """Ask whichever hosted model is available during one request, and remember who answered."""
 
-    def __init__(self):
-        """Start with nobody having answered."""
+    def __init__(self, names=COACH_MODELS):
+        """Start with nobody having answered, choosing among the given models."""
+        self.names = names
         self.answered_by = None
 
     async def __call__(self, messages):
@@ -29,7 +32,7 @@ class HostedConversation:
         back to library picks or plain excerpts.
         """
         # Ignore a provider without a key, because the diary must work with none of them
-        names = [name for name in asking_order(COACH_MODELS) if HOSTED_MODELS[name].key()]
+        names = [name for name in asking_order(self.names) if HOSTED_MODELS[name].key()]
         if not names:
             raise ValueError('No hosted model key is configured on this laptop.')
 

@@ -40,9 +40,9 @@ class CoachRequest(StrictModel):
 
 
 class CoachClaim(StrictModel):
-    """Hold one checked sentence and the cards behind it."""
+    """Hold one sentence and the cards behind it; a general answer has none."""
     text: str = Field(min_length=1, max_length=300)
-    cites: list[int] = Field(min_length=1, max_length=3)
+    cites: list[int] = Field(max_length=3)
 
 
 class CoachSource(StrictModel):
@@ -57,7 +57,7 @@ class CoachSource(StrictModel):
 
 class CoachReply(StrictModel):
     """Return a checked answer, the evidence itself, or an honest reason for neither."""
-    mode: Literal['answer', 'excerpts', 'no_evidence', 'refused']
+    mode: Literal['answer', 'general', 'excerpts', 'no_evidence', 'refused']
     message: str = Field(min_length=1, max_length=400)
     claims: list[CoachClaim] = Field(max_length=4)
     sources: list[CoachSource] = Field(max_length=3)
@@ -163,3 +163,22 @@ class BarcodeReply(StrictModel):
     """Return one packaged food's name and label values."""
     name: str = Field(min_length=1, max_length=80)
     estimate: Estimate
+
+
+class PhotoRequest(StrictModel):
+    """Accept only one photo, already shrunk on the phone to a small JPEG."""
+    image: str = Field(pattern=r'^data:image/jpeg;base64,[A-Za-z0-9+/=]+$', max_length=1_500_000)
+
+
+class PhotoFood(StrictModel):
+    """Hold one food seen in a photo: its name, and how it would be typed in the diary."""
+    name: str = Field(min_length=1, max_length=40)
+    entry: str = Field(min_length=1, max_length=60)
+
+
+class PhotoReply(StrictModel):
+    """Return the checked foods in a photo, or an honest reason for none."""
+    mode: Literal['foods', 'nothing']
+    message: str = Field(min_length=1, max_length=200)
+    foods: list[PhotoFood] = Field(max_length=8)
+    answeredBy: AnsweredBy = None

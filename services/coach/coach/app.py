@@ -7,9 +7,10 @@ from fastapi.responses import JSONResponse
 from starlette.middleware.trustedhost import TrustedHostMiddleware
 from .barcode import look_up_barcode
 from .exercises import load_library
-from .llm import HostedConversation
-from .models import BarcodeReply, BarcodeRequest, CoachReply, CoachRequest, EstimateRequest, Estimate, NutritionistReply, NutritionistRequest, TrainerReply, TrainerRequest
+from .llm import COACH_MODELS, PHOTO_MODELS, HostedConversation
+from .models import BarcodeReply, BarcodeRequest, CoachReply, CoachRequest, EstimateRequest, Estimate, NutritionistReply, NutritionistRequest, PhotoReply, PhotoRequest, TrainerReply, TrainerRequest
 from .nutritionist import suggest_meals
+from .photo import list_foods
 from .pipeline import estimate_food
 from .rag.answer import answer_question
 from .rag.retriever import knowledge
@@ -41,14 +42,14 @@ def check_local(request):
         raise HTTPException(415, 'Send a JSON request.')
 
 
-async def credited(coach_reply, written_by_model):
+async def credited(coach_reply, written_by_model, names=COACH_MODELS):
     """
     Return one coach's reply, naming the model that answered only when its words are on screen.
 
     Each request gets its own conversation, so two people asking at once cannot be
     credited with each other's model.
     """
-    conversation = HostedConversation()
+    conversation = HostedConversation(names)
     reply = await coach_reply(conversation)
     return reply.model_copy(update={'answeredBy': conversation.answered_by}) if written_by_model(reply) else reply
 
@@ -97,4 +98,11 @@ async def coach(request: Request, item: CoachRequest):
     check_local(request)
     if not item.question.strip():
         raise HTTPException(422, 'Type a question first.')
-    return await credited(lambda ask: answer_question(item.question.strip(), knowledge(), ask), lambda reply: reply.mode == 'answer')
+    return await credited(lambda ask: answer_question(item.question.strip(), knowledge(), ask), lambda reply: reply.mode in ('answer', 'general'))
+
+
+@app.post('/api/photo', response_model=PhotoReply)
+async def photo(request: Request, item: PhotoRequest):
+    """Return the foods a vision model sees in one photo, sent only when the person tapped Ask."""
+    check_local(request)
+    return await credited(lambda ask: list_foods(item.image, ask), lambda reply: reply.mode == 'foods', PHOTO_MODELS)

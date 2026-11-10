@@ -28,8 +28,8 @@ interface AskCardProps<Reply extends GroundedReply> {
   // What to say when the box is empty
   emptyError: string;
   ask: (text: string) => Promise<Reply>;
-  // The mode in which the words on screen are a model's
-  modelMode: Reply['mode'];
+  // The modes in which the words on screen are a model's
+  modelModes: readonly Reply['mode'][];
   // The part of a reply only this coach has: its claims or its suggestions
   children: (reply: Reply) => ReactNode;
 }
@@ -45,7 +45,7 @@ function SourceList({ sources }: { sources: CoachSource[] }) {
  * Only the typed text is sent. A model's reply names the model and keeps its sources
  * one tap away; when there is no model reply, the reviewed cards are shown themselves.
  */
-export function AskCard<Reply extends GroundedReply>({ headingId, inputId, eyebrow, heading, label, placeholder, maxLength, buttonText, hint, emptyError, ask, modelMode, children }: AskCardProps<Reply>) {
+export function AskCard<Reply extends GroundedReply>({ headingId, inputId, eyebrow, heading, label, placeholder, maxLength, buttonText, hint, emptyError, ask, modelModes, children }: AskCardProps<Reply>) {
   const [text, setText] = useState('');
   const [reply, setReply] = useState<Reply | null>(null);
   const { busy, error, setError, run } = useBusy();
@@ -73,18 +73,18 @@ export function AskCard<Reply extends GroundedReply>({ headingId, inputId, eyebr
         <Field label={label}>
           <textarea id={inputId} className="input ai-input" maxLength={maxLength} rows={2} value={text} placeholder={placeholder} onChange={event => setText(event.target.value)} />
         </Field>
-        <button type="submit" className="button" disabled={busy}>{busy ? 'Checking the guidance…' : buttonText}</button>
+        <button type="submit" className="button" disabled={busy}>{busy ? 'Thinking…' : buttonText}</button>
         <p className="hint">{hint}</p>
       </form>
 
       <ErrorLine error={error} />
 
       {reply !== null && <div className="ai-reply" aria-live="polite">
-        {reply.mode === modelMode && <AnsweredBy name={reply.answeredBy} />}
+        {modelModes.includes(reply.mode) && <AnsweredBy name={reply.answeredBy} />}
         <p className="body">{reply.message}</p>
         {children(reply)}
         {reply.mode === 'excerpts' && <SourceList sources={reply.sources} />}
-        {reply.mode === modelMode && <details><summary className="hint">Sources</summary><SourceList sources={reply.sources} /></details>}
+        {modelModes.includes(reply.mode) && reply.sources.length > 0 && <details><summary className="hint">Sources</summary><SourceList sources={reply.sources} /></details>}
       </div>}
     </section>
   );

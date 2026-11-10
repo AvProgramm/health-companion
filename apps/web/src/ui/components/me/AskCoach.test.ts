@@ -58,6 +58,16 @@ describe('Ask the Coach', () => {
     expect(container.textContent).toContain('Answered by Gemini');
   });
 
+  it('shows a general answer with its label, its model and no citations', async () => {
+    // Asked for on 10 Nov: a question outside the reviewed cards should still be answered
+    vi.stubGlobal('fetch', answering({ mode: 'general', message: 'A general answer from the AI, not checked against reviewed guidance.', claims: [{ text: 'Fictional general claim.', cites: [] }], sources: [], answeredBy: 'Groq' }));
+    await ask('Fictional question?');
+    expect(container.textContent).toContain('Answered by Groq');
+    expect(container.textContent).toContain('not checked against reviewed guidance');
+    expect(container.querySelector('.items li')?.textContent).toBe('Fictional general claim.');
+    expect(container.querySelector('details')).toBeNull();
+  });
+
   it('shows sources as plain text, never links', async () => {
     vi.stubGlobal('fetch', answering({ mode: 'answer', message: 'From reviewed guidance.', claims: [{ text: 'Fictional claim.', cites: [1] }], sources: [SOURCE] }));
     await ask('Fictional question?');

@@ -4,6 +4,7 @@ import { dishLabel, type DishFacts, type DishGuess } from '../../../domain/dish/
 import { loadDishFacts, modelIsKept, recogniseDish } from '../../../vision/recogniseDish';
 import { useBusy } from '../../hooks/useBusy';
 import { ErrorLine } from '../shared/NoticeLine';
+import { PhotoFoodsReader } from './PhotoFoodsReader';
 
 // Below this the first guess was right less than about two times in three on the validation photos (experiments/vision/results/global_bands.json)
 const UNSURE_BELOW = 0.5;
@@ -21,13 +22,16 @@ function megabytes(bytes: number): string {
 /**
  * Suggest dishes from a photo of a plate, using a model that runs on this device.
  *
- * The photo never leaves the phone. A pick only fills the entry box, and the normal
+ * The suggestions never send the photo anywhere. Listing every food with AI sends a small
+ * copy, and only when tapped. Either way a pick only fills the entry box, and the normal
  * review and confirmation still decide whether anything is saved. The card stays hidden
  * in a build with no model.
  */
-export function PlatePhoto({ onPick }: { onPick: (dish: string) => void }) {
+export function PlatePhoto({ onPick, onEntry }: { onPick: (dish: string) => void; onEntry: (entry: string) => void }) {
   const [facts, setFacts] = useState<DishFacts | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  // The chosen photo, kept so it can be sent on request
+  const [photo, setPhoto] = useState<Blob | null>(null);
   const [guesses, setGuesses] = useState<DishGuess[] | null>(null);
   const { busy, error, run } = useBusy();
   const [kept, setKept] = useState(true);
@@ -54,6 +58,7 @@ export function PlatePhoto({ onPick }: { onPick: (dish: string) => void }) {
     if (photo === undefined || facts === null) return;
     setGuesses(null);
     setDownloaded(null);
+    setPhoto(photo);
     setPreviewUrl(URL.createObjectURL(photo));
     await run(async () => {
       setGuesses(await recogniseDish(photo, facts, setDownloaded));
@@ -75,7 +80,7 @@ export function PlatePhoto({ onPick }: { onPick: (dish: string) => void }) {
         <Camera size={20} />{busy ? busyLabel : 'Take or choose a photo'}
         <input className="visually-hidden" type="file" accept="image/*" disabled={busy} onChange={handlePhoto} />
       </label>
-      <p className="hint">The photo stays on this device. Only the dish you pick is used for an estimate.</p>
+      <p className="hint">Suggestions run on this device, so the photo stays here. Only the dish you pick is used for an estimate.</p>
       {!kept && <p className="hint">The first photo downloads the food model once, {megabytes(facts.modelBytes)}, and keeps it on this device.</p>}
 
       <ErrorLine error={error} />
@@ -88,6 +93,8 @@ export function PlatePhoto({ onPick }: { onPick: (dish: string) => void }) {
         </button>)}</div>
         <p className="hint">Suggestions only, from {facts.dishes.length} food names. If yours is not here, type it in the box below.</p>
       </div>}
+
+      {photo !== null && !busy && <PhotoFoodsReader photo={photo} onEntry={onEntry} />}
     </section>
   );
 }

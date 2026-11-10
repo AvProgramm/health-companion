@@ -1,4 +1,4 @@
-"""Answer a question only from reviewed cards, and check every claim before showing it."""
+"""Answer a question from reviewed cards and check every claim, or else give a labelled general answer."""
 import asyncio
 import json
 import re
@@ -20,7 +20,14 @@ SYSTEM = ('You answer general health questions inside a personal diary app, usin
           'Copy every number as digits, exactly as the card gives it. Never diagnose, suggest a dose, or add anything the cards do not say. '
           'If the cards do not answer the question, return no claims. Reply with only JSON: {"claims": [{"text": "...", "cites": [1]}]}.')
 
+# What the model is told when no reviewed card is about the question; the label says it is unchecked
+GENERAL_SYSTEM = ('You answer general health, food, sleep and exercise questions inside a personal diary app. '
+                  f'Write 1 to {MAX_CLAIMS} short plain sentences that answer the question from widely accepted guidance. '
+                  'Say so when experts disagree or you are unsure. Never diagnose, suggest a dose, or tell someone to change a medicine. '
+                  'Reply with only JSON: {"claims": [{"text": "..."}]}.')
+
 # What the person reads when there is no checked answer to show
+GENERAL = 'A general answer from the AI, not checked against reviewed guidance. It can be wrong, so check anything important with a professional.'
 ANSWERED = 'From reviewed guidance. General information only, not medical advice.'
 EXCERPTS_ONLY = 'The AI answer is not available, so here is the reviewed guidance itself.'
 NO_EVIDENCE = 'I do not have reviewed guidance on that yet, so I would rather not guess.'
@@ -82,6 +89,35 @@ async def proposed_from_cards(ask, system, cards, label, text, key):
     return reply.get(key) if isinstance(reply, dict) else None
 
 
+def general_claims(claims):
+    """Return the model's own sentences that are well formed, with no cards behind them."""
+    # Ignore anything that is not a list of claims
+    if not isinstance(claims, list):
+        return []
+    texts = [claim.get('text') for claim in claims[:MAX_CLAIMS] if isinstance(claim, dict)]
+    return [CoachClaim(text=text.strip(), cites=[]) for text in texts if isinstance(text, str) and text.strip() and len(text) <= MAX_CLAIM_LENGTH]
+
+
+async def general_answer(question, ask):
+    """
+    Return the model's own answer, clearly labelled, or an honest reason for none.
+
+    Used only when no reviewed card is about the question, so the person still gets an
+    answer, but never one that looks like it came from the reviewed guidance.
+    """
+    messages = [{'role': 'system', 'content': GENERAL_SYSTEM}, {'role': 'user', 'content': f'QUESTION: {json.dumps(question)}'}]
+    try:
+        reply = await asyncio.wait_for(ask(messages), timeout=ANSWER_DEADLINE)
+    except PROVIDER_FAILURES:
+        return CoachReply(mode='no_evidence', message=NO_EVIDENCE, claims=[], sources=[])
+
+    # Keep only well-formed sentences
+    claims = general_claims(reply.get('claims') if isinstance(reply, dict) else None)
+    if not claims:
+        return CoachReply(mode='no_evidence', message=NO_EVIDENCE, claims=[], sources=[])
+    return CoachReply(mode='general', message=GENERAL, claims=claims, sources=[])
+
+
 async def answer_question(question, retriever, ask):
     """
     Return a checked answer, the evidence itself, or an honest reason for neither.
@@ -94,15 +130,15 @@ async def answer_question(question, retriever, ask):
     if refusal is not None:
         return CoachReply(mode='refused', message=refusal.message, claims=[], sources=[])
 
-    # Say so plainly when nothing reviewed is about this question
+    # Answer from the model's own knowledge, labelled as such, when nothing reviewed is about this question
     cards = retriever.search(question)
     if not cards:
-        return CoachReply(mode='no_evidence', message=NO_EVIDENCE, claims=[], sources=[])
+        return await general_answer(question, ask)
 
     # Take the model at its word when it says the cards do not answer this
     proposed = await proposed_from_cards(ask, SYSTEM, cards, 'QUESTION', question, 'claims')
     if proposed == []:
-        return CoachReply(mode='no_evidence', message=NO_EVIDENCE, claims=[], sources=[])
+        return await general_answer(question, ask)
 
     # Show the cards themselves if no claim survives the checks, or the model could not be asked
     claims, sources = validate_citations(proposed, cards), sources_for(cards)

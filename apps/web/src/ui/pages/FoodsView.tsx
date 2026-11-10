@@ -2,20 +2,18 @@ import { useState } from 'react';
 import type { FoodVersion } from '../../domain/nutrition/types';
 import { BarcodeScan } from '../components/meals/BarcodeScan';
 import { FoodEditor } from '../components/meals/FoodEditor';
-import { NutritionistCard } from '../components/meals/NutritionistCard';
 import { SOURCE_LABELS, formatQuantity, formatValue } from '../format';
 
 interface FoodsViewProps {
   currentFoods: readonly FoodVersion[];
   hideNumbers: boolean;
   onSaveFood: (food: FoodVersion) => Promise<void>;
-  onDraftEntry: (entry: string) => void;
 }
 
 /**
  * Saved foods: the labels the composer can recognise, each editable as a new version.
  */
-export function FoodsView({ currentFoods, hideNumbers, onSaveFood, onDraftEntry }: FoodsViewProps) {
+export function FoodsView({ currentFoods, hideNumbers, onSaveFood }: FoodsViewProps) {
   // undefined: editor closed; null: adding a new food; a food: editing that food
   const [editing, setEditing] = useState<FoodVersion | null | undefined>(undefined);
   // A food found by barcode, waiting to be reviewed before it is saved
@@ -27,8 +25,6 @@ export function FoodsView({ currentFoods, hideNumbers, onSaveFood, onDraftEntry 
         <h1 className="title">Foods</h1>
         <p className="status">Labels you save here are what the composer recognises by name.</p>
       </header>
-
-      <NutritionistCard onDraft={onDraftEntry} />
 
       <BarcodeScan onFound={setScanned} />
 

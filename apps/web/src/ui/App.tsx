@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { House, Barbell, BowlFood, UserCircle, Leaf, ShieldCheck } from '@phosphor-icons/react';
+import { House, Barbell, BowlFood, UserCircle, Leaf, ShieldCheck, Sparkle } from '@phosphor-icons/react';
 import { EMPTY_PROFILE, type Profile, type ProfileSnapshot } from '../domain/profile/profile';
 import { readProfile, saveProfile } from '../storage/profileRepo';
 import { foodKey } from '../domain/nutrition/aggregate';
@@ -8,6 +8,7 @@ import type { FoodVersion } from '../domain/nutrition/types';
 import { listFoods, saveFoodVersion } from '../storage/foodsRepo';
 import { openDiary } from '../storage/connection';
 import { readDurability, requestDurability, type Durability } from '../storage/persistence';
+import { AiView } from './pages/AiView';
 import { FirstRunSetup } from './pages/FirstRunSetup';
 import { FoodsView } from './pages/FoodsView';
 import { GymView } from './pages/GymView';
@@ -17,12 +18,13 @@ import { TodayView } from './pages/TodayView';
 import { errorText } from './format';
 import { ErrorLine } from './components/shared/NoticeLine';
 
-type Tab = 'today' | 'gym' | 'foods' | 'me';
+type Tab = 'today' | 'gym' | 'foods' | 'ai' | 'me';
 
 const TABS: readonly { id: Tab; label: string }[] = [
   { id: 'today', label: 'Today' },
   { id: 'gym', label: 'Gym' },
   { id: 'foods', label: 'Foods' },
+  { id: 'ai', label: 'AI' },
   { id: 'me', label: 'Me' },
 ];
 
@@ -157,7 +159,8 @@ export function App() {
           <TodayView key={diaryVersion} db={db} foods={foods} currentFoods={currentFoods} hideNumbers={hideNumbers} durability={durability} diabetes={profile.diabetes} initialEntry={draftEntry} body={profile.body ?? null} onSaveFood={handleSaveFood} />
         )}
         {tab === 'gym' && <GymView key={`${diaryVersion}:${savedProfile?.version ?? 0}`} db={db} profile={profile} hideNumbers={hideNumbers} />}
-        {tab === 'foods' && <FoodsView currentFoods={currentFoods} hideNumbers={hideNumbers} onSaveFood={handleSaveFood} onDraftEntry={(entry) => { setDraftEntry(entry); setTab('today'); }} />}
+        {tab === 'foods' && <FoodsView currentFoods={currentFoods} hideNumbers={hideNumbers} onSaveFood={handleSaveFood} />}
+        {tab === 'ai' && <AiView key={savedProfile?.version ?? 0} profile={profile} onDraftEntry={(entry) => { setDraftEntry(entry); setTab('today'); }} />}
         {tab === 'me' && (
           <MeView
             db={db}
@@ -188,6 +191,7 @@ export function App() {
             {item.id === 'today' && <House size={22} weight={tab === item.id ? 'fill' : 'regular'} />}
             {item.id === 'gym' && <Barbell size={22} weight={tab === item.id ? 'fill' : 'regular'} />}
             {item.id === 'foods' && <BowlFood size={22} weight={tab === item.id ? 'fill' : 'regular'} />}
+            {item.id === 'ai' && <Sparkle size={22} weight={tab === item.id ? 'fill' : 'regular'} />}
             {item.id === 'me' && <UserCircle size={22} weight={tab === item.id ? 'fill' : 'regular'} />}
             <span>{item.label}</span>
           </button>

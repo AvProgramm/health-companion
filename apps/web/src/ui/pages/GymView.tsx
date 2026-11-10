@@ -13,7 +13,6 @@ import { describeSets, lastPerformed, type WorkoutEntry } from '../../domain/tra
 import { listWorkouts } from '../../storage/logsRepo';
 import { burnText, formatDiaryDate, errorText } from '../format';
 import { PlanSession } from '../components/training/PlanSession';
-import { TrainerCard } from '../components/training/TrainerCard';
 import { ErrorLine } from '../components/shared/NoticeLine';
 
 // Enough history to see a trend on a phone screen without scrolling forever
@@ -108,8 +107,6 @@ export function GymView({ db, profile = EMPTY_PROFILE, hideNumbers = false }: { 
       </header>
 
       <CardioCard db={db} weightKg={profile.body?.weightKg ?? null} hideNumbers={hideNumbers} onSaved={reloadEntries} />
-
-      {library !== null && <TrainerCard entries={library.EXERCISE_ENTRIES} profile={profile} />}
 
       {library !== null && <PackPicker profile={profile} entries={library.EXERCISE_ENTRIES} chosen={choices} busy={!choicesReady || savingChoice} onAdd={card => persistChoice(card, false)} />}
 

@@ -6,7 +6,6 @@ import { countMeals } from '../../storage/mealsRepo';
 import type { Durability } from '../../storage/persistence';
 import type { Profile, ProfileSnapshot } from '../../domain/profile/profile';
 import { ProfileEditor } from '../components/me/ProfileEditor';
-import { AskCoach } from '../components/me/AskCoach';
 import { BodyCard } from '../components/me/BodyCard';
 import { DURABILITY_TEXT, errorText } from '../format';
 import { NoticeLine } from '../components/shared/NoticeLine';
@@ -141,8 +140,6 @@ export function MeView({ db, profileSnapshot, onSaveProfile, durability, foodCou
 
       <ProfileEditor snapshot={profileSnapshot} onSave={onSaveProfile} />
       <BodyCard db={db} snapshot={profileSnapshot} hideNumbers={hideNumbers} currentYear={new Date().getFullYear()} onSave={onSaveProfile} />
-
-      <AskCoach />
 
       <section className="card" aria-labelledby="storage-heading">
         <h2 id="storage-heading" className="heading">Storage</h2>

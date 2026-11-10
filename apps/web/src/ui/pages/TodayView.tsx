@@ -85,6 +85,14 @@ export function TodayView({ db, foods, currentFoods, hideNumbers, durability, di
   }
 
   /**
+   * Fill the entry box with the foods an AI listed from a photo, for review like any typed meal.
+   */
+  function fillEntryFromList(entry: string) {
+    setText(entry);
+    document.getElementById('composer')?.focus();
+  }
+
+  /**
    * Start a draft of a saved meal for today, which still has to be confirmed.
    */
   function logAgain(meal: SavedMeal) {
@@ -136,7 +144,7 @@ export function TodayView({ db, foods, currentFoods, hideNumbers, durability, di
 
       <div className="today-layout">
       <div className="today-main">
-      {panel === null && <PlatePhoto onPick={fillEntryFromPhoto} />}
+      {panel === null && <PlatePhoto onPick={fillEntryFromPhoto} onEntry={fillEntryFromList} />}
 
       <Composer text={text} onTextChange={setText} reviewing={panel !== null} onSubmit={handleSubmit} onAddManually={startManualDraft} />
 

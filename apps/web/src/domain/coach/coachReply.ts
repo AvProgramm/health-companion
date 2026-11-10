@@ -1,4 +1,4 @@
-/** One checked sentence and the cards behind it. */
+/** One sentence and the cards behind it; a general answer has none. */
 export interface CoachClaim {
   text: string;
   cites: number[];
@@ -16,7 +16,7 @@ export interface CoachSource {
 
 /** What the Coach decided to show, and why. */
 export interface CoachReply {
-  mode: 'answer' | 'excerpts' | 'no_evidence' | 'refused';
+  mode: 'answer' | 'general' | 'excerpts' | 'no_evidence' | 'refused';
   message: string;
   claims: CoachClaim[];
   sources: CoachSource[];
@@ -24,7 +24,7 @@ export interface CoachReply {
 }
 
 // Every outcome this app knows how to display
-const MODES: readonly string[] = ['answer', 'excerpts', 'no_evidence', 'refused'];
+const MODES: readonly string[] = ['answer', 'general', 'excerpts', 'no_evidence', 'refused'];
 
 /** Return whether a value is one displayable source. */
 export function isSource(value: unknown): value is CoachSource {
