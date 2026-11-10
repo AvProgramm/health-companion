@@ -2,7 +2,7 @@
 import asyncio
 import math
 import re
-import httpx
+from .failures import PROVIDER_FAILURES
 from .models import Estimate
 from .retrieval import search_missing_nutrients
 
@@ -91,6 +91,6 @@ async def enrich_unknown(name, portion_text, estimate, search=search_missing_nut
     try:
         evidence = await asyncio.wait_for(search(name, portion_text, missing), timeout=SUPPLEMENT_TIMEOUT)
         return supplement_values(estimate, evidence)
-    except (TimeoutError, httpx.HTTPError, ValueError, KeyError, TypeError):
+    except PROVIDER_FAILURES:
         # Ignore a failed supplement because the original useful proposal must survive.
         return estimate

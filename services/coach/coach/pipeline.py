@@ -1,7 +1,7 @@
 """Choose composition data, public evidence and validated model fallbacks."""
 import asyncio
-import httpx
 from .availability import asking_order, send_to_back
+from .failures import PROVIDER_FAILURES
 from .providers import database_estimate, llm_estimate
 from .retrieval import search_nutrition
 from .gemini import gemini_estimate
@@ -20,7 +20,7 @@ async def attempt(provider, *args, deadline):
     """Return a provider result or leave the next fallback available."""
     try:
         return await asyncio.wait_for(provider(*args), timeout=deadline)
-    except (TimeoutError, httpx.HTTPError, ValueError, KeyError, IndexError, TypeError):
+    except PROVIDER_FAILURES:
         # Ignore a failed provider because manual entry and later fallbacks remain available.
         return None
 

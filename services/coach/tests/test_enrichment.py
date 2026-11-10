@@ -57,6 +57,14 @@ class EnrichmentTests(unittest.TestCase):
         failing = AsyncMock(side_effect=TimeoutError())
         self.assertEqual(asyncio.run(enrich_unknown('Fictional oatcakes', '50 g', base, failing)), base)
 
+    def test_every_kind_of_provider_failure_keeps_the_proposal(self):
+        """Keep the proposal for each failure the other provider callers already survive."""
+        base = base_estimate()
+        for failure in (TimeoutError(), httpx.ConnectError('fictional'), ValueError(), KeyError(), IndexError(), TypeError()):
+            with self.subTest(failure=type(failure).__name__):
+                failing = AsyncMock(side_effect=failure)
+                self.assertEqual(asyncio.run(enrich_unknown('Fictional oatcakes', '50 g', base, failing)), base)
+
     def test_sodium_is_read_in_milligrams_and_every_nutrient_has_a_search_label(self):
         """Fill sodium from an explicit mg value, and build a query for any missing nutrient."""
         base = base_estimate().model_copy(deep=True)

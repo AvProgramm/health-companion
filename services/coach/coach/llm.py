@@ -4,6 +4,7 @@ import os
 from dataclasses import dataclass
 import httpx
 from .availability import asking_order, send_to_back
+from .failures import PROVIDER_FAILURES
 from .gemini import GEMINI_DEFAULT_MODEL, GEMINI_URL
 
 # Groq's chat endpoint, the same one the estimate fallback uses
@@ -59,7 +60,7 @@ class HostedConversation:
             except httpx.HTTPStatusError as problem:
                 send_to_back(name)
                 refusal = problem
-            except (httpx.HTTPError, ValueError, KeyError, IndexError, TypeError):
+            except PROVIDER_FAILURES:
                 # Stop at a slow or garbled reply, because the browser cannot wait for a second model
                 send_to_back(name)
                 raise

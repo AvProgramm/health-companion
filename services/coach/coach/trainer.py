@@ -1,9 +1,9 @@
 """Let the AI Trainer choose exercises, keeping every hard limit outside the model."""
 import asyncio
 import json
-import httpx
 from .agent import Tool, run_coach
 from .exercises import search_exercises
+from .failures import PROVIDER_FAILURES
 from .models import TrainerReply
 from .safety import check_safety
 
@@ -85,7 +85,7 @@ async def plan_session(request, library, ask, extra_tools=()):
     message = json.dumps({'goal': request.goal, 'minutes': request.minutes, 'shortlist': [describe(entry) for entry in shortlist]})
     try:
         final = await asyncio.wait_for(run_coach(SYSTEM, message, [search_tool(library, request), *extra_tools], ask), timeout=COACH_DEADLINE)
-    except (TimeoutError, httpx.HTTPError, ValueError, KeyError, IndexError, TypeError):
+    except PROVIDER_FAILURES:
         final = None
 
     # Use the model's picks only if there are enough real ones

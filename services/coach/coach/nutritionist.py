@@ -1,14 +1,9 @@
 """Let the AI Nutritionist suggest foods to try, grounded in reviewed guidance and never saved."""
-import asyncio
-import json
 import re
-import httpx
 from .models import CoachClaim, NutritionistReply, NutritionistSuggestion
-from .rag.answer import EXCERPTS_ONLY, NO_EVIDENCE, build_context, sources_for, valid_claim
+from .rag.answer import EXCERPTS_ONLY, NO_EVIDENCE, proposed_from_cards, sources_for, valid_claim
 from .safety import check_safety
 
-# One model call has to fit inside the browser's wait
-DEADLINE = 15.0
 # Few enough to read at a glance
 MAX_SUGGESTIONS = 3
 # The reviewed guidance a nutritionist has any business reading
@@ -73,21 +68,13 @@ async def suggest_meals(goal, retriever, ask):
     if not cards:
         return NutritionistReply(mode='no_evidence', message=NO_EVIDENCE, suggestions=[], sources=[])
 
-    # Ask the model, treating any provider failure as "show the evidence instead"
-    sources = sources_for(cards)
-    messages = [{'role': 'system', 'content': SYSTEM}, {'role': 'user', 'content': f'{build_context(cards)}\n\nGOAL: {json.dumps(goal)}'}]
-    try:
-        reply = await asyncio.wait_for(ask(messages), timeout=DEADLINE)
-    except (TimeoutError, httpx.HTTPError, ValueError, KeyError, IndexError, TypeError):
-        return NutritionistReply(mode='excerpts', message=EXCERPTS_ONLY, suggestions=[], sources=sources)
-
     # Take the model at its word when it says the cards do not help
-    proposed = reply.get('suggestions') if isinstance(reply, dict) else None
+    proposed = await proposed_from_cards(ask, SYSTEM, cards, 'GOAL', goal, 'suggestions')
     if proposed == []:
         return NutritionistReply(mode='no_evidence', message=NO_EVIDENCE, suggestions=[], sources=[])
 
-    # Show the cards themselves if no suggestion survives the checks
-    suggestions = checked_suggestions(proposed, cards)
+    # Show the cards themselves if no suggestion survives the checks, or the model could not be asked
+    suggestions, sources = checked_suggestions(proposed, cards), sources_for(cards)
     if not suggestions:
         return NutritionistReply(mode='excerpts', message=EXCERPTS_ONLY, suggestions=[], sources=sources)
     return NutritionistReply(mode='suggestions', message=SUGGESTED, suggestions=suggestions, sources=sources)

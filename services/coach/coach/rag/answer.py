@@ -2,7 +2,7 @@
 import asyncio
 import json
 import re
-import httpx
+from ..failures import PROVIDER_FAILURES
 from ..models import CoachClaim, CoachReply, CoachSource
 from ..safety import check_safety
 
@@ -66,6 +66,22 @@ def sources_for(cards):
             for number, card in enumerate(cards, start=1)]
 
 
+async def proposed_from_cards(ask, system, cards, label, text, key):
+    """
+    Return what the model proposes from the cards under one key, or None when it gave nothing usable.
+
+    A provider failure and a malformed reply both return None. The caller's checks then keep
+    nothing, so the person is shown the reviewed cards themselves.
+    """
+    # Send the cards as labelled data, and the person's own words as a JSON string
+    messages = [{'role': 'system', 'content': system}, {'role': 'user', 'content': f'{build_context(cards)}\n\n{label}: {json.dumps(text)}'}]
+    try:
+        reply = await asyncio.wait_for(ask(messages), timeout=ANSWER_DEADLINE)
+    except PROVIDER_FAILURES:
+        return None
+    return reply.get(key) if isinstance(reply, dict) else None
+
+
 async def answer_question(question, retriever, ask):
     """
     Return a checked answer, the evidence itself, or an honest reason for neither.
@@ -83,21 +99,13 @@ async def answer_question(question, retriever, ask):
     if not cards:
         return CoachReply(mode='no_evidence', message=NO_EVIDENCE, claims=[], sources=[])
 
-    # Ask the model, treating any provider failure as "show the evidence instead"
-    sources = sources_for(cards)
-    messages = [{'role': 'system', 'content': SYSTEM}, {'role': 'user', 'content': f'{build_context(cards)}\n\nQUESTION: {json.dumps(question)}'}]
-    try:
-        reply = await asyncio.wait_for(ask(messages), timeout=ANSWER_DEADLINE)
-    except (TimeoutError, httpx.HTTPError, ValueError, KeyError, IndexError, TypeError):
-        return CoachReply(mode='excerpts', message=EXCERPTS_ONLY, claims=[], sources=sources)
-
     # Take the model at its word when it says the cards do not answer this
-    proposed = reply.get('claims') if isinstance(reply, dict) else None
+    proposed = await proposed_from_cards(ask, SYSTEM, cards, 'QUESTION', question, 'claims')
     if proposed == []:
         return CoachReply(mode='no_evidence', message=NO_EVIDENCE, claims=[], sources=[])
 
-    # Show the cards themselves if no claim survives the checks
-    claims = validate_citations(proposed, cards)
+    # Show the cards themselves if no claim survives the checks, or the model could not be asked
+    claims, sources = validate_citations(proposed, cards), sources_for(cards)
     if not claims:
         return CoachReply(mode='excerpts', message=EXCERPTS_ONLY, claims=[], sources=sources)
     return CoachReply(mode='answer', message=ANSWERED, claims=claims, sources=sources)
