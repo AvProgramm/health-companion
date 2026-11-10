@@ -7,6 +7,7 @@ from fastapi.responses import JSONResponse
 from starlette.middleware.trustedhost import TrustedHostMiddleware
 from .cloud.config import web_config
 from .cloud.session import verify_session
+from .http_policy import read_http_policy
 from .barcode import look_up_barcode
 from .exercises import load_library
 from .llm import COACH_MODELS, PHOTO_MODELS, HostedConversation
@@ -21,11 +22,11 @@ from .trainer import evidence_tool, plan_session
 # Only the repository root .env is read; nothing is exposed through Vite.
 load_dotenv(Path(__file__).resolve().parents[3] / '.env')
 app = FastAPI(docs_url=None, redoc_url=None, openapi_url=None)
-app.add_middleware(TrustedHostMiddleware, allowed_hosts=['127.0.0.1', 'localhost', 'testserver'])
+# Keep exact local defaults, adding only configured deployment hosts and origins.
+ALLOWED_HOSTS, ALLOWED_ORIGINS = read_http_policy()
+app.add_middleware(TrustedHostMiddleware, allowed_hosts=ALLOWED_HOSTS)
 # Read once, because the bundled library only changes with a new build
 EXERCISES = load_library()
-# The only pages allowed to call this service
-LOCAL_ORIGINS = ('http://localhost:4173', 'http://127.0.0.1:4173', 'http://localhost:5173', 'http://127.0.0.1:5173')
 
 
 @app.exception_handler(RequestValidationError)
@@ -36,9 +37,9 @@ async def invalid_request(_request, _error):
 
 def check_local(request):
     """Refuse a request from another site or one that is not JSON."""
-    # Ignore an unrelated browser origin because this service is laptop-only.
+    # Ignore an unrelated browser origin because only explicitly allowed frontends may use this boundary.
     origin = request.headers.get('origin')
-    if origin and origin not in LOCAL_ORIGINS:
+    if origin and origin not in ALLOWED_ORIGINS:
         raise HTTPException(403, 'Open the local diary to use this service.')
     if not request.headers.get('content-type', '').startswith('application/json'):
         raise HTTPException(415, 'Send a JSON request.')
@@ -125,3 +126,9 @@ async def firebase_account(request: Request):
     check_local(request)
     session = await verify_session(request.headers.get('authorization'))
     return JSONResponse({'uid': session.uid, 'displayName': session.display_name}, headers={'Cache-Control': 'no-store'})
+
+
+@app.get('/api/health')
+async def health():
+    """Report completed service startup without calling providers or exposing settings."""
+    return JSONResponse({'status': 'ok'}, headers={'Cache-Control': 'no-store'})

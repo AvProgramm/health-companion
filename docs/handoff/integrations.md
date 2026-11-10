@@ -36,3 +36,8 @@ Yash now requests Firebase cloud storage and AI access to his own saved diary/pr
 ## Gemini diary decision, 10 Nov
 
 Yash confirmed Free Tier and chose to keep diary sharing off. UI/client/server gates now block context; general typed questions remain unchanged. Official Gemini Additional Terms distinguish unpaid input (product improvement/human review, no personal information) from API projects associated with active billing. No paid tier was inferred from a working key and no billing was enabled. See https://ai.google.dev/gemini-api/terms?authuser=00 and https://ai.google.dev/gemini-api/docs/billing . Reassess before any private-context route; do not fall back from private data to another provider automatically.
+
+
+## Hosting preparation, 10 Nov
+
+Render backend and Vercel frontend examples live in deploy/; no hosting is live. Exact configured hostnames/origins preserve local defaults; they are not user authentication or rate limiting. /api/health is provider-free startup status. Original code uses MIT; THIRD_PARTY_NOTICES.md preserves external terms. A clean hosted checkout excludes ignored model weights; do not claim the laptop classifier or semantic encoder is present on a fresh host. No DB migration or weight download was performed. Gemini Free Tier remains confirmed and diary sharing blocked. See docs/testing/2026-11-10-hosting-preparation.md.

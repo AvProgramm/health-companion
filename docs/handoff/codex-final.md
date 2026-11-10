@@ -106,7 +106,7 @@ Resume with phone step 1, not with a new feature. All seven phone results remain
 
 ## Latest MVP decision (Yash, 10 Nov)
 
-Frontend hosting: Vercel; backend: Render, planned for 11 Nov. The redundant Me-page Google sign-in card is removed; general multi-user sign-in is later work. Developer Firebase ownership does not authenticate visitors. A later database migration may use Render PostgreSQL rather than Firestore/vector storage; no migration is implemented now. The single interview entry point is `docs/milestones/interview-walkthrough.md`, replacing the three separate M8 interview scripts. Historical milestone records remain as provenance. Licence and permitted diary-model choices remain pending.
+Frontend hosting: Vercel; backend: Render, planned for 11 Nov. The redundant Me-page Google sign-in card is removed; general multi-user sign-in is later work. Developer Firebase ownership does not authenticate visitors. A later database migration may use Render PostgreSQL rather than Firestore/vector storage; no migration is implemented now. The single interview entry point is `docs/milestones/interview-walkthrough.md`, replacing the three separate M8 interview scripts. Historical milestone records remain as provenance. MIT is selected for original code, with separate third-party notices. Yash confirmed Gemini Free Tier and explicitly kept diary sharing off. No private-context route or billing change is enabled.
 
 
 ## Beginner-readable organisation (Yash, 10 Nov)
@@ -116,3 +116,10 @@ Yash explicitly authorised small organisation refactors despite the earlier free
 Save points: 7d33b80 before refactoring; db60917 after API moved to data/api; 900d3c6 after persistence moved to data/storage. The third checkpoint relocates the plain seven-day loader to data/diary/loadWeek.ts. Functions are unchanged except imports. Each checkpoint passed full check/build; all moved files were mechanically compared. Database name/version/stores, backup format, domain algorithms, request fields/endpoints/timeouts and sharing/model route remain unchanged. No real diary data was sent in the browser smoke check.
 
 The one interview walkthrough has the current folder map. Historical milestone documents retain old paths as provenance. The schema-migration checklist now points to data/storage/connection.ts; this was not a schema migration. Keep future refactors small and separately verified; do not turn remaining UI orchestration into a new framework. Hosting/licence/provider and physical-phone gates remain as previously recorded.
+
+
+## Current checkpoint: licence, privacy and hosting preparation (10 Nov, Codex)
+
+Supersedes the older licence/provider/account demo instructions above: original code is MIT; third-party notices remain separate. Yash explicitly confirmed Gemini Free Tier and kept diary sharing off. Commit 2bf6e17 blocks context in the UI, browser helper and server; no real diary was sent. Step 5 now demonstrates generic chat/Trainer and the disabled sharing switch. Step 7 is profile/adaptations/backup, not account sign-in.
+
+Render/Vercel examples and an exact host/origin policy plus /api/health are prepared. No cloud deployment, billing, database, new account or model download has occurred. Follow deploy/README.md tomorrow, replacing the reserved .invalid API destination with the real Render hostname. Read docs/testing/2026-11-10-hosting-preparation.md for actual verification and limits. The single interview guide remains docs/milestones/interview-walkthrough.md. All seven physical-phone steps remain NOT TESTED until Yash reports them.

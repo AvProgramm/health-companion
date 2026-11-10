@@ -17,13 +17,13 @@ This is the single interview script and feature/code tour for the MVP. Older mil
 
 "Health Companion is a React and TypeScript PWA for food, exercise and sleep. The diary works locally in IndexedDB. Optional FastAPI services supply nutrition proposals, food-photo reading and coaching. Code owns arithmetic, revisions and hard exercise constraints; model responses are proposals that need confirmation. Missing nutrition stays unknown."
 
-Today, 10 November: finish and rehearse the local MVP. Tomorrow, 11 November: host the frontend on Vercel and the Python backend on Render after the licence decision and deployment checks. The interview is Friday 13 November, 1:35 pm MYT.
+Today, 10 November: finish and rehearse the local MVP. Tomorrow, 11 November: host the frontend on Vercel and the Python backend on Render after deployment checks. MIT now covers the original code; third-party terms remain separate. The interview is Friday 13 November, 1:35 pm MYT.
 
 ## Current scope and future scope
 
 The Me-page Google account card has been removed at Yash's request. His Firebase project configuration belongs to the developer setup; it does not authenticate every visitor, upload the diary or replace a later general sign-in system. Do not present multi-user login or cloud sync as shipped.
 
-A later cloud diary may use Render PostgreSQL instead of Firestore. That is a future migration decision: no PostgreSQL database, vector extension or Firestore sync is implemented for this demo. Keep immutable history, null values, operation keys, revision conflicts and user ownership when that work begins. Sharing diary context with a hosted model still needs Yash's provider choice.
+A later cloud diary may use Render PostgreSQL instead of Firestore. That is a future migration decision: no PostgreSQL database, vector extension or Firestore sync is implemented for this demo. Keep immutable history, null values, operation keys, revision conflicts and user ownership when that work begins. Yash confirmed Gemini Free Tier and kept diary sharing off; UI, client and server all block it.
 
 ## Five-minute live demo
 
@@ -31,7 +31,7 @@ A later cloud diary may use Render PostgreSQL instead of Firestore. That is a fu
 2. Enter `actually 250 ml`. Check that the intended milk item changes, totals update and the old revision remains available. Undo/history demonstrate immutable corrections.
 3. Choose a plate photo. Review the AI names and counts, correct any mistakes and place the list in the composer. The photo action itself never saves a meal.
 4. Look up a packet barcode on Today, if available. Review the label basis. Foods contains the saved-food list, rather than duplicate capture screens.
-5. AI: send `Hi`, a protein question and `A 30 minute workout with no equipment`. Show the 30-minute plan and local eligibility checks. The seven-day switch is disabled for the confirmed free tier; after approval, ask `how was my week?` and check its named dates and gaps.
+5. AI: send `Hi`, a protein question and `A 30 minute workout with no equipment`. Show the 30-minute plan and local eligibility checks. The seven-day switch is disabled for the confirmed free tier. Explain that diary analysis is paused; do not enable it for the demo.
 6. Airplane mode: reopen the cached diary and show local entries/editing. An unavailable AI service is expected; saved local data must still work.
 7. Me: show profile/adaptations, number hiding and backup/export. Explain the later general sign-in/cloud-database plan. Do not show a redundant account-login card.
 
@@ -69,13 +69,13 @@ For each phone step record PASS, FAIL or NOT TESTED in `docs/test-log.md`. A lap
 
 ## Tomorrow's hosting runbook: Render backend and Vercel frontend
 
-This is preparation, not a deployment claim. Yash must choose the code licence before publication and the permitted hosted model before changing diary-context routing. Do not provision PostgreSQL or enable billing as part of this MVP deployment.
+This is preparation, not a deployment claim. MIT is selected for original code, with separate third-party notices. Gemini Free Tier is confirmed and private diary context stays blocked. Do not provision PostgreSQL or enable billing as part of this MVP deployment.
 
 Render runs FastAPI from this repository. Planned build: `pip install -r services/coach/requirements.txt`; planned start: `python -m uvicorn coach.app:app --app-dir services/coach --host 0.0.0.0 --port $PORT --no-access-log`. Confirm Python compatibility and bundled exercise-data paths before deploying. Keep provider credentials in Render server settings only.
 
-Vercel builds the Vite frontend. Because the importer reads repository-level data, build from the repository root with `npm --prefix apps/web install` and `npm --prefix apps/web run build`, publishing `apps/web/dist`; verify lockfile installation uses `npm ci` for the final configuration. Route `/api/*` to the actual Render URL using an external rewrite before any SPA fallback. The local Vite proxy does not deploy itself.
+Vercel builds the Vite frontend. Because the importer reads repository-level data, build from the repository root with `npm --prefix apps/web ci` and `npm --prefix apps/web run build`, publishing `apps/web/dist`; reviewed examples are in `deploy/`. Route `/api/*` to the actual Render URL using an external rewrite before any SPA fallback. The local Vite proxy does not deploy itself.
 
-Before public use, replace the backend's loopback-only trusted-host/origin policy with exact deployed hostnames, retain local development origins, and test rejection of unrelated origins. Choose suitable access/rate controls for model endpoints; a developer-owned Firebase project is not visitor authentication. Do not place private API responses in CDN or service-worker caches.
+The backend now accepts exact configured deployment hosts/origins alongside local defaults, with rejection tests. `/api/health` reports startup without a provider call. Set actual hostnames and verify them after deployment. Choose suitable access/rate controls for model endpoints; a developer-owned Firebase project is not visitor authentication. Do not place private API responses in CDN or service-worker caches.
 
 Check the 187 MB local-model asset and service memory/startup requirements against host limits. Decide whether that optional model is included; never silently remove the phone fallback. Confirm RAG assets exist or clearly disclose the word-search fallback. Test the final HTTPS link on phone data with USB disconnected, including an API call, reload, offline diary and unavailable-provider behaviour. Record actual results and prepare the video.
 
@@ -90,7 +90,7 @@ Full checks and build are required after changes. The existing laptop rehearsal 
 
 ## Say it in the interview
 
-"One chat routes a message to a question-answering Coach, a Nutritionist or a Trainer. The routing rules are deterministic. The Trainer proposes library IDs, and my planner checks them again on the device. For a diary question I can explicitly share seven dated summary lines, whose totals are calculated in code. The model describes that context; it does not own the diary or save changes."
+"One chat routes a message to a question-answering Coach, a Nutritionist or a Trainer. The routing rules are deterministic. The Trainer proposes library IDs, and my planner checks them again on the device. Seven-day summaries are calculated in code, but sharing them is paused for the confirmed free-tier setup. The model does not own the diary or save changes."
 
 ## Follow one request
 
@@ -98,7 +98,7 @@ Full checks and build are required after changes. The existing laptop rehearsal 
 
 Without diary context, a food-idea request goes to the Nutritionist; when it lacks evidence the Coach can give a labelled general answer. Questions go to the Coach. `ChatReply.tsx` presents each response under its role. This screen has no conversation memory sent to the service: a follow-up is a new independent request.
 
-With the sharing switch on, `loadWeekLines` reads seven local dates. It loads the latest meals, workouts and sleep, then calls existing domain summaries. Deleted meals and inactive components are excluded from food names. `weekLines` formats a bounded line per date. Gaps, unknown nutrition and partial totals have different text. At most seven lines of 200 characters reach `CoachRequest.context`; up to eight distinct food names appear per line, and long lines are clipped. This bounded view is not the full database or a complete nutrient history.
+The retained, currently disabled sharing implementation uses `loadWeekLines` to read seven local dates. It loads the latest meals, workouts and sleep, then calls existing domain summaries. Deleted meals and inactive components are excluded from food names. `weekLines` formats a bounded line per date. Gaps, unknown nutrition and partial totals have different text. At most seven lines of 200 characters reach `CoachRequest.context`; up to eight distinct food names appear per line, and long lines are clipped. This bounded view is not the full database or a complete nutrient history.
 
 The sharing switch starts off on every new AI screen. Loading occurs only when it is on and a message is sent. Shared lines route question/food messages to the Coach; workout planning still uses its own path. The model route currently chooses between Groq and Gemini through the shared availability queue. Yash selected Gemini conditionally, then confirmed Free Tier and asked to keep sharing off. The UI is disabled and both request boundaries reject diary context before any provider call. A permitted paid-tier route is not enabled. Do not claim that Google sign-in or Firestore is required for these local summaries.
 

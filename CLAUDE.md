@@ -8,7 +8,7 @@ Read this file first in every new chat. When explaining the app, start with a 10
 
 - Screens belong in `ui/pages/`: one screen per file.
 - Reusable UI belongs in `ui/components/`: check existing components first and reuse them.
-- Saving, loading and API logic belong in `data/`: check existing data modules before writing new code. API requests now live in `data/api/`. The existing `data/storage/` repositories and UI loading helpers are legacy locations to migrate separately, one folder at a time; do not duplicate them in `data/` meanwhile.
+- Saving, loading and API logic belong in `data/`: check existing data modules before writing new code. API requests now live in `data/api/`. `data/storage/` owns persistence and `data/diary/` owns reusable diary loading; hooks coordinate screen state around these services. Do not duplicate these modules.
 - Keep pure calculations and rules in `domain/`; UI state belongs in hooks, not data services.
 - Give each file one job and keep authored code files at or under 300 lines. Do not grow a file past the limit; split it by responsibility.
 - Before changes, suggest a Git save point. Refactor one folder at a time without changing behaviour, then confirm checks/build and relevant UI behaviour before the next folder. Keep explicit-path staging and green commits.
@@ -101,3 +101,8 @@ Use `docs/milestones/interview-walkthrough.md` as the single interview walkthrou
 
 
 Current privacy decision, 10 Nov: Yash confirmed the Gemini project is Free Tier and chose to keep diary sharing off. The sharing switch is disabled, the browser request helper rejects context without fetching, and the server returns 403 for context before calling a model. Generic typed messages still use the existing route. Google terms and account-tier review must precede any later Gemini-only private-context route; no billing was enabled.
+
+
+## Hosting preparation checkpoint (10 Nov)
+
+Original code is MIT; read LICENSE and THIRD_PARTY_NOTICES.md for scope. deploy/ contains reviewed examples, not a live deployment. Exact host/origin configuration and a credential-free /api/health endpoint preserve local defaults. See docs/testing/2026-11-10-hosting-preparation.md for checks and pending hosted/phone gates.
