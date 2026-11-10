@@ -49,3 +49,12 @@ No billing upgrade, account creation, deployment, credential generation or produ
 - [Firestore vector search](https://firebase.google.com/docs/firestore/vector-search): embeddings are generated separately; supported server clients perform vector queries.
 - [Cloud Storage billing requirement](https://firebase.google.com/docs/storage/faqs-storage-changes-announced-sept-2024): Blaze is required for file storage.
 - [Firestore billing](https://firebase.google.com/docs/firestore/pricing): document and vector-index read charges.
+
+
+## Selected memory technique (Yash's image, 10 Nov)
+
+Use episodic memory as the primary personal-memory model: dated food, workout and sleep events with their immutable corrections. Retrieval memory is the access mechanism, combining exact date queries with semantic search over derived summaries. Use semantic memory for explicitly saved goals, preferences and limitations. Working memory holds the current conversation and tool results; it must not silently replace stored facts. These labels describe different jobs, not seven competing database products.
+
+For "what did I eat recently, and how does that fit my goal?", fetch the signed-in user's current goal, query the requested recent dates, calculate nutrition and activity totals in code with unknowns preserved, then give the model a bounded summary with source references. Vector search is useful for "meals like the one I enjoyed last week", but is not a reliable way to enumerate every meal or calculate a weekly total. No fine-tuning or parametric memory is needed to remember diary entries. Recommendations remain proposals until confirmed.
+
+Google sign-in was selected by Yash. He supplied the four Firebase web configuration values and asked the agent to handle server setup. Investigate using Firebase ID tokens with Firestore's REST API and Security Rules, which may avoid a separate administrator credential for user-owned requests. Do not claim this route is implemented or remove the server checks until it is tested. Interactive Google sign-in still belongs to the user if requested by Google.

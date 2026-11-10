@@ -5,10 +5,10 @@ Read `CLAUDE.md`, then `docs/handoff/codex-11-nov.md`, then `docs/handoff/fireba
 ## Where things stand
 
 - Last commit `6aea0d9` (pushed). It contains Codex's photo work: hosted photo capture before local inference, a remembered photo consent on the device, counted containers kept through scaling, and paced draft estimates.
-- **Not committed:** the Firebase account work. That is `apps/web/src/api/firebaseAccount.ts`, `ui/components/me/CloudAccount.tsx` and its test, `services/coach/coach/cloud/`, `tests/test_firebase_account.py`, and edits to `MeView.tsx`, `app.py`, `package.json` and `docs/handoff/firebase-diary.md`. `npm run check` passed with these files in place on 10 Nov (coach 211, router 33, vision 92, web tests green); review the diff, then commit it.
+- **Committed by Claude Code on 10 Nov, unreviewed by Yash:** the Firebase account work. That is `apps/web/src/api/firebaseAccount.ts`, `ui/components/me/CloudAccount.tsx` and its test, `services/coach/coach/cloud/`, `tests/test_firebase_account.py`, and edits to `MeView.tsx`, `app.py`, `package.json` and `docs/handoff/firebase-diary.md`. `npm run check` passed with these files in place on 10 Nov (coach 211, router 33, vision 92, web tests green); review the diff, then commit it.
 - Yash has put the Firebase keys in the root `.env`. Never open or print that file. Check the names only against `.env.example`, and add any missing names there with no values.
 
-## Decision this needs written down first
+## Decision this needs written down first (DONE: invariant 5 rewritten in CLAUDE.md, commit after 5705259; Yash can still change the wording)
 
 Firebase accounts and Firestore diary memory break two `CLAUDE.md` invariants as written:
 - "No accounts, telemetry or other personal-data uploads."

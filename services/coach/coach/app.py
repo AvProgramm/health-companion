@@ -5,6 +5,8 @@ from fastapi import FastAPI, HTTPException, Request
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 from starlette.middleware.trustedhost import TrustedHostMiddleware
+from .cloud.config import web_config
+from .cloud.session import verify_session
 from .barcode import look_up_barcode
 from .exercises import load_library
 from .llm import COACH_MODELS, PHOTO_MODELS, HostedConversation
@@ -106,3 +108,17 @@ async def photo(request: Request, item: PhotoRequest):
     """Return foods from one explicitly selected photo without saving it."""
     check_local(request)
     return await credited(lambda ask: list_foods(item.image, ask), lambda reply: reply.mode == 'foods', PHOTO_MODELS)
+
+
+@app.get('/api/firebase/config')
+async def firebase_config():
+    """Return only public Firebase app settings without caching them."""
+    return JSONResponse(web_config(), headers={'Cache-Control': 'no-store'})
+
+
+@app.post('/api/firebase/account')
+async def firebase_account(request: Request):
+    """Return the verified account without accepting a caller-selected owner."""
+    check_local(request)
+    session = await verify_session(request.headers.get('authorization'))
+    return JSONResponse({'uid': session.uid, 'displayName': session.display_name}, headers={'Cache-Control': 'no-store'})
