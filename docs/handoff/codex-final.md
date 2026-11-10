@@ -2,19 +2,21 @@
 
 Read `CLAUDE.md`, then this file, then `docs/handoff/firebase-diary.md` (the cloud plan) and `docs/handoff/codex-11-nov.md` (photo verdict, chat, multi-food model idea). Last commit `67ecac6`, pushed. Deadlines: hosting Wed 11 Nov; Deriv interview Fri 13 Nov, 1:35 pm MYT.
 
-## Firebase keys: checked, one thing blocks sign-in
+## Firebase keys: working; a real sign-in is the only check left
 
-Checked through the running service on 10 Nov without opening `.env` (the script printed facts only, never a key):
+Checked through the running service on 10 Nov, evening, without opening `.env` (the scripts printed facts only, never a key). Yash enabled Google sign-in in the Firebase Console between the two runs.
 
 | Check | Result |
 |---|---|
 | `GET /api/firebase/config` | 200; apiKey, projectId, authDomain and appId are all present |
-| Google accepts the API key | Yes (the key is recognised) |
-| Firebase Authentication set up in the project | **No.** Google answers `CONFIGURATION_NOT_FOUND` |
+| Google accepts the API key | Yes |
+| Firebase Authentication set up | Yes (a fake token now gets `INVALID_ID_TOKEN`, where it got `CONFIGURATION_NOT_FOUND` before) |
+| Google sign-in enabled | Yes (`accounts:createAuthUri` for google.com returned a sign-in link) |
+| `localhost` authorised | Yes |
 
-**Yash must do this in the Firebase Console (an account setting, so not for an agent):** Authentication → Get started → Sign-in method → Google → Enable, and confirm `localhost` is under Settings → Authorised domains. Until then Google sign-in cannot work, whatever the code does. After that, re-run the check and try a real sign-in on localhost.
+Not checked: an actual sign-in, which needs Yash at the browser (Me, account card). One older Google endpoint returned a project value that did not equal the configured project ID; it is probably the project number, and was not confirmed.
 
-**Port warning:** an old coach process still holds port 8000 and does not have the Firebase or diary-context code (it returned 404 for the config endpoint). The web preview proxies `/api` to 8000, so the phone and browser are talking to old code. Stop that process, then start the service again on 8000. Claude's checks used a second copy on 8001.
+**Port warning:** an old coach process (uvicorn, started in an earlier session) still holds port 8000; Claude was not permitted to stop it, so Yash or Codex must (`Stop-Process` on the PID that owns port 8000, then start the service again). It and does not have the Firebase or diary-context code (it returned 404 for the config endpoint). The web preview proxies `/api` to 8000, so the phone and browser are talking to old code. Stop that process, then start the service again on 8000. Claude's checks used a second copy on 8001.
 
 ## Built in this last session (commit `67ecac6`; web tests 565 and coach tests 214 pass)
 
@@ -33,7 +35,7 @@ Checked through the running service on 10 Nov without opening `.env` (the script
 
 ## What is left, in order
 
-1. Yash enables Google sign-in (above). Then: live sign-in on localhost; Firestore rules in the emulator (one user cannot read another's records); record results in `docs/test-log.md`.
+1. Google sign-in is enabled. Next: a live sign-in on localhost by Yash; Firestore rules in the emulator (one user cannot read another's records); record results in `docs/test-log.md`.
 2. Free port 8000 and restart the service; rebuild and serve the web app; phone-check the chat, the 7-day switch, automatic estimates, the photo reader and the barcode on Today.
 3. Cloud plan steps 2 and 3: cloud repositories behind the storage boundary, then a migration preview with read-back. Never erase the local diary automatically.
 4. Chat working memory: send the last few turns with each message, capped, still safety-checked.
