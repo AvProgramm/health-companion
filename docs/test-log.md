@@ -415,3 +415,48 @@ Started from pushed 900d3c6. Moved the existing plain loadWeekLines helper from 
 Final browser smoke check after rebuilding/reloading: Me still showed the existing three meals and three saved foods, and the week display retained its existing entries. This confirms visibility of the existing local store, not a complete data-integrity audit. The AI screen opened with sharing off. No saved data, account settings or limitations were edited. Phone checks remain NOT TESTED.
 
 Browser chat smoke PASS after all three moves: submitted only `Hi` with sharing off and received the Coach greeting. No diary/profile lines were uploaded. Screenshot saved outside the repo. This verifies the relocated request path; it does not substitute for the outstanding phone rehearsal.
+
+
+## Final pre-hosting retest (10 Nov, Codex; source 1513e4e)
+
+Working tree was clean at the start. `npm run check` passed (web/type/hook checks, 214 coach tests, importer 9, router 33, vision 92) and the production build passed with the existing large-chunk warning. No application changes were needed. Tests used fictional records only; no training, sealed evaluation, real-diary sharing or new cloud feature was run.
+
+### Live service/proxy
+
+| Check | Result | Evidence |
+|---|---|---|
+| Firebase public config through preview | PASS | 200, all four fields present; values were not printed. |
+| Account with no token | PASS | 401. |
+| Estimate request with an extra diary field | PASS | 422. |
+| Dosing question | PASS | 200 with refused mode. |
+| Malformed barcode | PASS | 422. |
+| Public product barcode 3017620422003 | PASS | 200 with product found; package nutrition accuracy was not independently established. |
+| Generated blank JPEG | PASS | 200 with nothing mode and zero foods. No personal photo uploaded. |
+| Generic no-equipment Trainer request | PASS | 200, AI proposal with 11 library IDs. This API check is not a completed workout. |
+| Generic higher-fibre breakfast request | PASS | 200 with two Nutritionist suggestions. |
+
+### Integrated browser tests on isolated 127.0.0.1:4173
+
+This origin initially showed first-run setup and no foods. It is separate from the user's localhost diary. Created only fictional profile/label/log records for this test; did not inspect or modify the user's real diary. Browser capture controls became unreliable in the small in-app pane; accessible-element actions completed the same tests. Those tool-control issues were not treated as app defects.
+
+| Check | Result | Evidence |
+|---|---|---|
+| First run/manual food | PASS | Fictional 170 cm/70 kg profile; Fictional milk label, 60 kcal and 3 g protein per 100 mL; other nutrients blank. |
+| Parse and review 250 ml Fictional milk | PASS | Unsaved draft showed 150 kcal and 7.5 g protein; day still empty before confirmation. |
+| Confirm meal and unknown handling | PASS | One meal, 150 kcal/7.5 g protein; missing nutrients remained Unknown. |
+| actually 200 ml | PASS | Preview 120 kcal/6 g protein; confirmed revision 2 retained revision 1. |
+| Undo | PASS | Restored 250 mL/150 kcal as revision 3; both earlier revisions remained in history. |
+| Overnight sleep | PASS | `slept 11 pm to 7 am` previewed 8 h in bed. Explicit 7.5 h actual sleep saved as 7 h 30 min, separately from time in bed. |
+| Workout log | PASS | `run 30 min 5 km` previewed and saved only after confirmation. Reload retained meal, workout and sleep. |
+| Weekly overview | PASS | Displayed 150 kcal, one training session and 7.5 h on the test date; other dates remained gaps. |
+| 60-minute plan with repetitions | PASS | 60/60, with 4 full rounds; displayed coverage 3/4 rather than pretending every area was covered. |
+| Same target without repetitions | PASS | 15/60, partial session, explicit 45-minute shortfall. |
+| Exercise search/add/remove | PASS | Found Pushups locally, reviewed before adding, showed 1/24 after reload; removal returned through the existing versioned choice path. |
+| Backup download | PASS | UI reported download; inspected only the known fictional export: 1 food, 1 meal, 3 meal revisions, 1 workout, 1 sleep, added sugar still unknown. |
+| Cached reload with preview stopped | PASS | Stopped only the verified app preview; same-origin reload still displayed saved fictional meal/workout/sleep and weekly values. Preview restarted immediately afterwards. This is not a physical-phone radio-state test. |
+
+### Limits and remaining phone gate
+
+Positive real-plate recognition/camera controls, the packet barcode UI, actual phone airplane mode, and phone backup permissions remain NOT TESTED in this pass. Restore/erase, conflicts/replays and adaptation combinations are covered by automated tests; destructive real-diary restore/erase was not attempted in the browser. No assertion of independent clinical/nutrient accuracy is made. Real diary sharing remains off until Yash chooses its permitted provider. Phone results must be reported separately as PASS/FAIL/NOT TESTED.
+
+Before hosting: phone reload twice at the usual origin, download a backup, then test meal/correction/history, photo and barcode, Gym search/60-minute repeat setting, AI without diary sharing, sleep/workout persistence, and cold reopening after disconnecting USB and enabling airplane mode. Check Me has no Google card and number hiding works. Keep licence and diary-provider decisions separate from functional test results.
