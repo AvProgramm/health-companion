@@ -406,3 +406,12 @@ Rollback point suggested before work: 7d33b80, clean and pushed. Baseline check/
 ## Organisation checkpoint 2: local storage (10 Nov, Codex)
 
 Started from pushed db60917. Moved the existing connection/migration test first; it failed at the new location until the implementation moved. Relocated all 17 storage files into data/storage and retargeted imports. Mechanical comparison against Git confirms no changes beyond module paths; every moved file is under 300 lines. Full check/build passed, including original revision, operation-key, rollback, schema-upgrade and backup tests. Database name, DB_VERSION, stores, indexes and schema steps are unchanged: this is a source-folder move, not a diary data migration. Phone NOT TESTED. Updated the rule/checklist file paths so future agents find the existing code.
+
+
+## Organisation checkpoint 3: diary loader (10 Nov, Codex)
+
+Started from pushed 900d3c6. Moved the existing plain loadWeekLines helper from ui/hooks into data/diary/loadWeek.ts and changed only storage import paths plus the AiView caller. Mechanical comparison confirms unchanged function contents; the sharing switch and model route are untouched. Full check/build passed again. All relocated API, storage, loader and test files are under 300 lines.
+
+Final browser smoke check after rebuilding/reloading: Me still showed the existing three meals and three saved foods, and the week display retained its existing entries. This confirms visibility of the existing local store, not a complete data-integrity audit. The AI screen opened with sharing off. No saved data, account settings or limitations were edited. Phone checks remain NOT TESTED.
+
+Browser chat smoke PASS after all three moves: submitted only `Hi` with sharing off and received the Coach greeting. No diary/profile lines were uploaded. Screenshot saved outside the repo. This verifies the relocated request path; it does not substitute for the outstanding phone rehearsal.

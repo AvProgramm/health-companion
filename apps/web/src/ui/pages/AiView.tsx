@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import type { FoodVersion } from '../../domain/nutrition/types';
 import type { Profile } from '../../domain/profile/profile';
 import { deviceZone, localDateIn } from '../../domain/shared/dates';
-import { loadWeekLines } from '../hooks/loadWeek';
+import { loadWeekLines } from '../../data/diary/loadWeek';
 import { AiChat } from '../components/ai/AiChat';
 import { ErrorLine } from '../components/shared/NoticeLine';
 

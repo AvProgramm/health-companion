@@ -52,6 +52,7 @@ Organised by feature, one reason to change per module. Domain never imports stor
 - `data/exercises/`, `scripts/import-exercises.mjs`, `apps/web/src/data/`: pinned Unlicense exercise source and reproducible offline search index; see `docs/data/exercise-dataset.md`.
 - `apps/web/src/data/storage/`: `connection` (open, schema upgrades, `runTransaction`), `foodsRepo`, `mealsRepo`, `logsRepo`, `customCardsRepo` (immutable exercise-choice snapshots, schema v4), `profileRepo` (immutable device-only adaptations, schema v5), `persistence`, and `backup/` (`format`, `validate` with one checker per store, `transfer` for export/restore/erase).
 - `apps/web/src/data/api/`: HTTP boundary to the optional coach service, with response validation.
+- `apps/web/src/data/diary/`: reusable diary loading, including the gated seven-day summary loader.
 - `apps/web/src/vision/`: the Web Worker that runs the dish model on the device with `onnxruntime-web`. The model is too large to precache, so the service worker keeps it after its first download.
 - `apps/web/src/ui/`: responsive React screens, local Geist/Phosphor assets, compact draft/result presentation. They call domain and storage and never compute totals themselves. `App.tsx` is the shell, `format.ts` holds display text and rounding, and `app.css` loads before `gym.css`.
   - `pages/`: one file per screen (`TodayView`, `GymView`, `FoodsView`, `AiView`, `MeView`, `FirstRunSetup`). A page connects its parts.

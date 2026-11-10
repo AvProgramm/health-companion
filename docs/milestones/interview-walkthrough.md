@@ -6,6 +6,7 @@ This is the single interview script and feature/code tour for the MVP. Older mil
 
 - `ui/pages`: the rooms you visit, such as Today and Gym.
 - `ui/components`: reusable building blocks, such as buttons, cards and editors.
+- `data/diary`: helpers that fetch diary facts for a screen.
 - `data/api`: the messengers that ask the laptop service for information.
 - `data`: the home for loading/saving work and bundled facts. `data/storage` holds the local diary filing cabinet.
 - `domain`: the rulebook and calculator, with no screen or database calls.

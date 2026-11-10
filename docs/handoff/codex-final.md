@@ -107,3 +107,12 @@ Resume with phone step 1, not with a new feature. All seven phone results remain
 ## Latest MVP decision (Yash, 10 Nov)
 
 Frontend hosting: Vercel; backend: Render, planned for 11 Nov. The redundant Me-page Google sign-in card is removed; general multi-user sign-in is later work. Developer Firebase ownership does not authenticate visitors. A later database migration may use Render PostgreSQL rather than Firestore/vector storage; no migration is implemented now. The single interview entry point is `docs/milestones/interview-walkthrough.md`, replacing the three separate M8 interview scripts. Historical milestone records remain as provenance. Licence and permitted diary-model choices remain pending.
+
+
+## Beginner-readable organisation (Yash, 10 Nov)
+
+Yash explicitly authorised small organisation refactors despite the earlier freeze. His rules are now in CLAUDE.md: read first each chat, check existing components/data before new code, pages for screens, components for reusable UI, data for I/O, one job/file, max 300 lines, suggest a Git save point, and change/verify one folder at a time. Begin app explanations with the child-friendly folder map.
+
+Save points: 7d33b80 before refactoring; db60917 after API moved to data/api; 900d3c6 after persistence moved to data/storage. The third checkpoint relocates the plain seven-day loader to data/diary/loadWeek.ts. Functions are unchanged except imports. Each checkpoint passed full check/build; all moved files were mechanically compared. Database name/version/stores, backup format, domain algorithms, request fields/endpoints/timeouts and sharing/model route remain unchanged. No real diary data was sent in the browser smoke check.
+
+The one interview walkthrough has the current folder map. Historical milestone documents retain old paths as provenance. The schema-migration checklist now points to data/storage/connection.ts; this was not a schema migration. Keep future refactors small and separately verified; do not turn remaining UI orchestration into a new framework. Hosting/licence/provider and physical-phone gates remain as previously recorded.
