@@ -346,3 +346,24 @@ The check exposed a separate backend issue: counts were modelled as generic "1",
 
 
 After restarting the coach with the new portion code, two generic live API requests (dal / "2 bowls" and dal / "2 cups") both returned Gemini estimates with count 2, known energy and a real range. This confirms the restarted request path responds; it does not validate serving weight or nutrient accuracy. No diary/profile data was included. The build preview and coach were left running on loopback for Yash's next check.
+
+
+## Interview demo rehearsal (10 Nov 2026 evening, Codex)
+
+Baseline: clean `feat/ai-trainer` at `1fef81b`. `npm run check` and `npm --prefix apps/web run build` passed. The existing large-chunk build warning remains. No application code changed for this checkpoint.
+
+Laptop service: initial port 8000 check was unreachable and the preview proxy returned 502. Started this checkout's coach on loopback port 8000. GET `/api/firebase/config` then returned 200 directly and through localhost:4173, with all four web fields present. Only status/presence flags were printed; no credential files or values were displayed. This was an environment/startup issue, not a reproduced code defect.
+
+Phone results below are for this rehearsal only. Update from Yash's report, one step at a time; previous device checks do not count as observing the current build.
+
+| Step | Test | Result | Observation |
+|---|---|---|---|
+| 1 | `2 weetabix and 300 ml milk`, automatic estimates and explicit save | NOT TESTED | Awaiting Yash's phone report. |
+| 2 | `actually 250 ml`, immutable correction | NOT TESTED | Awaiting step 1. |
+| 3 | Photo reader, counted foods into entry box and estimates | NOT TESTED | Awaiting earlier steps. |
+| 4 | Barcode on Today | NOT TESTED | Requires a packet; record NOT TESTED if unavailable. |
+| 5 | Coach greeting/protein question, 30-minute session, opt-in week context | NOT TESTED | Keep week sharing off until the diary-provider choice is resolved; do not silently send diary lines through the current fallback queue. |
+| 6 | Airplane-mode diary | NOT TESTED | Awaiting earlier steps. |
+| 7 | Google sign-in on Me | NOT TESTED | Prior success was reported in the handover; this rehearsal has not been observed. |
+
+Firestore sync, vector storage and the multi-food experiment are deferred until after Friday. Hosting follows Yash's licence choice; changing the diary-model route requires his provider choice. No working demo path was refactored.
