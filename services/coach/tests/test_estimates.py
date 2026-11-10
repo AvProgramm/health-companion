@@ -9,7 +9,7 @@ from unittest.mock import AsyncMock, patch
 from fastapi.testclient import TestClient
 from coach.app import app
 from coach.databases import parse_usda, parse_off, average_matches
-from coach.databases import portion_basis
+from coach.portions import portion_basis
 from coach.model_client import check_energy_consistency, check_model_spread, request_model
 from coach.models import Basis, Estimate, Nutrients
 from coach.pipeline import estimate_food
@@ -213,7 +213,13 @@ class EstimateTests(unittest.TestCase):
         self.assertEqual(result.range['kcal'].model_dump(), {'low': 100, 'high': 140})
         # Only the food name and a fixed serving phrase reach the model
         self.assertEqual(json.loads(json.loads(requests[0].content)['messages'][1]['content']),
-                         {'name': 'Fictional dish', 'portionText': '1'})
+                         {'name': 'Fictional dish', 'portionText': '1 plate'})
+
+    def test_counted_container_units_keep_their_count(self):
+        """Retain cups and small containers as counts without guessing their mass."""
+        for text in ('2 cups', '2 glass', '2 cans', '2 slices', '2 spoons', '2 mugs'):
+            with self.subTest(text=text):
+                self.assertEqual(portion_basis(text).model_dump(), {'amount': 2.0, 'unit': 'piece'})
 
     def test_prompt_reads_a_bare_count_as_servings_not_cups(self):
         """Keep the portion rule that fixed "2 nasi lemak" becoming 2 cups."""

@@ -2,7 +2,8 @@
 import asyncio
 import os
 import httpx
-from .databases import average_matches, parse_off, parse_usda, portion_basis
+from .portions import portion_basis
+from .databases import average_matches, parse_off, parse_usda
 
 # A short provider deadline leaves the manual diary responsive on a phone.
 DATABASE_TIMEOUT = 3.0

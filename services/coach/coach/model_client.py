@@ -1,7 +1,7 @@
 """Validate hosted-model proposals and attach only real supplied citations."""
 import json
 import httpx
-from .databases import portion_basis
+from .portions import one_serving_text, portion_basis
 from .hosted_models import HOSTED_MODELS
 from .models import Basis, Estimate
 from .prompts import estimate_prompt, estimate_schema
@@ -39,8 +39,8 @@ async def request_model(endpoint, token, model, provider, provider_url, name, po
     """
     per_serving = basis.unit == 'piece' and basis.amount != 1
     asked = ONE_SERVING if per_serving else basis
-    # "1" matches the one-piece basis exactly: one item of a counted food, one plate of a dish
-    asked_text = '1' if per_serving else portion_text
+    # Keep a named bowl or cup, because one generic serving could describe a different amount.
+    asked_text = one_serving_text(portion_text) if per_serving else portion_text
     proposal = await ask_model(endpoint, token, model, provider, provider_url, name, asked_text, asked, evidence, strict_schema)
     return scale_estimate(proposal, basis) if per_serving else proposal
 

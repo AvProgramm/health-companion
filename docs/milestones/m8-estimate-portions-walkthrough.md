@@ -15,3 +15,12 @@ The estimate card receives that prepared input; it no longer has its own contain
 Failing tests first reproduced the count loss through `parseEntry`, `toDraftRow` and `DraftCard`, and proved that requests previously started together. Regression cases cover counted bowls, half bowls, cups, pieces, grams and a food name containing "bowl". The queue test holds the first request open, checks the second has not started, then fails the first and checks the second is sent. Neither test accepts an estimate or saves a meal.
 
 Phone: reload the rebuilt preview twice. Review "2 bowls of dal, 12 almonds". Check the food names and portions before accepting either estimate. Confirm that a provider failure leaves manual entry available and later rows still finish. Nutrition values remain estimates; a correct request portion is not evidence that a model recognised the food or serving accurately.
+
+
+## Preserve the container at the service boundary too
+
+The live browser exposed a second loss: `request_model` replaced any count with the text "1", so the model no longer knew whether it meant a bowl or a cup. The old portion parser also recognised bowls but not cups, glasses, cans, slices, spoons or mugs.
+
+`coach/portions.py` now owns that grammar for both database lookup and model requests. It preserves the numeric count on the existing piece/serving basis and supplies "1 bowl", "1 cup", etc. to the model before code multiplies nutrients and ranges. Bare pieces still use "1". No density or container weight is invented. A prompt rule makes the named container take precedence over a generic serving. Tests first failed for the erased plate name and lost container counts; the final suite has 203 coach tests. Grams and millilitres retain their physical units.
+
+The live pre-service-fix browser check showed the corrected request and a range-labelled, unsaved estimate. Its generic "For 2 pieces" line describes the internal serving basis, not two literal pieces of dal. Serving-size assumptions still need review; a container count is not a measured weight.

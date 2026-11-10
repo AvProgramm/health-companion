@@ -336,3 +336,10 @@ The browser checkbox started off, was enabled explicitly, and remained enabled a
 Failing parser-to-review tests reproduced "2 bowls of dal" becoming "1 bowl". Passing regressions now send "dal" / "2 bowl", "dal" / "0.5 bowl", "rice" / "2 cup", "almonds" / "12 piece", and "rice" / "150 g". A non-container food name, "bowl noodles", stays unchanged. No estimate was accepted or meal saved by these tests.
 
 The request-order regression first observed two simultaneous calls; after the change the second waits, including when the first fails. Full npm check and production build passed. Physical phone and live multi-row estimate accuracy were not verified at this checkpoint.
+
+
+### Live counted draft and responsive check (10 Nov, Codex)
+
+Browser, real service, no diary entry saved: "2 bowls of dal" showed `dal` / `2 bowl` and received a range-labelled estimate automatically, with added sugar still Unknown. The draft was discarded. The request text and responsive review were checked at 393 by 852; the photo checkbox and barcode layout also fit that width. This is browser viewport testing, not a physical phone.
+
+The check exposed a separate backend issue: counts were modelled as generic "1", losing bowl/cup semantics. Added failing service regressions and fixed that boundary afterwards. Full check passed with 203 coach tests; build passed with the existing large-chunk warning. No training or model downloads ran.

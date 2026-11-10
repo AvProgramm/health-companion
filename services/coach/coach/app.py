@@ -103,6 +103,6 @@ async def coach(request: Request, item: CoachRequest):
 
 @app.post('/api/photo', response_model=PhotoReply)
 async def photo(request: Request, item: PhotoRequest):
-    """Return the foods a vision model sees in one photo, sent only when the person tapped Ask."""
+    """Return foods from one explicitly selected photo without saving it."""
     check_local(request)
     return await credited(lambda ask: list_foods(item.image, ask), lambda reply: reply.mode == 'foods', PHOTO_MODELS)

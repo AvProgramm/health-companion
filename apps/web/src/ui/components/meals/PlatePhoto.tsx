@@ -92,7 +92,7 @@ export function PlatePhoto({ onPick, onEntry }: { onPick: (dish: string) => void
         <input className="visually-hidden" type="file" accept="image/*" disabled={busy} onChange={handlePhoto} />
       </label>
       <p className="hint">Choose a photo, then ask AI to list its foods. Check the names and amounts before using them. Nothing is saved here.</p>
-      <label className="check-label">
+      <label className="choice">
         <input type="checkbox" checked={autoRead} onChange={event => handleAutoPhoto(event.target.checked)} />
         Use AI automatically for photos on this device
       </label>
