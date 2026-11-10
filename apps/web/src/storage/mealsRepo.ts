@@ -59,22 +59,15 @@ export function confirmMeal(db: IDBDatabase, first: MealRevision, foods: Readonl
     const operations = tx.objectStore('operations');
     const revisions = tx.objectStore('revisions');
 
-    operations.get(first.operationKey).onsuccess = (event) => {
-      // Replay an operation that already happened instead of saving a second meal
-      const used = resultOf(event) as OperationRecord | undefined;
-      if (used !== undefined) {
-        revisions.get([used.mealId, used.revision]).onsuccess = (stored) =>
-          finish({ status: 'saved', revision: resultOf(stored) as MealRevision, replayed: true });
-        return;
-      }
-
+    // A double tap replays the first save instead of making a second meal
+    unlessReplayed(tx, first.operationKey, finish, () => {
       // Save the header, the revision and the operation key together
       const header: MealHeader = { mealId: first.mealId, localDate: first.localDate, createdAt: first.savedAt, latestRevision: first.revision };
       tx.objectStore('meals').add(header);
       revisions.add(first);
       operations.add({ operationKey: first.operationKey, mealId: first.mealId, revision: first.revision });
       finish({ status: 'saved', revision: first, replayed: false });
-    };
+    });
   });
 }
 
@@ -92,15 +85,8 @@ export function commitEdit(db: IDBDatabase, request: MealEditRequest, foods: Rea
     const revisions = tx.objectStore('revisions');
     const operations = tx.objectStore('operations');
 
-    operations.get(request.operationKey).onsuccess = (event) => {
-      // Replay an operation that already happened, so a retry returns the same revision
-      const used = resultOf(event) as OperationRecord | undefined;
-      if (used !== undefined) {
-        revisions.get([used.mealId, used.revision]).onsuccess = (stored) =>
-          finish({ status: 'saved', revision: resultOf(stored) as MealRevision, replayed: true });
-        return;
-      }
-
+    // A retry returns the revision the first attempt saved
+    unlessReplayed(tx, request.operationKey, finish, () => {
       meals.get(request.mealId).onsuccess = (mealEvent) => {
         const header = resultOf(mealEvent) as MealHeader | undefined;
         if (header === undefined) {
@@ -137,7 +123,7 @@ export function commitEdit(db: IDBDatabase, request: MealEditRequest, foods: Rea
           finish({ status: 'saved', revision: next, replayed: false });
         };
       };
-    };
+    });
   });
 }
 
@@ -189,6 +175,27 @@ export function countMeals(db: IDBDatabase): Promise<number> {
   return runTransaction(db, ['meals'], (tx, finish) => {
     tx.objectStore('meals').count().onsuccess = (event) => finish(resultOf(event) as number);
   }, 'readonly');
+}
+
+/**
+ * Hand back the revision an operation key already produced, or run the write when the key is new.
+ *
+ * Both lookups use the caller's transaction, so the check and the write it guards
+ * still succeed or fail together.
+ */
+function unlessReplayed(tx: IDBTransaction, operationKey: string, finish: (result: CommitResult) => void, write: () => void): void {
+  tx.objectStore('operations').get(operationKey).onsuccess = (event) => {
+    // Run the write for a key that has not been used
+    const used = resultOf(event) as OperationRecord | undefined;
+    if (used === undefined) {
+      write();
+      return;
+    }
+
+    // Replay the stored revision, so nothing is saved twice
+    tx.objectStore('revisions').get([used.mealId, used.revision]).onsuccess = (stored) =>
+      finish({ status: 'saved', revision: resultOf(stored) as MealRevision, replayed: true });
+  };
 }
 
 /**
