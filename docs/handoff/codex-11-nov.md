@@ -33,6 +33,13 @@ Invariant 5 changed with Yash's approval: a photo may leave the device on an exp
 3. **A better estimate from two opinions.** Ask Gemini directly, and separately build the web-search (Tavily) estimate, then have a model pick the less biased one. Whatever is picked must still pass the code checks in `model_client.py` (real low-high range, energy within 25% of 4 × protein + 4 × carbohydrate + 9 × fat, servings multiplied in code). The picker chooses between checked candidates; it never writes numbers. Mind the six-second estimate budget in `pipeline.py`.
 4. **Portions from a photo.** "1 plate" should become the counted or estimated amount from the photo reader (`12 almonds`), not a typical serving.
 
+## Added later on 10 Nov (after the handover was first written)
+
+- **Done: estimates arrive without a tap.** `EstimateDraft.tsx` fetches as soon as a draft row has a food with no saved match, and "bowl of dal" is split into food "dal" and portion "1 bowl". The button now reads "Estimate again". Unit tests pass; not seen on the phone. Left to do: a count before a container ("2 bowls of dal") still loses the 2, and several rows fetch at once, so watch the providers' rate limits.
+- **Done: the chat is friendly** and answers greetings, typos and off-topic questions (checked live). The "not checked" note is once in the footer.
+- **Photo reader seen on the phone:** on a plate of roti canai, tempeh, chickpeas, dhal and sambar it listed "1 roti canai, 1 bowl of curry, 1 bowl of chickpeas, 1 plate of fried chicken". Better than one name, but it called the tempeh fried chicken. Try a stronger Gemini model through `GEMINI_MODEL` (the default is the small flash-lite), and add "say what you are unsure of" to `photo.py`'s prompt.
+- **Yash's view of the on-device model: "the vision transformer is trash".** The Malaysian set is too small for the fine-tune to tell these dishes apart. He is thinking of fine-tuning `google/vit-base-patch16-224` (or a Swin) on Food-101 on his laptop. Tell him plainly before he spends the days: that is still one label per photo, so it cannot fix a plate with five foods, counts or labels; M6 and M7 already tried ViT-Small and SigLIP2 with LoRA; and Food-101 has no Malaysian or Indian plates. For Friday the Gemini photo reader is the working path. A local model is worth it only as the offline fallback or as the FIT3181 story.
+
 ## Still open from the 10 Nov plan
 
 - Phone: Coach, Nutritionist and session through the new chat; add and delete your own exercise; airplane mode after the model download; download time and time per photo.

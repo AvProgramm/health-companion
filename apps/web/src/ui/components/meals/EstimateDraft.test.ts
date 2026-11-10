@@ -48,7 +48,6 @@ describe('estimate draft', () => {
     };
     vi.stubGlobal('fetch', vi.fn().mockResolvedValue({ ok: true, json: async () => full }));
     await act(async () => root.render(createElement(EstimateDraft, { name: 'Fictional oats', portionText: '50 g', hideNumbers: false, onUse: vi.fn(), onEdit: vi.fn() })));
-    await tap('Estimate nutrition');
     for (const label of ['Protein', 'Fat', 'Saturated fat', 'Total sugar', 'Added sugar']) {
       expect(container.textContent).toContain(label);
     }
@@ -57,14 +56,15 @@ describe('estimate draft', () => {
     expect(container.querySelectorAll('.estimate-sources a')).toHaveLength(0);
   });
 
-  it('shows sources and a range without saving until Use estimate is tapped', async () => {
+  it('estimates at once, and shows sources and a range without saving until Use estimate is tapped', async () => {
     const onUse = vi.fn().mockResolvedValue(undefined);
     const onEdit = vi.fn();
     const fetchMock = vi.fn().mockResolvedValue({ ok: true, json: async () => proposal });
     vi.stubGlobal('fetch', fetchMock);
     await act(async () => root.render(createElement(EstimateDraft, { name: 'Fictional oats', portionText: '50 g', hideNumbers: false, onUse, onEdit })));
-    expect(fetchMock).not.toHaveBeenCalled();
-    await tap('Estimate nutrition');
+    // Asked for on the phone on 10 Nov: the estimate arrives without a tap, sending only the name and portion
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    expect(JSON.parse(fetchMock.mock.calls[0]![1].body)).toMatchObject({ name: 'Fictional oats', portionText: '50 g' });
     expect(container.textContent).toContain('60.0 kcal (50.0–70.0)');
     expect(container.textContent).toContain('USDA');
     expect(onUse).not.toHaveBeenCalled();
@@ -78,7 +78,6 @@ describe('estimate draft', () => {
     const onEdit = vi.fn();
     vi.stubGlobal('fetch', vi.fn().mockResolvedValue({ ok: true, json: async () => proposal }));
     await act(async () => root.render(createElement(EstimateDraft, { name: 'Fictional oats', portionText: '50 g', hideNumbers: false, onUse, onEdit })));
-    await tap('Estimate nutrition');
     await tap('Edit');
     expect(onUse).not.toHaveBeenCalled();
     expect(onEdit.mock.calls[0]![0].source.kind).toBe('database');
@@ -99,7 +98,6 @@ describe('estimate draft', () => {
   it('hides all nutrient values when numbers are hidden', async () => {
     vi.stubGlobal('fetch', vi.fn().mockResolvedValue({ ok: true, json: async () => proposal }));
     await act(async () => root.render(createElement(EstimateDraft, { name: 'Fictional oats', portionText: '50 g', hideNumbers: true, onUse: vi.fn(), onEdit: vi.fn() })));
-    await tap('Estimate nutrition');
     expect(container.textContent).not.toContain('60.0');
     expect(container.textContent).toContain('USDA');
   });

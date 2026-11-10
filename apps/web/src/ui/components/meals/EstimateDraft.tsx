@@ -9,6 +9,9 @@ import { Sparkle } from '@phosphor-icons/react';
 import { EstimateResult } from './EstimateResult';
 import { errorText } from '../../format';
 
+// A container before the food, as the photo reader and people write it: "bowl of dal", "2 cups of rice" keeps its own amount
+const CONTAINER_OF = /^(bowl|cup|plate|glass|can|slice|spoon|mug)s? of (.+)$/i;
+
 interface EstimateDraftProps {
   name: string;
   portionText: string;
@@ -19,8 +22,10 @@ interface EstimateDraftProps {
 
 /** Offer a food-only request and keep its result unsaved until confirmation. */
 export function EstimateDraft({ name: initialName, portionText: initialPortion, hideNumbers, onUse, onEdit }: EstimateDraftProps) {
-  const [name, setName] = useState(initialName);
-  const [portionText, setPortionText] = useState(initialPortion);
+  // "bowl of dal": the container is the portion, not part of the food's name
+  const contained = initialPortion === '' ? CONTAINER_OF.exec(initialName) : null;
+  const [name, setName] = useState(contained?.[2] ?? initialName);
+  const [portionText, setPortionText] = useState(contained ? `1 ${contained[1]}` : initialPortion);
   const [estimate, setEstimate] = useState<NutritionEstimate | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
@@ -31,6 +36,13 @@ export function EstimateDraft({ name: initialName, portionText: initialPortion, 
   useEffect(() => {
     mounted.current = true;
     return () => { mounted.current = false; };
+  }, []);
+
+  // Fetch the estimate as soon as the food is identified, so nobody has to ask for it; it is still only a proposal
+  useEffect(() => {
+    if (name.trim() !== '') void loadEstimate();
+    // Run once for the food this row started with; later edits are sent by the button
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   /** Fetch a proposal without writing a food or meal. */
@@ -76,7 +88,7 @@ export function EstimateDraft({ name: initialName, portionText: initialPortion, 
         <input className="input" maxLength={80} placeholder="Typical serving, or e.g. 150 g" value={portionText} disabled={busy} onChange={(event) => { setPortionText(event.target.value); setEstimate(null); }} />
       </Field>
       </div>
-      <button type="button" className="button button-secondary estimate-trigger" disabled={busy || name.trim() === ''} onClick={loadEstimate}>Estimate nutrition</button>
+      <button type="button" className="button button-secondary estimate-trigger" disabled={busy || name.trim() === ''} onClick={loadEstimate}>{estimate === null ? 'Estimate nutrition' : 'Estimate again'}</button>
   </>;
 
   return (
