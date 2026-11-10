@@ -1,5 +1,5 @@
 import { useState, type ChangeEvent, type FormEvent } from 'react';
-import { lookUpBarcode, readBarcodeDigits } from '../../../api/barcode';
+import { lookUpBarcode, readBarcodeDigits } from '../../../data/api/barcode';
 import type { FoodVersion } from '../../../domain/nutrition/types';
 import { errorText } from '../../format';
 import { useBusy } from '../../hooks/useBusy';

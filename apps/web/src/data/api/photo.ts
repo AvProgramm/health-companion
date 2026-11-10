@@ -1,4 +1,4 @@
-import { readPhotoReply, type PhotoReply } from '../domain/dish/photoReply';
+import { readPhotoReply, type PhotoReply } from '../../domain/dish/photoReply';
 import { postJson, type ServiceMessages } from './post';
 
 // A model reading a photo is slower than one reading a question, plus the upload

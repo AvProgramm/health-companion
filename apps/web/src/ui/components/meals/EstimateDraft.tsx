@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { Field } from '../shared/Field';
-import { requestEstimate } from '../../../api/estimate';
+import { requestEstimate } from '../../../data/api/estimate';
 import { estimatedFood, type NutritionEstimate } from '../../../domain/nutrition/estimates';
 import { buildFoodVersion } from '../../../domain/nutrition/foods';
 import { NUTRIENT_KEYS } from '../../../domain/nutrition/types';

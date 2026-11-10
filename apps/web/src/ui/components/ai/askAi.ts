@@ -1,6 +1,6 @@
-import { askCoach } from '../../../api/coach';
-import { askNutritionist } from '../../../api/nutritionist';
-import { requestTrainerPlan } from '../../../api/trainer';
+import { askCoach } from '../../../data/api/coach';
+import { askNutritionist } from '../../../data/api/nutritionist';
+import { requestTrainerPlan } from '../../../data/api/trainer';
 import { chatIntent } from '../../../domain/chat/chatIntent';
 import type { CoachReply } from '../../../domain/coach/coachReply';
 import type { NutritionistReply } from '../../../domain/nutrition/nutritionistReply';

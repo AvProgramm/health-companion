@@ -1,5 +1,5 @@
-import { estimatedFood, readEstimate } from '../domain/nutrition/estimates';
-import type { FoodVersion } from '../domain/nutrition/types';
+import { estimatedFood, readEstimate } from '../../domain/nutrition/estimates';
+import type { FoodVersion } from '../../domain/nutrition/types';
 import { postJson, type ServiceMessages } from './post';
 
 // One bounded call to a public food database, plus the proxy hop

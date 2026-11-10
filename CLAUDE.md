@@ -2,6 +2,18 @@
 
 A free, local-first diary for balancing food, exercise and sleep. It remembers what was logged, accepts corrections, and always shows what it knows versus what it estimated. Built in six days (8–13 Nov 2026) by Yash, with Claude Code (architecture, frontend) and Codex (Python backend, PyTorch). Yash reviews every diff and explains the code himself.
 
+## Beginner-readable architecture and refactoring (Yash, 10 Nov)
+
+Read this file first in every new chat. When explaining the app, start with a 10-year-old-friendly folder map before technical details.
+
+- Screens belong in `ui/pages/`: one screen per file.
+- Reusable UI belongs in `ui/components/`: check existing components first and reuse them.
+- Saving, loading and API logic belong in `data/`: check existing data modules before writing new code. API requests now live in `data/api/`. The existing `storage/` repositories and UI loading helpers are legacy locations to migrate separately, one folder at a time; do not duplicate them in `data/` meanwhile.
+- Keep pure calculations and rules in `domain/`; UI state belongs in hooks, not data services.
+- Give each file one job and keep authored code files at or under 300 lines. Do not grow a file past the limit; split it by responsibility.
+- Before changes, suggest a Git save point. Refactor one folder at a time without changing behaviour, then confirm checks/build and relevant UI behaviour before the next folder. Keep explicit-path staging and green commits.
+- This authorises small, behaviour-preserving organisation work despite the earlier pre-interview refactor freeze. Do not mix feature changes, database migration or reserved algorithm edits into it.
+
 ## Stack
 - `apps/web`: Vite + React 19 + TypeScript PWA.
   - Diary in IndexedDB.
@@ -39,7 +51,7 @@ Organised by feature, one reason to change per module. Domain never imports stor
   - `parsing/`: the composer grammar. `parseEntry` tries an ordered list of small parsers (`question`, `correction`, `sleepEntry`, `workoutEntry`, `meal`); a new kind of entry is a new parser in that list.
 - `data/exercises/`, `scripts/import-exercises.mjs`, `apps/web/src/data/`: pinned Unlicense exercise source and reproducible offline search index; see `docs/data/exercise-dataset.md`.
 - `apps/web/src/storage/`: `connection` (open, schema upgrades, `runTransaction`), `foodsRepo`, `mealsRepo`, `logsRepo`, `customCardsRepo` (immutable exercise-choice snapshots, schema v4), `profileRepo` (immutable device-only adaptations, schema v5), `persistence`, and `backup/` (`format`, `validate` with one checker per store, `transfer` for export/restore/erase).
-- `apps/web/src/api/`: HTTP boundary to the optional coach service, with response validation.
+- `apps/web/src/data/api/`: HTTP boundary to the optional coach service, with response validation.
 - `apps/web/src/vision/`: the Web Worker that runs the dish model on the device with `onnxruntime-web`. The model is too large to precache, so the service worker keeps it after its first download.
 - `apps/web/src/ui/`: responsive React screens, local Geist/Phosphor assets, compact draft/result presentation. They call domain and storage and never compute totals themselves. `App.tsx` is the shell, `format.ts` holds display text and rounding, and `app.css` loads before `gym.css`.
   - `pages/`: one file per screen (`TodayView`, `GymView`, `FoodsView`, `AiView`, `MeView`, `FirstRunSetup`). A page connects its parts.
@@ -52,7 +64,7 @@ Organised by feature, one reason to change per module. Domain never imports stor
 ## Design rules
 - **SOLID where it pays:** single-purpose modules, extension by adding to a list (parsers, backup checkers, `MealEdit` cases), and dependencies pointing inward (UI → storage → domain).
 - **YAGNI:** no interface with one implementation, no wrapper or export without a caller in app code, no speculative options. Delete code the app stopped using.
-- **One job per file, at most 300 lines.** Split a file by job before it grows past that. A test file may run longer, because one module's cases belong together.
+- **One job per file, at most 300 lines.** Split a file by job before it grows past that. Check existing oversized files separately; do not expand them while reorganising another folder.
 - **Responsive UI:** `ui/app.css` owns the spacing/type/surface tokens. The app uses a sidebar and two columns on laptops, and an edge-to-edge single column with a bottom dock on phones. Do not restore a narrow fixed-width wrapper around the whole app. Sources and secondary explanations stay expandable; confirmation remains explicit.
 
 ## Invariants (never break these)

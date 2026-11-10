@@ -1,6 +1,6 @@
-import type { Category, Equipment } from '../domain/training/catalogue';
-import type { ExerciseLevel } from '../domain/training/exerciseSearch';
-import { readTrainerReply, type TrainerReply } from '../domain/training/trainerPlan';
+import type { Category, Equipment } from '../../domain/training/catalogue';
+import type { ExerciseLevel } from '../../domain/training/exerciseSearch';
+import { readTrainerReply, type TrainerReply } from '../../domain/training/trainerPlan';
 import { postJson, type ServiceMessages } from './post';
 
 // Three bounded model steps, plus the proxy hop

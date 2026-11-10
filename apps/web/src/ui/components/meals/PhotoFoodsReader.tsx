@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { Sparkle } from '@phosphor-icons/react';
-import { readPhotoFoods } from '../../../api/photo';
+import { readPhotoFoods } from '../../../data/api/photo';
 import { photoEntry, type PhotoReply } from '../../../domain/dish/photoReply';
 import { shrinkPhoto } from '../../../vision/shrinkPhoto';
 import { useBusy } from '../../hooks/useBusy';

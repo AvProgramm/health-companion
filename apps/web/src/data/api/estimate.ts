@@ -1,4 +1,4 @@
-import { readEstimate } from '../domain/nutrition/estimates';
+import { readEstimate } from '../../domain/nutrition/estimates';
 import { postJson, type ServiceMessages } from './post';
 
 // Outlast the slowest path: database 4 s, web 4 s, three models at 8 s each and a 2 s supplement.

@@ -1,4 +1,4 @@
-import { readNutritionistReply, type NutritionistReply } from '../domain/nutrition/nutritionistReply';
+import { readNutritionistReply, type NutritionistReply } from '../../domain/nutrition/nutritionistReply';
 import { postJson, type ServiceMessages } from './post';
 
 // One bounded model call, plus the proxy hop

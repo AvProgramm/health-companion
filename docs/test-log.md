@@ -396,3 +396,8 @@ Regression first: opening Me displayed "Connect with Google" and made a Firebase
 Browser PASS: rebuilt preview, reloaded to update the cached shell, then opened Me. The page begins with local adaptations, with body/storage/backup/display below and no Google account card. No profile or diary data was changed. Physical-phone result remains NOT TESTED.
 
 The single interview document is `docs/milestones/interview-walkthrough.md` (146 lines), covering all MVP features, source files, demo sequence, experimental limitations and tomorrow's hosting gates. Three separate M8 interview scripts were consolidated into it; older milestone histories remain as provenance. No deployment, database provisioning or licence/provider decision was made.
+
+
+## Organisation checkpoint 1: API folder (10 Nov, Codex)
+
+Rollback point suggested before work: 7d33b80, clean and pushed. Baseline check/build passed. Moved the existing request tests first; they failed because the new location had no implementation yet. Moved all eight API files into data/api and adjusted relative imports only. Mechanical comparison against Git confirms identical contents apart from domain import paths. Post-move full check/build passed, including existing UI request/privacy and queue cases. No endpoint, payload, timeout, model route or saving behaviour changed. Phone NOT TESTED for this organisation-only change. Rules are saved in CLAUDE.md; storage is a separate next folder.

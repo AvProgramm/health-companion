@@ -2,7 +2,7 @@
 import { act, createElement } from 'react';
 import { createRoot, type Root } from 'react-dom/client';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { readBarcodeDigits } from '../../../api/barcode';
+import { readBarcodeDigits } from '../../../data/api/barcode';
 import { BarcodeScan } from './BarcodeScan';
 
 // A label reply shaped like the service's, with every nutrient key present

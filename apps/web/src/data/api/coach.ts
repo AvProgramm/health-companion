@@ -1,4 +1,4 @@
-import { readCoachReply, type CoachReply } from '../domain/coach/coachReply';
+import { readCoachReply, type CoachReply } from '../../domain/coach/coachReply';
 import { postJson, type ServiceMessages } from './post';
 
 // One bounded model call, plus the proxy hop

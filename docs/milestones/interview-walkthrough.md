@@ -2,6 +2,16 @@
 
 This is the single interview script and feature/code tour for the MVP. Older milestone documents are development history, not additional interview scripts. Yash should explain each section back and mark his actual review in `docs/ai-log.md`.
 
+## Folder map, like explaining it to a 10-year-old
+
+- `ui/pages`: the rooms you visit, such as Today and Gym.
+- `ui/components`: reusable building blocks, such as buttons, cards and editors.
+- `data/api`: the messengers that ask the laptop service for information.
+- `data`: the home for loading/saving work and bundled facts. Existing `storage` still holds the local diary filing cabinet while we migrate one folder at a time.
+- `domain`: the rulebook and calculator, with no screen or database calls.
+- `ui/hooks`: the screen's short-term memory and action state.
+- `services/coach`: the optional laptop helpers for food and coaching.
+
 ## Opening: 30 seconds
 
 "Health Companion is a React and TypeScript PWA for food, exercise and sleep. The diary works locally in IndexedDB. Optional FastAPI services supply nutrition proposals, food-photo reading and coaching. Code owns arithmetic, revisions and hard exercise constraints; model responses are proposals that need confirmation. Missing nutrition stays unknown."
@@ -131,7 +141,7 @@ The barcode card is on Today beside photo capture; Foods is the saved-food list.
 
 ## Automatic estimates
 
-`EstimateDraft.tsx` begins lookup when an unknown-food row opens. `api/estimate.ts` sends only its name and portion text and serialises requests in this tab to reduce bursts. Both successful and failed calls release the next queued row. A slow row can delay later rows; this queue is not a provider-quota guarantee.
+`EstimateDraft.tsx` begins lookup when an unknown-food row opens. `data/api/estimate.ts` sends only its name and portion text and serialises requests in this tab to reduce bursts. Both successful and failed calls release the next queued row. A slow row can delay later rows; this queue is not a provider-quota guarantee.
 
 The service checks composition data first, searches bounded public evidence on a miss and asks an available model only when needed. Database spreads describe the matching records; they are not statistical confidence intervals. AI proposals need usable values and genuine low/high bounds. Missing nutrients remain null, even if others are known. Energy is checked against 4P + 4C + 9F within the configured tolerance. This rejects contradictions; it cannot prove that a recipe or serving assumption is correct.
 
