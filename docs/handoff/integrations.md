@@ -26,3 +26,8 @@ Current pipeline: composition data → Tavily excerpts → whichever of Groq, Ge
 
 ## Device-only profile (8 Nov, B1/B2)
 The schema-v5 profile holds opt-in avoided areas, seated-only, blocked pull-up/jumping capabilities and diabetes display priorities. None is appended to Trainer/Coach requests or prompts. The existing explicitly named Trainer fields remain the entire outgoing payload; all profile filtering and fallback happen on-device. Backups include immutable profile history and must be kept private. UI request-shape and stale-reply tests pass; no new live-provider verification was run for this checkpoint. B5 logged diary sharing remains an open decision for Yash. Read docs/milestones/m5-profile-walkthrough.md.
+
+
+## New cloud direction (Yash, 10 Nov)
+
+Yash now requests Firebase cloud storage and AI access to his own saved diary/profile for analysis. This authorises a change from the earlier local-only direction; read `docs/handoff/firebase-diary.md` (from the repo root) before implementing it. The configuration template is prepared, but auth, migration, cloud repositories and diary-aware AI are not implemented yet. Existing local data and current request boundaries remain in place until that tested path ships. No existing records may be erased as an implicit part of setup.

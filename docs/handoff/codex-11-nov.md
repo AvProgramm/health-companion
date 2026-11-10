@@ -117,3 +117,8 @@ His idea: like the claim extractor in Veritaserum, first *extract* each food reg
 - Remaining: two checked estimate opinions/picker, vision-provider backups, stronger photo uncertainty, positive real-plate/phone tests and hosting. The handover's six-second estimate budget is stale: the actual current pipeline has 4-second lookup stages and 8-second model stages, with a 35-second browser timeout. Resolve that budget explicitly before adding more calls; do not claim the picker already exists.
 
 - Follow-up service fix: preserve "1 bowl"/"1 cup" when asking for a single serving before multiplying in code. New `coach/portions.py` is the shared portion grammar; cups, glasses, cans, slices, spoons and mugs now retain counts. The old generic "1" erased the container. Coach tests now 203; full checks and production build passed. The UI still calls a container's internal count "pieces" in its basis line; review the stated assumptions rather than treating that as a measured mass.
+
+
+## New cloud direction (Yash, 10 Nov)
+
+Yash now requests Firebase cloud storage and AI access to his own saved diary/profile for analysis. This authorises a change from the earlier local-only direction; read `docs/handoff/firebase-diary.md` (from the repo root) before implementing it. The configuration template is prepared, but auth, migration, cloud repositories and diary-aware AI are not implemented yet. Existing local data and current request boundaries remain in place until that tested path ships. No existing records may be erased as an implicit part of setup.

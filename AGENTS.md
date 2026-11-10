@@ -21,3 +21,8 @@ Unfinished Milestone 5 work: read `docs/handoff/codex-m5.md` first.
 Local profile adaptations now use schema v5 and must apply to every planner path on the device. Read `docs/milestones/m5-profile-walkthrough.md`; a later schema addition starts at v6. Do not paste the profile into a service request or model prompt.
 
 Current priorities: read `docs/handoff/codex-11-nov.md`. Photo uploads need a per-photo tap or the explicitly enabled, device-only automatic-photo setting; its default is off. Never send diary or saved profile data.
+
+
+## New cloud direction (Yash, 10 Nov)
+
+Yash now requests Firebase cloud storage and AI access to his own saved diary/profile for analysis. This authorises a change from the earlier local-only direction; read `docs/handoff/firebase-diary.md` (from the repo root) before implementing it. The configuration template is prepared, but auth, migration, cloud repositories and diary-aware AI are not implemented yet. Existing local data and current request boundaries remain in place until that tested path ships. No existing records may be erased as an implicit part of setup.
