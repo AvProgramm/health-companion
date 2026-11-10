@@ -22,6 +22,11 @@ function Sources({ sources, open }: { sources: CoachSource[]; open: boolean }) {
 
 /** Display the Coach's sentences, each with the cards it cites when it has any. */
 function CoachAnswer({ reply }: { reply: CoachReply }) {
+  // A general answer reads as conversation, with its label underneath as a small note
+  if (reply.mode === 'general') {
+    return <>{reply.claims.map(claim => <p key={claim.text} className="body">{claim.text}</p>)}<p className="hint">{reply.message}</p></>;
+  }
+
   return (
     <>
       <p className="body">{reply.message}</p>

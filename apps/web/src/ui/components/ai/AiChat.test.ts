@@ -99,7 +99,7 @@ describe('AI chat', () => {
     await show();
     await say('Fictional question?');
     expect(container.textContent).toContain('not checked against reviewed guidance');
-    expect(container.querySelector('.chat-reply .items li')?.textContent).toBe('Fictional general claim.');
+    expect(container.querySelector('.chat-reply p.body')?.textContent).toBe('Fictional general claim.');
     expect(container.querySelector('details')).toBeNull();
   });
 

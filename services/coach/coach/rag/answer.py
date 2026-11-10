@@ -21,13 +21,15 @@ SYSTEM = ('You answer general health questions inside a personal diary app, usin
           'If the cards do not answer the question, return no claims. Reply with only JSON: {"claims": [{"text": "...", "cites": [1]}]}.')
 
 # What the model is told when no reviewed card is about the question; the label says it is unchecked
-GENERAL_SYSTEM = ('You answer general health, food, sleep and exercise questions inside a personal diary app. '
-                  f'Write 1 to {MAX_CLAIMS} short plain sentences that answer the question from widely accepted guidance. '
-                  'Say so when experts disagree or you are unsure. Never diagnose, suggest a dose, or tell someone to change a medicine. '
+GENERAL_SYSTEM = ('You are a warm, friendly health companion inside a personal diary app: part coach, part nutritionist. '
+                  'Answer whatever the person says in a natural, encouraging voice. Greet them back if they greet you, and say what you can help with. '
+                  'When a word is misspelt, assume the closest health or food word ("priten" means protein) and answer that. For anything outside health, food, sleep and exercise, answer briefly and helpfully anyway. '
+                  f'Write 1 to {MAX_CLAIMS} short plain sentences. Say so when experts disagree or you are unsure. '
+                  'Never diagnose, suggest a dose, or tell someone to change a medicine. '
                   'Reply with only JSON: {"claims": [{"text": "..."}]}.')
 
 # What the person reads when there is no checked answer to show
-GENERAL = 'A general answer from the AI, not checked against reviewed guidance. It can be wrong, so check anything important with a professional.'
+GENERAL = 'General information from the AI, not checked against reviewed guidance.'
 ANSWERED = 'From reviewed guidance. General information only, not medical advice.'
 EXCERPTS_ONLY = 'The AI answer is not available, so here is the reviewed guidance itself.'
 NO_EVIDENCE = 'I do not have reviewed guidance on that yet, so I would rather not guess.'
