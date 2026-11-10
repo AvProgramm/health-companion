@@ -221,6 +221,12 @@ class EstimateTests(unittest.TestCase):
         self.assertIn('Never reinterpret servings as cups', prompt)
         self.assertIn('strictly below its high', prompt)
 
+    def test_prompt_counts_small_foods_by_the_single_item(self):
+        """Keep the rule that fixed "7 almonds" becoming seven 28 g servings (1155 kcal on the phone, 10 Nov)."""
+        prompt = estimate_prompt(Basis(amount=1, unit='piece'))
+        self.assertIn('one piece of almonds is one almond', prompt)
+        self.assertIn('never a handful', prompt)
+
     def test_http_adapters_fall_back_to_groq_with_only_food_input(self):
         """Exercise the real endpoint and adapters with fictional HTTP responses."""
         requests = []

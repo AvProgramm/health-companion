@@ -69,3 +69,7 @@ Yash shared a list of seven kinds of agent memory and asked which fit this app. 
 **A vector database (he mentioned Firestore):** not needed for items 1, 2 and 4, which are small and local. It becomes relevant only for accounts with memory across devices, or a much larger card library. That is the parked "accounts and per-user coaches" idea, and it would end "no accounts, nothing leaves the device", so it is his decision and comes after Friday. The current card search (BM25 and MiniLM in memory) is enough for the reviewed cards.
 
 **Recommended for Friday:** item 1 only. Item 2 is the best next milestone and a good interview talking point: memory the user can read, edit and erase, kept on the device.
+
+## Estimate bug fixed last (10 Nov, 11:55)
+
+On the phone "almonds, 7 piece" gave 1155 kcal: the model answered one 28 g serving for "1 piece" and the code multiplied by 7. `prompts.py` now says small counted foods are counted by the single item. Checked live through the proxy: almonds 7 piece gives 49 kcal (42-56) twice, grapes 10 piece 34 kcal, nasi lemak 2 piece still 1300 kcal. One almond request in three returned 503 "No estimate is available", so tiny per-item values may sometimes fail a check in `model_client.py`; worth a look. A stronger fix is to ask the model for the grams of one item and scale a per-100 g record in code.
