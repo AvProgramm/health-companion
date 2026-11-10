@@ -1,4 +1,5 @@
 import { EMPTY_PROFILE, type Profile } from '../../../domain/profile/profile';
+import { Field } from '../shared/Field';
 import { useEffect, useRef, useState, type FormEvent } from 'react';
 import { Sparkle } from '@phosphor-icons/react';
 import { requestTrainerPlan } from '../../../api/trainer';
@@ -84,14 +85,12 @@ export function TrainerCard({ entries, profile = EMPTY_PROFILE }: { entries: rea
     <section className="card ai-card" aria-labelledby="trainer-heading">
       <div className="card-head"><div><p className="eyebrow">AI TRAINER</p><h2 id="trainer-heading" className="heading">Ask the Trainer</h2></div><span className="badge"><Sparkle size={14} />Chooses from the library</span></div>
       <form className="form" onSubmit={handleSubmit}>
-        <label className="field">
-          <span className="label">What do you want from today?</span>
+        <Field label="What do you want from today?">
           <textarea id="trainer-goal" className="input ai-input" maxLength={200} rows={2} value={goal} placeholder="I want to get healthier and build some muscle" onChange={event => setGoal(event.target.value)} />
-        </label>
-        <label className="field">
-          <span className="label">Minutes you have</span>
+        </Field>
+        <Field label="Minutes you have">
           <input id="trainer-minutes" className="input input-short" inputMode="numeric" value={minutesText} onChange={event => setMinutesText(event.target.value)} />
-        </label>
+        </Field>
         <OptionGroup legend="Where" name="trainer-setting" options={Object.entries(SETTINGS).map(([value, place]) => [value as Setting, place.label])} value={setting} onChange={setSetting} />
         <OptionGroup legend="How hard" name="trainer-difficulty" options={Object.entries(DIFFICULTIES).map(([value, rule]) => [value as Difficulty, rule.label])} value={difficulty} onChange={setDifficulty} />
         <button type="submit" className="button" disabled={busy}>{busy ? 'Choosing exercises…' : 'Ask the Trainer'}</button>

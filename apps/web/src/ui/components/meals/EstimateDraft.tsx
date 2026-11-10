@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import { Field } from '../shared/Field';
 import { requestEstimate } from '../../../api/estimate';
 import { estimatedFood, type NutritionEstimate } from '../../../domain/nutrition/estimates';
 import { buildFoodVersion } from '../../../domain/nutrition/foods';
@@ -68,14 +69,12 @@ export function EstimateDraft({ name: initialName, portionText: initialPortion, 
   // Reuse the inputs before lookup and inside the collapsed result editor.
   const inputFields = <>
       <div className="estimate-fields">
-      <label className="field">
-        <span className="label">Food to estimate</span>
+      <Field label="Food to estimate">
         <input className="input" maxLength={80} value={name} disabled={busy} onChange={(event) => { setName(event.target.value); setEstimate(null); }} />
-      </label>
-      <label className="field">
-        <span className="label">Portion text</span>
+      </Field>
+      <Field label="Portion text">
         <input className="input" maxLength={80} placeholder="Typical serving, or e.g. 150 g" value={portionText} disabled={busy} onChange={(event) => { setPortionText(event.target.value); setEstimate(null); }} />
-      </label>
+      </Field>
       </div>
       <button type="button" className="button button-secondary estimate-trigger" disabled={busy || name.trim() === ''} onClick={loadEstimate}>Estimate nutrition</button>
   </>;

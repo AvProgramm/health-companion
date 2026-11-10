@@ -196,6 +196,13 @@ export function errorText(problem: unknown): string {
   return problem instanceof Error ? problem.message : String(problem);
 }
 
+/**
+ * Return the numbers of the cards behind a claim as they read on screen, such as "[1] [3]".
+ */
+export function citesText(cites: readonly number[]): string {
+  return cites.map((cite) => `[${cite}]`).join(' ');
+}
+
 // Keep very large display-only labels inside the minutes ring; exact totals remain elsewhere.
 const COMPACT_MINUTES = new Intl.NumberFormat('en-AU', { notation: 'compact', maximumFractionDigits: 1 });
 

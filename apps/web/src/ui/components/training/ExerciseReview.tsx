@@ -1,9 +1,12 @@
 import { useState, type FormEvent } from 'react';
 import type { MovementCard } from '../../../domain/training/catalogue';
 import { reviewExercise, whyNotAddable, type ExerciseEntry } from '../../../domain/training/exerciseSearch';
-import { CAPABILITY_LABELS, EQUIPMENT_LABELS, LEVEL_LABELS, errorText } from '../../format';
+import { CAPABILITY_LABELS, EQUIPMENT_LABELS, LEVEL_LABELS } from '../../format';
 import { MuscleMap } from './MuscleMap';
 import { Sheet } from '../shared/Sheet';
+import { Field } from '../shared/Field';
+import { ErrorLine } from '../shared/NoticeLine';
+import { useBusy } from '../../hooks/useBusy';
 
 interface ExerciseReviewProps { entry: ExerciseEntry; onConfirm: (card: MovementCard) => Promise<void>; onClose: () => void }
 
@@ -16,8 +19,7 @@ interface ExerciseReviewProps { entry: ExerciseEntry; onConfirm: (card: Movement
 export function ExerciseReview({ entry, onConfirm, onClose }: ExerciseReviewProps) {
   // Keep the planning block in an unsaved draft until the person confirms
   const [minutes, setMinutes] = useState(String(entry.minutes));
-  const [busy, setBusy] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const { busy, error, run } = useBusy();
   const blocked = whyNotAddable(entry);
 
   /** Save the exercise with the source's facts and the chosen planning block. */
@@ -25,14 +27,10 @@ export function ExerciseReview({ entry, onConfirm, onClose }: ExerciseReviewProp
     event.preventDefault();
     // Ignore a repeated confirmation because one write is already in flight
     if (busy || blocked !== null) return;
-    setError(null);
-    setBusy(true);
-    try {
+    await run(async () => {
       await onConfirm(reviewExercise(entry, Number(minutes)));
       onClose();
-    } catch (problem) {
-      setError(errorText(problem));
-    } finally { setBusy(false); }
+    });
   }
 
   // Describe each fact as it reads on screen; bodyweight and "no special ability" are facts too
@@ -49,10 +47,10 @@ export function ExerciseReview({ entry, onConfirm, onClose }: ExerciseReviewProp
     </dl>
     <p className="hint">These come from the source{entry.sourceEquipment === null ? '' : ` (listed equipment: ${entry.sourceEquipment})`} and its instructions, so they cannot be changed here.</p>
     {blocked !== null ? <p className="notice" role="status">{blocked}</p> : <form className="form" onSubmit={confirm}>
-      <label className="field"><span className="label">Planning block (minutes)</span><input className="input input-short" type="number" min="1" max="60" step="1" value={minutes} onChange={event => setMinutes(event.target.value)} /></label>
+      <Field label="Planning block (minutes)"><input className="input input-short" type="number" min="1" max="60" step="1" value={minutes} onChange={event => setMinutes(event.target.value)} /></Field>
       <p className="hint">The source gives no duration. Five minutes is a planning default you can change, not a prescription.</p>
       <details className="exercise-instructions"><summary>Read the instructions</summary><p className="body">{entry.cue || 'The source supplied no instructions.'}</p></details>
-      {error && <p role="alert" className="field-error">{error}</p>}
+      <ErrorLine error={error} />
       <button className="button" type="submit" disabled={busy}>{busy ? 'Adding…' : 'Add to my exercises'}</button>
     </form>}
   </Sheet>;

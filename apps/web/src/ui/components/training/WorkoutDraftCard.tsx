@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import { Field } from '../shared/Field';
 import { buildWorkout, describeSets, lastPerformed, movementKey, type LoadUnit, type WorkoutDraft, type WorkoutEntry, type WorkoutSet } from '../../../domain/training/workouts';
 import { listWorkouts, saveLogEntry } from '../../../storage/logsRepo';
 import { formatDiaryDate, readAmount, errorText } from '../../format';
@@ -99,10 +100,9 @@ export function WorkoutDraftCard({ db, date, dateLabel, zone, draft, onSaved, on
         <p className="body">No training on {dateLabel}. Saving it keeps the record honest; nothing is counted as missed.</p>
       ) : (
         <>
-          <label className="field">
-            <span className="label">Exercise or activity</span>
+          <Field label="Exercise or activity">
             <input className="input" value={movement} onChange={(event) => setMovement(event.target.value)} />
-          </label>
+          </Field>
 
           {timed ? (
             <div className="row">

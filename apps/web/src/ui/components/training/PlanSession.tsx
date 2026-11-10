@@ -1,4 +1,5 @@
 import { EMPTY_PROFILE, type Profile } from '../../../domain/profile/profile';
+import { Field } from '../shared/Field';
 import { useEffect, useState, type FormEvent } from 'react';
 import { type Category, type MovementCard, type Equipment } from '../../../domain/training/catalogue';
 import { bestPlan, type PlanResult } from '../../../domain/training/planner';
@@ -71,10 +72,9 @@ export function PlanSession({ cards, profile = EMPTY_PROFILE }: { cards: readonl
       <div><p className="eyebrow">YOUR TIME, YOUR MOVEMENTS</p><h2 id="plan-heading" className="heading">Plan a session</h2></div>
       <p className="hint">Planning over {cards.length} reviewed or explicitly chosen exercises.</p>
       <form className="form" onSubmit={handleSubmit} onChange={() => setResult(null)}>
-        <label className="field">
-          <span className="label">Target duration (minutes)</span>
+        <Field label="Target duration (minutes)">
           <input className="input input-short" inputMode="numeric" value={minutesText} onChange={(event) => setMinutesText(event.target.value)} />
-        </label>
+        </Field>
         <fieldset className="fieldset">
           <legend className="label">Session setup</legend>
           <div className="equipment-modes">

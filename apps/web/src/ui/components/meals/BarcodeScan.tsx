@@ -2,6 +2,7 @@ import { useState, type ChangeEvent, type FormEvent } from 'react';
 import { lookUpBarcode, readBarcodeDigits } from '../../../api/barcode';
 import type { FoodVersion } from '../../../domain/nutrition/types';
 import { errorText } from '../../format';
+import { useBusy } from '../../hooks/useBusy';
 import { ErrorLine } from '../shared/NoticeLine';
 
 // The packaged-food barcode formats, which is all a nutrition lookup can use
@@ -26,22 +27,15 @@ function barcodeReader(): BarcodeReader | null {
  */
 export function BarcodeScan({ onFound }: { onFound: (food: FoodVersion) => void }) {
   const [code, setCode] = useState('');
-  const [busy, setBusy] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const { busy, error, setError, run } = useBusy();
   const canScan = barcodeReader() !== null;
 
   /** Look up one barcode number and pass on what it finds. */
   async function lookUp(text: string) {
-    setError(null);
-    setBusy(true);
-    try {
+    await run(async () => {
       onFound(await lookUpBarcode(readBarcodeDigits(text), crypto.randomUUID()));
       setCode('');
-    } catch (problem) {
-      setError(errorText(problem));
-    } finally {
-      setBusy(false);
-    }
+    });
   }
 
   /** Read a barcode from a photo, on this device. */

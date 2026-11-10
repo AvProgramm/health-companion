@@ -1,4 +1,5 @@
 import { useRef, useState } from 'react';
+import { Field } from '../shared/Field';
 import { buildSleep, formatDuration, resolveSleep, type ClockTime, type SleepInterval } from '../../../domain/sleep/sleep';
 import { saveLogEntry } from '../../../storage/logsRepo';
 import { formatDiaryDate, readAmount } from '../../format';
@@ -67,14 +68,12 @@ export function SleepDraftCard({ db, date, dateLabel, zone, bed, wake, asleepMin
       </div>
 
       <div className="grid-2">
-        <label className="field">
-          <span className="label">Went to bed</span>
+        <Field label="Went to bed">
           <input className="input" type="time" value={bedText} onChange={(event) => setBedText(event.target.value)} />
-        </label>
-        <label className="field">
-          <span className="label">Woke up</span>
+        </Field>
+        <Field label="Woke up">
           <input className="input" type="time" value={wakeText} onChange={(event) => setWakeText(event.target.value)} />
-        </label>
+        </Field>
       </div>
 
       {interval === null ? (
@@ -86,11 +85,9 @@ export function SleepDraftCard({ db, date, dateLabel, zone, bed, wake, asleepMin
         </p>
       )}
 
-      <label className="field">
-        <span className="label">Hours actually asleep (optional)</span>
+      <Field label="Hours actually asleep (optional)" hint="Leave blank if you are not sure. Time in bed is not counted as sleep.">
         <input className="input input-short" inputMode="decimal" value={asleepText} onChange={(event) => setAsleepText(event.target.value)} />
-        <span className="hint">Leave blank if you are not sure. Time in bed is not counted as sleep.</span>
-      </label>
+      </Field>
 
       <NoticeLine notice={notice} />
 

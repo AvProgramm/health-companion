@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { Field } from '../shared/Field';
 import { foodKey } from '../../../domain/nutrition/aggregate';
 import type { FoodVersion } from '../../../domain/nutrition/types';
 import type { MealComponent, MealEdit } from '../../../domain/meals/types';
@@ -82,12 +83,11 @@ export function ChangeAmountEditor({ component, food, nextRevision, busy, onSave
   return (
     <div className="editor">
       <AmountFields amountText={amountText} onAmountChange={setAmountText} unit={unit} onUnitChange={setUnit} units={unitsFor(food)} />
-      <label className="field">
-        <span className="label">How much was eaten</span>
+      <Field label="How much was eaten">
         <select className="input" value={eaten} onChange={(event) => setEaten(Number(event.target.value))}>
           {eatenOptions(component.eatenFraction).map((choice) => <option key={choice.value} value={choice.value}>{choice.label}</option>)}
         </select>
-      </label>
+      </Field>
       <div className="row">
         <button type="button" className="button" disabled={busy} onClick={save}>{busy ? 'Saving…' : 'Save change'}</button>
         <button type="button" className="button button-quiet" onClick={onCancel}>Cancel</button>

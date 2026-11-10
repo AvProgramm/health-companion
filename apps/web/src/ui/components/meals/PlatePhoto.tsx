@@ -2,7 +2,7 @@ import { useEffect, useState, type ChangeEvent } from 'react';
 import { Camera } from '@phosphor-icons/react';
 import { dishLabel, type DishFacts, type DishGuess } from '../../../domain/dish/dishModel';
 import { loadDishFacts, modelIsKept, recogniseDish } from '../../../vision/recogniseDish';
-import { errorText } from '../../format';
+import { useBusy } from '../../hooks/useBusy';
 import { ErrorLine } from '../shared/NoticeLine';
 
 // Below this the first guess was right less than about two times in three on the validation photos (experiments/vision/results/global_bands.json)
@@ -29,8 +29,7 @@ export function PlatePhoto({ onPick }: { onPick: (dish: string) => void }) {
   const [facts, setFacts] = useState<DishFacts | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [guesses, setGuesses] = useState<DishGuess[] | null>(null);
-  const [busy, setBusy] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const { busy, error, run } = useBusy();
   const [kept, setKept] = useState(true);
   const [downloaded, setDownloaded] = useState<number | null>(null);
 
@@ -53,20 +52,14 @@ export function PlatePhoto({ onPick }: { onPick: (dish: string) => void }) {
 
     // Ignore a cancelled camera, because there is nothing to read
     if (photo === undefined || facts === null) return;
-    setError(null);
     setGuesses(null);
     setDownloaded(null);
     setPreviewUrl(URL.createObjectURL(photo));
-    setBusy(true);
-    try {
+    await run(async () => {
       setGuesses(await recogniseDish(photo, facts, setDownloaded));
       // The model has now been fetched, so the warning no longer applies
       setKept(true);
-    } catch (problem) {
-      setError(errorText(problem));
-    } finally {
-      setBusy(false);
-    }
+    });
   }
 
   // Stay out of the way until a model is confirmed to be here

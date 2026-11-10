@@ -3,10 +3,13 @@ import { BODY_AREAS, type BodyArea } from '../../../domain/profile/profile';
 import type { Capability, Category, Equipment, MovementCard } from '../../../domain/training/catalogue';
 import { ownExerciseCard } from '../../../domain/training/customCards';
 import { Choices } from '../shared/Choices';
-import { CAPABILITY_LABELS, EQUIPMENT_LABELS, errorText } from '../../format';
+import { CAPABILITY_LABELS, EQUIPMENT_LABELS } from '../../format';
 import { OptionGroup } from '../shared/OptionGroup';
 import { CATEGORY_CHOICES } from './PlanResultView';
 import { Sheet } from '../shared/Sheet';
+import { Field } from '../shared/Field';
+import { ErrorLine } from '../shared/NoticeLine';
+import { useBusy } from '../../hooks/useBusy';
 
 // The same planning default the library uses, and the person can change it
 const DEFAULT_MINUTES = '5';
@@ -36,8 +39,7 @@ export function OwnExerciseSheet({ initialName, onConfirm, onClose }: OwnExercis
   const [requires, setRequires] = useState<Capability[]>([]);
   const [seated, setSeated] = useState(false);
   const [loads, setLoads] = useState<BodyArea[]>([]);
-  const [busy, setBusy] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const { busy, error, run } = useBusy();
 
   /** Build the card from the form, and save it. */
   async function confirm(event: FormEvent) {
@@ -45,23 +47,19 @@ export function OwnExerciseSheet({ initialName, onConfirm, onClose }: OwnExercis
 
     // Ignore a repeated confirmation because one write is already in flight
     if (busy) return;
-    setError(null);
-    setBusy(true);
-    try {
+    await run(async () => {
       await onConfirm(ownExerciseCard({ name, category, equipment, minutes: Number(minutes), cue, requires, seated, loads }, id));
       onClose();
-    } catch (problem) {
-      setError(errorText(problem));
-    } finally { setBusy(false); }
+    });
   }
 
   return <Sheet title="Add my own exercise" onClose={onClose}>
     <form className="form" onSubmit={confirm}>
-      <label className="field"><span className="label">Exercise name</span><input id="own-name" className="input" maxLength={80} value={name} onChange={event => setName(event.target.value)} autoComplete="off" /></label>
+      <Field label="Exercise name"><input id="own-name" className="input" maxLength={80} value={name} onChange={event => setName(event.target.value)} autoComplete="off" /></Field>
       <OptionGroup legend="What it trains" name="own-category" options={CATEGORY_CHOICES} value={category} onChange={setCategory} />
       <Choices legend="Equipment it needs (none ticked means bodyweight)" choices={EQUIPMENT_CHOICES} selected={equipment} onChange={setEquipment} />
-      <label className="field"><span className="label">Planning block (minutes)</span><input id="own-minutes" className="input input-short" type="number" min="1" max="60" step="1" value={minutes} onChange={event => setMinutes(event.target.value)} /></label>
-      <label className="field"><span className="label">How to do it (optional)</span><textarea id="own-cue" className="input ai-input" maxLength={500} rows={2} value={cue} onChange={event => setCue(event.target.value)} /></label>
+      <Field label="Planning block (minutes)"><input id="own-minutes" className="input input-short" type="number" min="1" max="60" step="1" value={minutes} onChange={event => setMinutes(event.target.value)} /></Field>
+      <Field label="How to do it (optional)"><textarea id="own-cue" className="input ai-input" maxLength={500} rows={2} value={cue} onChange={event => setCue(event.target.value)} /></Field>
       <details className="exercise-instructions"><summary>If you have saved adaptations</summary>
         <p className="hint">Leave these blank if unsure. With an adaptation active, an exercise with unknown facts is left out of plans.</p>
         <Choices legend="Needs" choices={NEED_CHOICES} selected={requires} onChange={setRequires} />
@@ -69,7 +67,7 @@ export function OwnExerciseSheet({ initialName, onConfirm, onClose }: OwnExercis
         <Choices legend="Body areas it loads" choices={AREA_CHOICES} selected={loads} onChange={setLoads} />
       </details>
       <p className="hint">Stays on this device. Your own exercise has not been reviewed by anyone else.</p>
-      {error && <p role="alert" className="field-error">{error}</p>}
+      <ErrorLine error={error} />
       <button className="button" type="submit" disabled={busy}>{busy ? 'Adding…' : 'Add to my exercises'}</button>
     </form>
   </Sheet>;

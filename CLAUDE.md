@@ -42,8 +42,8 @@ Organised by feature, one reason to change per module. Domain never imports stor
 - `apps/web/src/vision/`: the Web Worker that runs the dish model on the device with `onnxruntime-web`. The model is too large to precache, so the service worker keeps it after its first download.
 - `apps/web/src/ui/`: responsive React screens, local Geist/Phosphor assets, compact draft/result presentation. They call domain and storage and never compute totals themselves. `App.tsx` is the shell, `format.ts` holds display text and rounding, and `app.css` loads before `gym.css`.
   - `pages/`: one file per screen (`TodayView`, `GymView`, `FoodsView`, `MeView`, `FirstRunSetup`). A page connects its parts.
-  - `components/`: the parts of a screen, one folder per feature (`today`, `meals`, `training`, `sleep`, `summary`, `me`). `shared/` holds pieces more than one feature uses (`Sheet`, `NoticeLine`, `Choices`).
-  - `hooks/`: screen state with a job of its own (`useSave`, `useToday`, `useDiaryDay`, `useEntryPanel`).
+  - `components/`: the parts of a screen, one folder per feature (`today`, `meals`, `training`, `sleep`, `summary`, `me`). `shared/` holds pieces more than one feature uses (`Sheet`, `NoticeLine`, `Choices`, `Field` for every labelled input, and `AskCard`, the one box behind the Coach and the Nutritionist).
+  - `hooks/`: screen state with a job of its own (`useBusy` for a slow action and its error, `useSave` when a save needs an operation key and a conflict notice, `useToday`, `useDiaryDay`, `useEntryPanel`).
 - `apps/web/src/test/`: test-only helpers (`goldenFixture`, `testFoods`). Never imported by app code.
 - `eval/fixtures/`: fictional golden cases. `ledger_golden.json` is the source of truth for totals.
 - `docs/`: ADRs, milestone walkthroughs, the device test log and the AI contribution log.
@@ -73,4 +73,4 @@ Organised by feature, one reason to change per module. Domain never imports stor
 
 Current repeated-round planner and wrap-up: read `docs/handoff/claude-code.md` and `docs/milestones/m4-repeated-rounds-walkthrough.md`. Repetition is explicitly selectable; the earlier distinct-only duration notes are historical.
 
-Current work: remove the repeated code found on 9 Nov, then test the global food model and the features still untested on the phone (`docs/test-log.md`). Earlier rules and later ideas: `docs/handoff/codex-m5.md`.
+Current work: test the global food model and the features still untested on the phone (`docs/test-log.md`). Earlier rules and later ideas: `docs/handoff/codex-m5.md`.

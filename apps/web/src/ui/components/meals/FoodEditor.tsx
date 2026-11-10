@@ -5,6 +5,8 @@ import type { Unit } from '../../../domain/shared/units';
 import { NUTRIENT_LABELS, errorText } from '../../format';
 import { Sheet } from '../shared/Sheet';
 import { ErrorLine } from '../shared/NoticeLine';
+import { Field } from '../shared/Field';
+import { useBusy } from '../../hooks/useBusy';
 
 // The label fields, in the order printed on most nutrition panels
 const EDITABLE_NUTRIENTS = NUTRIENT_KEYS;
@@ -50,8 +52,7 @@ export function FoodEditor({ previous, initialFood, initialName, initialUnit, on
     }
     return start;
   });
-  const [error, setError] = useState<string | null>(null);
-  const [busy, setBusy] = useState(false);
+  const { busy, error, setError, run } = useBusy();
 
   /**
    * Validate the form through buildFoodVersion and save the new version.
@@ -80,30 +81,22 @@ export function FoodEditor({ previous, initialFood, initialName, initialUnit, on
       return;
     }
 
-    setBusy(true);
-    try {
+    await run(async () => {
       await onSave(food);
       onClose();
-    } catch (problem) {
-      setError(errorText(problem));
-    } finally {
-      setBusy(false);
-    }
+    });
   }
 
   return (
     <Sheet title={previous === undefined ? 'Add a food' : `Edit ${previous.name}`} onClose={onClose}>
       <form className="form" onSubmit={handleSubmit} noValidate>
-        <label className="field">
-          <span className="label">Name</span>
+        <Field label="Name">
           <input className="input" value={name} onChange={(event) => setName(event.target.value)} autoComplete="off" />
-        </label>
+        </Field>
 
-        <label className="field">
-          <span className="label">Other names you type</span>
+        <Field label="Other names you type" hint="Separate with commas. The composer recognises these.">
           <input className="input" value={aliases} onChange={(event) => setAliases(event.target.value)} placeholder="e.g. weetabix, wheat biscuit" autoComplete="off" />
-          <span className="hint">Separate with commas. The composer recognises these.</span>
-        </label>
+        </Field>
 
         <fieldset className="fieldset">
           <legend className="label">Values are per</legend>
