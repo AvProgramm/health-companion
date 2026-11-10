@@ -343,3 +343,6 @@ The request-order regression first observed two simultaneous calls; after the ch
 Browser, real service, no diary entry saved: "2 bowls of dal" showed `dal` / `2 bowl` and received a range-labelled estimate automatically, with added sugar still Unknown. The draft was discarded. The request text and responsive review were checked at 393 by 852; the photo checkbox and barcode layout also fit that width. This is browser viewport testing, not a physical phone.
 
 The check exposed a separate backend issue: counts were modelled as generic "1", losing bowl/cup semantics. Added failing service regressions and fixed that boundary afterwards. Full check passed with 203 coach tests; build passed with the existing large-chunk warning. No training or model downloads ran.
+
+
+After restarting the coach with the new portion code, two generic live API requests (dal / "2 bowls" and dal / "2 cups") both returned Gemini estimates with count 2, known energy and a real range. This confirms the restarted request path responds; it does not validate serving weight or nutrient accuracy. No diary/profile data was included. The build preview and coach were left running on loopback for Yash's next check.
