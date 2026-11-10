@@ -37,3 +37,26 @@ describe('estimate request', () => {
     await expect(requestEstimate({ name: 'Fictional oats', portionText: '50 g' })).rejects.toThrow(/No usable estimate/);
   });
 });
+
+
+describe('automatic estimate request order', () => {
+  it('waits for the preceding row and continues after its failure', async () => {
+    let finish!: (response: { ok: boolean; status: number }) => void;
+    const fetchMock = vi.fn()
+      .mockImplementationOnce(() => new Promise(resolve => { finish = resolve; }))
+      .mockResolvedValue({ ok: false, status: 503 });
+    vi.stubGlobal('fetch', fetchMock);
+    const first = requestEstimate({ name: 'Fictional oats', portionText: '50 g' }).catch(() => 'first failed');
+    const second = requestEstimate({ name: 'Fictional soup', portionText: '2 bowl' }).catch(() => 'second failed');
+    try {
+      await vi.waitFor(() => expect(fetchMock).toHaveBeenCalled());
+      expect(fetchMock).toHaveBeenCalledTimes(1);
+    } finally {
+      // Release the fictional first request even if the order assertion fails.
+      finish({ ok: false, status: 503 });
+      await Promise.all([first, second]);
+    }
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+    expect(JSON.parse(fetchMock.mock.calls[1]![1].body)).toEqual({ name: 'Fictional soup', portionText: '2 bowl' });
+  });
+});

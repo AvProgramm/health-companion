@@ -3,6 +3,8 @@ import { act, createElement } from 'react';
 import { createRoot, type Root } from 'react-dom/client';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { EstimateDraft } from './EstimateDraft';
+import { parseEntry } from '../../../domain/parsing/parseEntry';
+import { toDraftRow } from './DraftCard';
 import { DraftCard } from './DraftCard';
 import { FoodEditor } from './FoodEditor';
 import { estimatedFood, readEstimate } from '../../../domain/nutrition/estimates';
@@ -165,5 +167,32 @@ describe('phone estimate regression', () => {
     expect(container.textContent).toContain('No nutrition values');
     expect([...container.querySelectorAll('button')].some((button) => button.textContent === 'Use estimate')).toBe(false);
     expect(onUse).not.toHaveBeenCalled();
+  });
+});
+
+
+describe('counted photo containers', () => {
+  it.each([
+    ['2 bowls of dal', 'dal', '2 bowl'],
+    ['half bowl of dal', 'dal', '0.5 bowl'],
+    ['2 cups of rice', 'rice', '2 cup'],
+    ['12 almonds', 'almonds', '12 piece'],
+    ['150 g rice', 'rice', '150 g'],
+    ['bowl noodles', 'bowl noodles', ''],
+  ])('keeps the typed portion from %s through review', async (entry, name, portionText) => {
+    // Reported in the 10 Nov handover: "2 bowls of dal" lost its count before lookup.
+    const parsed = parseEntry(entry, []);
+    if (parsed.kind !== 'meal') throw new Error('Expected a meal draft.');
+    const fetchMock = vi.fn().mockResolvedValue({ ok: true, json: async () => proposal });
+    const onUseEstimate = vi.fn();
+    const onSave = vi.fn();
+    vi.stubGlobal('fetch', fetchMock);
+    await act(async () => root.render(createElement(DraftCard, {
+      rows: parsed.items.map(toDraftRow), foods: new Map(), currentFoods: [], hideNumbers: false, dateLabel: 'today', busy: false,
+      onRowsChange: vi.fn(), onSave, onCancel: vi.fn(), onCreateFood: vi.fn(), onUseEstimate, onEditEstimate: vi.fn(),
+    })));
+    expect(JSON.parse(fetchMock.mock.calls[0]![1].body)).toEqual({ name, portionText });
+    expect(onUseEstimate).not.toHaveBeenCalled();
+    expect(onSave).not.toHaveBeenCalled();
   });
 });

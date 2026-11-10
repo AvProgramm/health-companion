@@ -16,7 +16,15 @@ const MESSAGES: ServiceMessages = {
   failed: (status) => `The estimate service returned an error (HTTP ${status}). ${FALLBACK}`,
 };
 
+// Allow one automatic row lookup at a time in this tab to avoid a burst at the providers.
+let precedingEstimate: Promise<void> = Promise.resolve();
+
 /** Request a proposal using only food name and portion text. */
 export async function requestEstimate(input: { name: string; portionText: string }) {
-  return readEstimate(await postJson('/api/estimate', { name: input.name, portionText: input.portionText }, ESTIMATE_TIMEOUT_MS, MESSAGES));
+  const request = precedingEstimate.then(async () => readEstimate(await postJson(
+    '/api/estimate', { name: input.name, portionText: input.portionText }, ESTIMATE_TIMEOUT_MS, MESSAGES,
+  )));
+  // Release the next row on success or failure, because one miss must not block the meal.
+  precedingEstimate = request.then(() => {}, () => {});
+  return request;
 }

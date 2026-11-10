@@ -327,3 +327,12 @@ Fresh production preview on localhost:4173 with the restarted real coach service
 - Photo: selecting a generated blank JPEG immediately showed the AI action without running or downloading the local model. The explicit AI tap returned "No foods could be read" with the manual-entry fallback. This verifies the empty-image path, not recognition accuracy on a real plate.
 - Automated: failing regressions first, then all checks and the production build passed. The photo card has 18 passing cases, including a late reply after replacing a photo. Coach 200, router 33, vision 92 and importer 9 also passed. The existing large-chunk build warning remains.
 - Phone still needed: new photo flow, barcode on Today, all three chat routes, local fallback after download, and airplane mode.
+
+
+### Remembered photo choice and counted portions (10 Nov, Codex)
+
+The browser checkbox started off, was enabled explicitly, and remained enabled after a reload. Automatic dispatch, duplicate prevention and disabling were tested with fictional HTTP replies in unit tests; real photo accuracy remains a phone task. The user approved the remembered opt-in in this chat.
+
+Failing parser-to-review tests reproduced "2 bowls of dal" becoming "1 bowl". Passing regressions now send "dal" / "2 bowl", "dal" / "0.5 bowl", "rice" / "2 cup", "almonds" / "12 piece", and "rice" / "150 g". A non-container food name, "bowl noodles", stays unchanged. No estimate was accepted or meal saved by these tests.
+
+The request-order regression first observed two simultaneous calls; after the change the second waits, including when the first fails. Full npm check and production build passed. Physical phone and live multi-row estimate accuracy were not verified at this checkpoint.

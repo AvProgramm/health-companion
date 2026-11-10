@@ -9,9 +9,6 @@ import { Sparkle } from '@phosphor-icons/react';
 import { EstimateResult } from './EstimateResult';
 import { errorText } from '../../format';
 
-// A container before the food, as the photo reader and people write it: "bowl of dal", "2 cups of rice" keeps its own amount
-const CONTAINER_OF = /^(bowl|cup|plate|glass|can|slice|spoon|mug)s? of (.+)$/i;
-
 interface EstimateDraftProps {
   name: string;
   portionText: string;
@@ -22,10 +19,9 @@ interface EstimateDraftProps {
 
 /** Offer a food-only request and keep its result unsaved until confirmation. */
 export function EstimateDraft({ name: initialName, portionText: initialPortion, hideNumbers, onUse, onEdit }: EstimateDraftProps) {
-  // "bowl of dal": the container is the portion, not part of the food's name
-  const contained = initialPortion === '' ? CONTAINER_OF.exec(initialName) : null;
-  const [name, setName] = useState(contained?.[2] ?? initialName);
-  const [portionText, setPortionText] = useState(contained ? `1 ${contained[1]}` : initialPortion);
+  // The review boundary has already separated the typed food and portion.
+  const [name, setName] = useState(initialName);
+  const [portionText, setPortionText] = useState(initialPortion);
   const [estimate, setEstimate] = useState<NutritionEstimate | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);

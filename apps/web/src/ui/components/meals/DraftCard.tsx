@@ -6,6 +6,7 @@ import type { MealComponent, MealRevision } from '../../../domain/meals/types';
 import { areCompatible, type Unit } from '../../../domain/shared/units';
 import { readAmount, formatTotal, SOURCE_LABELS, errorText } from '../../format';
 import { totalNutrient } from '../../../domain/nutrition/aggregate';
+import { estimateInput } from '../../../domain/nutrition/estimateInput';
 import { EstimateDraft } from './EstimateDraft';
 
 // Every unit, filtered per row to the ones that fit the chosen food
@@ -172,6 +173,9 @@ export function DraftCard({ rows, onRowsChange, foods, currentFoods, hideNumbers
         {rows.map((row) => {
           const check = checkRow(row, foods);
           const food = check.food;
+          // Preserve counted containers for lookup without treating bowls as a storage unit.
+          const portionText = row.amountText === '' ? '' : `${row.amountText} ${row.unit}`;
+          const estimate = food === null ? estimateInput(row.text, portionText) : { name: food.name, portionText };
           const units = food === null ? ALL_UNITS : ALL_UNITS.filter((unit) => areCompatible(unit, food.basis.unit));
           return (
             <li key={row.key} className="draft-row">
@@ -202,7 +206,7 @@ export function DraftCard({ rows, onRowsChange, foods, currentFoods, hideNumbers
               </div>
 
               {(food === null || Object.values(food.nutrients).every((value) => value == null)) && (
-                <EstimateDraft name={food?.name ?? nameFromText(row.text)} portionText={row.amountText === '' ? '' : `${row.amountText} ${row.unit}`}
+                <EstimateDraft name={estimate.name} portionText={estimate.portionText}
                   hideNumbers={hideNumbers} onUse={(accepted) => onUseEstimate(food === null ? accepted : { ...accepted, id: food.id, version: food.version + 1 }, row.key)} onEdit={(proposal) => onEditEstimate(proposal, row.key, food ?? undefined)} />
               )}
               {food === null && (
