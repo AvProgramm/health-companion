@@ -34,8 +34,10 @@ export interface TrainerContext {
  *
  * Only the typed message is sent, or for a session the goal with the length, place and
  * difficulty read from it. The saved profile stays here and adapts the plan afterwards.
+ * Diary lines are passed only when the person switched sharing on, and then go with a
+ * question or a food request, so the answer can be about their own week.
  */
-export async function askAi(text: string, context: TrainerContext): Promise<ChatAnswer> {
+export async function askAi(text: string, context: TrainerContext, diaryLines: readonly string[] = []): Promise<ChatAnswer> {
   const intent = chatIntent(text);
 
   // Plan a session, then run the proposal through the checks on this device
@@ -47,6 +49,11 @@ export async function askAi(text: string, context: TrainerContext): Promise<Chat
     const result = planFromProposal(reply, context.entries, { minutes, equipment, unableTo, avoidAreas, seatedOnly, neverSuggest: [], categories: ALL_AREAS });
     const assumed = `Planned for ${minutes} minutes, ${SETTINGS[setting].label.toLowerCase()}, ${DIFFICULTIES[difficulty].label.toLowerCase()}. Say a length, place or difficulty to change it.`;
     return { kind: 'trainer', role: 'Coach', reply, result, minutes, assumed };
+  }
+
+  // Answer from the shared diary, under the role the message was meant for
+  if (diaryLines.length > 0) {
+    return { kind: 'coach', role: intent.kind === 'nutritionist' ? 'Nutritionist' : 'Coach', reply: await askCoach(text, diaryLines) };
   }
 
   // Ask for food ideas; with no reviewed guidance on the goal, answer it as a general question instead

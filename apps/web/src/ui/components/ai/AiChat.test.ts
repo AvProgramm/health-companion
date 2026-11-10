@@ -22,10 +22,12 @@ const SESSION = { exerciseIds: LIBRARY.map(entry => entry.id), reason: 'Fictiona
 let root: Root;
 let container: HTMLDivElement;
 const onDraft = vi.fn();
+// Fictional diary lines, as the device would build them
+const loadDiary = vi.fn(async () => ['2026-01-05: food 1800 kcal (Fictional oats); training 1 session; sleep 7 h 30 min']);
 
 /** Display the chat for one saved profile. */
 async function show(profile: Profile = EMPTY_PROFILE, entries: readonly ExerciseEntry[] = LIBRARY) {
-  await act(async () => root.render(createElement(AiChat, { context: { entries, profile }, onDraft })));
+  await act(async () => root.render(createElement(AiChat, { context: { entries, profile }, onDraft, loadDiary })));
 }
 
 /** Type a message and send it, letting the reply settle. */
@@ -132,6 +134,22 @@ describe('AI chat', () => {
     expect(sent(fetchMock).map(([path]) => path)).toEqual(['/api/nutritionist', '/api/coach']);
     expect(container.querySelector('.chat-reply .badge')?.textContent).toBe('Nutritionist');
     expect(container.textContent).toContain('Fictional general claim.');
+  });
+
+  it('never reads or sends the diary unless sharing is switched on', async () => {
+    const fetchMock = answering({ '/api/coach': GENERAL_ANSWER, '/api/nutritionist': IDEAS });
+    vi.stubGlobal('fetch', fetchMock);
+    await show();
+    await say('What did I eat this week?');
+    expect(loadDiary).not.toHaveBeenCalled();
+    expect(sent(fetchMock)).toEqual([['/api/coach', { question: 'What did I eat this week?' }]]);
+
+    // Switch sharing on: the same kind of message now carries the summary lines, and nothing else new
+    await act(async () => container.querySelector<HTMLInputElement>('input[type="checkbox"]')!.click());
+    expect(container.textContent).toContain('one line per day');
+    await say('What should I eat tomorrow?');
+    expect(sent(fetchMock)[1]).toEqual(['/api/coach', { question: 'What should I eat tomorrow?', context: ['2026-01-05: food 1800 kcal (Fictional oats); training 1 session; sleep 7 h 30 min'] }]);
+    expect(container.querySelectorAll('.chat-reply .badge')[1]?.textContent).toBe('Nutritionist');
   });
 
   it('plans a session from the message, sending only what it says', async () => {

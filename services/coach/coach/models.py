@@ -35,8 +35,9 @@ class TrainerReply(StrictModel):
 
 
 class CoachRequest(StrictModel):
-    """Accept only the question the person typed."""
+    """Accept the typed question and, only when the person switched it on, one line per recent diary day."""
     question: str = Field(min_length=1, max_length=300)
+    context: list[Annotated[str, Field(min_length=1, max_length=200)]] = Field(default=[], max_length=7)
 
 
 class CoachClaim(StrictModel):

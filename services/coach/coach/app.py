@@ -100,7 +100,7 @@ async def coach(request: Request, item: CoachRequest):
     check_local(request)
     if not item.question.strip():
         raise HTTPException(422, 'Type a question first.')
-    return await credited(lambda ask: answer_question(item.question.strip(), knowledge(), ask), lambda reply: reply.mode in ('answer', 'general'))
+    return await credited(lambda ask: answer_question(item.question.strip(), knowledge(), ask, item.context), lambda reply: reply.mode in ('answer', 'general'))
 
 
 @app.post('/api/photo', response_model=PhotoReply)

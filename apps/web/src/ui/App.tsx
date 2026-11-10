@@ -160,7 +160,7 @@ export function App() {
         )}
         {tab === 'gym' && <GymView key={`${diaryVersion}:${savedProfile?.version ?? 0}`} db={db} profile={profile} hideNumbers={hideNumbers} />}
         {tab === 'foods' && <FoodsView currentFoods={currentFoods} hideNumbers={hideNumbers} onSaveFood={handleSaveFood} />}
-        {tab === 'ai' && <AiView key={savedProfile?.version ?? 0} profile={profile} onDraftEntry={(entry) => { setDraftEntry(entry); setTab('today'); }} />}
+        {tab === 'ai' && <AiView key={savedProfile?.version ?? 0} db={db} foods={foods} profile={profile} onDraftEntry={(entry) => { setDraftEntry(entry); setTab('today'); }} />}
         {tab === 'me' && (
           <MeView
             db={db}

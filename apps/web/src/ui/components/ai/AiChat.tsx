@@ -24,7 +24,9 @@ interface Turn {
  * Each message is answered on its own, and only that message is sent. The chat lives in
  * this screen's memory only: it is never saved, and it can only hand a draft to Today.
  */
-export function AiChat({ context, onDraft }: { context: TrainerContext; onDraft: (entry: string) => void }) {
+export function AiChat({ context, onDraft, loadDiary }: { context: TrainerContext; onDraft: (entry: string) => void; loadDiary: () => Promise<string[]> }) {
+  // Off until the person switches it on, and off again whenever this screen is reopened
+  const [shareDiary, setShareDiary] = useState(false);
   const [text, setText] = useState('');
   const [turns, setTurns] = useState<Turn[]>([]);
   const busy = turns.some(turn => turn.answer === null && turn.error === null);
@@ -38,7 +40,7 @@ export function AiChat({ context, onDraft }: { context: TrainerContext; onDraft:
     setText('');
     const settle = (change: Partial<Turn>) => setTurns(previous => previous.map(turn => turn.id === id ? { ...turn, ...change } : turn));
     try {
-      settle({ answer: await askAi(message, context) });
+      settle({ answer: await askAi(message, context, shareDiary ? await loadDiary() : []) });
     } catch (problem) {
       settle({ error: errorText(problem) });
     }
@@ -65,6 +67,9 @@ export function AiChat({ context, onDraft }: { context: TrainerContext; onDraft:
         <ErrorLine error={turn.error} />
         {turn.answer === null && turn.error === null && <div className="skeleton skeleton-card" role="status" aria-label="Thinking" />}
       </div>)}</div>
+
+      <label className="choice"><input type="checkbox" checked={shareDiary} onChange={event => setShareDiary(event.target.checked)} /><span>Share my last 7 days with the AI</span></label>
+      {shareDiary && <p className="hint">Each message now also sends one line per day: energy total, food names, training sessions and sleep. Switch this off to send only your message.</p>}
 
       <form className="chat-form" onSubmit={handleSubmit}>
         <label className="visually-hidden" htmlFor="chat-input">Your message</label>

@@ -1,9 +1,14 @@
 import { useEffect, useState } from 'react';
+import type { FoodVersion } from '../../domain/nutrition/types';
 import type { Profile } from '../../domain/profile/profile';
+import { deviceZone, localDateIn } from '../../domain/shared/dates';
+import { loadWeekLines } from '../hooks/loadWeek';
 import { AiChat } from '../components/ai/AiChat';
 import { ErrorLine } from '../components/shared/NoticeLine';
 
 interface AiViewProps {
+  db: IDBDatabase;
+  foods: ReadonlyMap<string, FoodVersion>;
   profile: Profile;
   onDraftEntry: (entry: string) => void;
 }
@@ -14,7 +19,7 @@ interface AiViewProps {
  * Only the typed message is sent, and nothing here can save anything: an answer becomes
  * a draft or a plan the person still checks.
  */
-export function AiView({ profile, onDraftEntry }: AiViewProps) {
+export function AiView({ db, foods, profile, onDraftEntry }: AiViewProps) {
   const [library, setLibrary] = useState<typeof import('../../data/exerciseLibrary') | null>(null);
   const [error, setError] = useState<string | null>(null);
 
@@ -33,7 +38,7 @@ export function AiView({ profile, onDraftEntry }: AiViewProps) {
       </header>
 
       <ErrorLine error={error} />
-      {library !== null && <AiChat context={{ entries: library.EXERCISE_ENTRIES, profile }} onDraft={onDraftEntry} />}
+      {library !== null && <AiChat context={{ entries: library.EXERCISE_ENTRIES, profile }} onDraft={onDraftEntry} loadDiary={() => loadWeekLines(db, localDateIn(deviceZone(), new Date()), foods)} />}
     </>
   );
 }

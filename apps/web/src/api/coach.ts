@@ -15,7 +15,12 @@ const MESSAGES: ServiceMessages = {
   failed: (status) => `The Coach returned an error (HTTP ${status}). Your diary still works.`,
 };
 
-/** Ask the Coach, sending only the typed question. */
-export async function askCoach(question: string): Promise<CoachReply> {
-  return readCoachReply(await postJson('/api/coach', { question }, COACH_TIMEOUT_MS, MESSAGES));
+/**
+ * Ask the Coach, sending the typed question and nothing else unless diary lines are passed.
+ *
+ * The lines are a summary of recent days, and are only ever passed when the person has switched sharing on.
+ */
+export async function askCoach(question: string, context: readonly string[] = []): Promise<CoachReply> {
+  const body = context.length > 0 ? { question, context } : { question };
+  return readCoachReply(await postJson('/api/coach', body, COACH_TIMEOUT_MS, MESSAGES));
 }
