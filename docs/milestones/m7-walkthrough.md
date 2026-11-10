@@ -148,6 +148,41 @@ What photos of a local dish are worth, top-1 on the same validation photos:
 
 Across all eight, photos took top-1 from 45.0% to 77.2%. Fried noodles and mixed rice are generic names, and without photos they probably lose to specific ones on the list, so the five dishes with distinctive names are the fairer figure: 67.1% to 89.8%. Laksa's top-5 is 95.7%, so its first guess is probably curry laksa or asam laksa, which the phone also lists; that was not checked.
 
+## 8. The full retrain, and why the phone keeps its model
+
+[prepare_full.py](../../experiments/vision/vision/prepare_full.py) `new_positions`, `fresh_splits` → [run_full.py](../../experiments/vision/vision/run_full.py) `train`, `final`, `replaces_phone`.
+
+Yash approved fetching the rest of ISIA and retraining at half strength, the strength section 7 picked.
+
+- `new_positions` adds only photos the first join does not hold: 318,472 of them, for 503,633 in total (`results/prepare_full.json`).
+  - *Why leave the first join alone:* the phone's model was trained from it, so its photos must keep their split.
+- `fresh_splits` cuts two sealed sets nobody had looked at: one new photo in ten of the trained dishes (23,132), and the new photos from ISIA's test files, of dishes known only by name (69,504, after dropping 1,961 copies).
+  - *Why by fingerprint:* a photo and its copies always fall on the same side.
+- `train` is the same LoRA as part 4 on about three times the photos. Three epochs took 133 minutes, and validation top-1 went 72.9%, 75.7%, 76.0% (`results/global_full_lora.json`).
+- `replaces_phone` is the rule, written in the docstring before any fresh photo was read. The new model at half strength replaces the phone's only if both hold:
+  1. On the fresh sealed photos, its average top-1 over trained and never-trained dishes beats the phone model's.
+  2. On the Malaysian validation photos, its top-1 is no more than 5 points below the phone model's.
+
+Scored once ([`global_full_final.json`](../../experiments/vision/results/global_full_final.json)). **Rule 1 passed, rule 2 failed, so nothing was exported.**
+
+| Top-1 | SigLIP2 alone | Phone's model | **New, half strength** | New, full strength |
+|---|---|---|---|---|
+| Fresh trained dishes, 23,132 photos, 686 names | 51.7% | 53.9% | **63.1%** | 71.2% |
+| Fresh never-trained dishes, 65,043 photos, 777 names | 51.8% | 39.0% | **49.7%** | 35.4% |
+| Average of the two (rule 1) | 51.7% | 46.4% | **56.4%** | 53.3% |
+| Malaysian validation, 936 photos (rule 2) | 54.5% | 83.2% | **64.2%** | 78.1% |
+| Test-file dishes trained under that name, 4,461 photos | 55.5% | 44.6% | **51.0%** | 20.4% |
+
+Say these plainly:
+- **The rule did its job.** The new model is 10 points better on world food and 19 points worse on what Yash actually eats. Without rule 2 it would have shipped.
+- The 5-point margin came from section 7, where half strength cost trained dishes 5 points. On Malaysian photos it cost 14 (78.1% at full strength, 64.2% at half). Why Malaysian dishes lose so much more is untested.
+- Full strength was never a candidate. It would have missed rule 2 as well, by a tenth of a point (78.1% against the 78.2% needed).
+- The retrain's Malaysian score at full strength is itself 5 points under the phone model's. The Malaysian photos are a smaller share of a join three times the size, which may be why. That is a guess.
+- The Malaysian check is on validation photos, which chose the phone model's best epoch, so the phone's 83.2% is slightly flattering.
+- The phone's model scores 53.9% on fresh photos of dishes it trained on, against 79.7% on validation. The fresh photos are all ISIA's, and validation is mostly Food-101, so these are different mixes of dishes.
+- Fine-tuning at full strength still costs unseen dishes: 35.4% against SigLIP2's 51.8%. Half strength brings them back to 49.7%, as section 7 predicted.
+- Both fresh sealed sets are spent. A different strength, or a retrain that weights Malaysian photos more, needs photos nobody has scored.
+
 ## Bugs found
 
 | Bug | How it was caught, and what covers it |
@@ -163,6 +198,7 @@ Across all eight, photos took top-1 from 45.0% to 77.2%. Fried noodles and mixed
 - Real training on the RTX 5060: 48 minutes (`results/global_lora.json`).
 - Held-out comparison: three more trainings of 29 to 45 minutes each, after rehearsing the whole path on a few hundred photos (`results/global_holdout.json`).
 - `final` and `unseen` each ran once. Their refusal to run twice is by the same guard as Milestone 6.
+- The full retrain (section 8): `npm run check` with 92 vision tests, 133 minutes of training on the RTX 5060, and `run_full final` once. `export` was not run, because the rule said no.
 - The relabelled join: `dishes.json`, `splits` and `origins` identical, and zero training or validation labels changed (a throwaway comparison of the old and new arrays).
 - The export: 373.8 MB becomes 187.2 MB, same first guess on 223 of 223 photos (`results/global_export.json`).
 - Browser pane, localhost:4173, through the real file input and worker, with validation photos only (`docs/test-log.md`):
@@ -177,7 +213,8 @@ Across all eight, photos took top-1 from 45.0% to 77.2%. Fried noodles and mixed
 
 - **Real plates through the phone camera, and everything else on the phone.** The download, how long the first load takes, the time per photo, and whether a phone has the memory for it.
 - Whether almonds, now one of the names, is recognised.
-- Whether a lower LoRA strength helps on real plates. The phone still runs full strength, and a new strength would need a fresh sealed test.
+- Whether a lower LoRA strength helps on real plates. The phone still runs the first fine-tune at full strength. Half strength of the retrain failed its sealed rule (section 8), and those sealed photos are now spent.
+- Why half strength costs Malaysian dishes 14 points when it cost held-out comparison dishes 5.
 - SigLIP2 alone on the Malaysian photos.
 - Licences: ISIA, like the first two datasets, does not grant clear reuse rights, so decide before publicly hosting the model.
 - Hosting: a 187 MB file is larger than many free static hosts allow per file, so it may need to be split or kept elsewhere.

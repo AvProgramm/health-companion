@@ -95,9 +95,20 @@ Weights are stored in 16 bits, because 8-bit weights changed the first guess on 
 
 `vision/prepare_full.py` and `vision/run_full.py` retrain on every ISIA photo, at the half strength the held-out comparison picked. The first join is left untouched and only photos it never held are added, which leaves two sealed sets nobody has looked at: one in ten of the new photos of trained dishes, and the new photos from ISIA's test files, of dishes known only by name. The rule is in the `run_full.py` docstring, committed before any of those photos were read.
 
+**The retrain did not ship, so the phone keeps its model.** Scored once on 9 Nov 2026 (`results/global_full_final.json`). The rule had two halves, and the new model passed the first and failed the second.
+
+| Top-1 | SigLIP2 alone | Phone's model | **New model at half strength** | New model at full strength |
+|---|---|---|---|---|
+| Fresh sealed photos of trained dishes, 23,132, 686 names | 51.7% | 53.9% | **63.1%** | 71.2% |
+| Fresh sealed photos of dishes never trained, 65,043, 777 names | 51.8% | 39.0% | **49.7%** | 35.4% |
+| Average of those two (rule 1: must beat the phone's) | 51.7% | 46.4% | **56.4%, passed** | 53.3% |
+| Malaysian validation photos, 936 (rule 2: at most 5 points below the phone's) | 54.5% | 83.2% | **64.2%, failed by 14** | 78.1% |
+
+Half strength does what the held-out comparison said for dishes in general, and it costs the Malaysian dishes 19 points, far more than the 5 that comparison suggested. The cause is untested. Both fresh sealed sets are now spent, so another attempt needs photos nobody has scored.
+
 | Dataset or weights | Revision | Size used | Licence |
 |---|---|---|---|
-| ISIA Food-500, Hugging Face mirror, pinned in `config.py` | See `LARGE_DATASETS` | 71,701 photos, every fourth block of 93 of 131 files | None stated. Decide before publicly hosting |
+| ISIA Food-500, Hugging Face mirror, pinned in `config.py` | See `LARGE_DATASETS` | Phone's model: 71,701 photos, every fourth block of 93 of 131 files. Retrain: every block (4,027), which added 318,472 photos | None stated. Decide before publicly hosting |
 | `google/siglip2-base-patch16-224` | Pinned in `config.py` | 1.5 GB | Apache-2.0 |
 
 Then, from `experiments/vision`, with `PYTHONPATH=.`:
@@ -123,4 +134,4 @@ python -m vision.run_full export
 
 ## Later
 
-Regional or per-country fine-tunes on the global model, as Yash intends: a region is a small set of corrections and extra names on a shared base. The first fine-tune cost the dishes it never saw, and `run_holdout.py` shows that applying LoRA at half strength removes that cost, so measure a regional fine-tune on held-out dishes the same way.
+Regional or per-country fine-tunes on the global model, as Yash intends: a region is a small set of corrections and extra names on a shared base. The first fine-tune cost the dishes it never saw, and `run_holdout.py` shows that applying LoRA at half strength removes that cost. The full retrain then showed half strength costing the Malaysian dishes 19 points, so measure a regional fine-tune on held-out dishes and on that region's own dishes.
