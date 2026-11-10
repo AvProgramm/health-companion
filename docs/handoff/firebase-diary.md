@@ -58,3 +58,8 @@ Use episodic memory as the primary personal-memory model: dated food, workout an
 For "what did I eat recently, and how does that fit my goal?", fetch the signed-in user's current goal, query the requested recent dates, calculate nutrition and activity totals in code with unknowns preserved, then give the model a bounded summary with source references. Vector search is useful for "meals like the one I enjoyed last week", but is not a reliable way to enumerate every meal or calculate a weekly total. No fine-tuning or parametric memory is needed to remember diary entries. Recommendations remain proposals until confirmed.
 
 Google sign-in was selected by Yash. He supplied the four Firebase web configuration values and asked the agent to handle server setup. Investigate using Firebase ID tokens with Firestore's REST API and Security Rules, which may avoid a separate administrator credential for user-owned requests. Do not claim this route is implemented or remove the server checks until it is tested. Interactive Google sign-in still belongs to the user if requested by Google.
+
+
+## Latest MVP decision (Yash, 10 Nov)
+
+Frontend hosting: Vercel; backend: Render, planned for 11 Nov. The redundant Me-page Google sign-in card is removed; general multi-user sign-in is later work. Developer Firebase ownership does not authenticate visitors. A later database migration may use Render PostgreSQL rather than Firestore/vector storage; no migration is implemented now. The single interview entry point is `docs/milestones/interview-walkthrough.md`, replacing the three separate M8 interview scripts. Historical milestone records remain as provenance. Licence and permitted diary-model choices remain pending.

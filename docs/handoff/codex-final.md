@@ -102,3 +102,8 @@ Yash then asked for all independent work while away. Codex prepared `m8-chat-and
 The browser meal draft, greeting, protein reply, 30-minute plan and ready account card were checked. A cached-shell reload passed with the preview briefly stopped; the preview was restarted. See `docs/test-log.md` for limits, including the unverified Weetabix serving assumption. No new diary entries were saved. The coach and preview were left running on loopback.
 
 Resume with phone step 1, not with a new feature. All seven phone results remain NOT TESTED in this rehearsal until Yash reports them. Then collect the licence/provider choices for Wednesday. Hosting, actual sign-in, real diary-sharing and phone radio-state checks are not completed by these browser observations. No sync, vector database, model training or working-path refactor was started.
+
+
+## Latest MVP decision (Yash, 10 Nov)
+
+Frontend hosting: Vercel; backend: Render, planned for 11 Nov. The redundant Me-page Google sign-in card is removed; general multi-user sign-in is later work. Developer Firebase ownership does not authenticate visitors. A later database migration may use Render PostgreSQL rather than Firestore/vector storage; no migration is implemented now. The single interview entry point is `docs/milestones/interview-walkthrough.md`, replacing the three separate M8 interview scripts. Historical milestone records remain as provenance. Licence and permitted diary-model choices remain pending.

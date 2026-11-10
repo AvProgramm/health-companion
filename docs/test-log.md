@@ -385,3 +385,14 @@ Browser pane on localhost:4173 after the fresh build; real coach on port 8000. T
 | Real diary context | NOT TESTED | Sharing remained off pending Yash's provider choice. No private diary lines were sent. |
 
 `npm run check` and `npm --prefix apps/web run build` passed after preparing the walkthroughs. The existing chunk-size warning remains. Three explain-back documents and new AI attribution rows were prepared; no application path was refactored, no Firestore/vector work started, no sealed evaluation rerun and no model weight/photo download requested.
+
+
+## MVP scope update (10 Nov, Codex)
+
+Yash selected Vercel frontend/Render backend for tomorrow, removed the separate Me-page Google account card and deferred general multi-user login and a possible PostgreSQL migration. The old rehearsal step 7 (Google sign-in) is superseded: use Me profile/adaptations/backup for the current demo instead. Phone verification remains NOT TESTED.
+
+Regression first: opening Me displayed "Connect with Google" and made a Firebase request. After removing the card and unused client authentication code, the new MeView regression passes: no Google prompt/request, backup still available. Full `npm run check` and production build passed. Uninstalling the unused Firebase web dependency reported zero web dependency vulnerabilities. Existing server-side config/account checks remain intact for future use; no authentication bypass or cloud upload was added.
+
+Browser PASS: rebuilt preview, reloaded to update the cached shell, then opened Me. The page begins with local adaptations, with body/storage/backup/display below and no Google account card. No profile or diary data was changed. Physical-phone result remains NOT TESTED.
+
+The single interview document is `docs/milestones/interview-walkthrough.md` (146 lines), covering all MVP features, source files, demo sequence, experimental limitations and tomorrow's hosting gates. Three separate M8 interview scripts were consolidated into it; older milestone histories remain as provenance. No deployment, database provisioning or licence/provider decision was made.

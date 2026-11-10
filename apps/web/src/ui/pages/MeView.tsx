@@ -5,7 +5,6 @@ import { validateBackup } from '../../storage/backup/validate';
 import { countMeals } from '../../storage/mealsRepo';
 import type { Durability } from '../../storage/persistence';
 import type { Profile, ProfileSnapshot } from '../../domain/profile/profile';
-import { CloudAccount } from '../components/me/CloudAccount';
 import { ProfileEditor } from '../components/me/ProfileEditor';
 import { BodyCard } from '../components/me/BodyCard';
 import { DURABILITY_TEXT, errorText } from '../format';
@@ -137,7 +136,6 @@ export function MeView({ db, profileSnapshot, onSaveProfile, durability, foodCou
         <p className="status">Your saved profile and diary stay on this device. Optional services receive only the text and choices you submit.</p>
       </header>
 
-      <CloudAccount />
       <NoticeLine notice={message} />
 
       <ProfileEditor snapshot={profileSnapshot} onSave={onSaveProfile} />
