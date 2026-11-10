@@ -74,4 +74,4 @@ Organised by feature, one reason to change per module. Domain never imports stor
 
 Current repeated-round planner and wrap-up: read `docs/handoff/claude-code.md` and `docs/milestones/m4-repeated-rounds-walkthrough.md`. Repetition is explicitly selectable; the earlier distinct-only duration notes are historical.
 
-Current work: test the global food model and the features still untested on the phone (`docs/test-log.md`). Earlier rules and later ideas: `docs/handoff/codex-m5.md`.
+Current work: read `docs/handoff/codex-11-nov.md`. Verify the AI chat and the photo reader, then make Gemini the main photo path and fetch estimates automatically. Earlier rules and later ideas: `docs/handoff/codex-m5.md`.
