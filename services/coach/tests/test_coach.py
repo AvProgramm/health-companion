@@ -3,7 +3,7 @@ import asyncio
 import json
 import unittest
 from pathlib import Path
-from unittest.mock import patch
+from unittest.mock import AsyncMock, patch
 import httpx
 from fastapi.testclient import TestClient
 from coach.app import app
@@ -206,3 +206,14 @@ class CoachEndpointTests(unittest.TestCase):
 
 if __name__ == '__main__':
     unittest.main()
+
+
+class DiaryPrivacyGateTests(unittest.TestCase):
+    def test_current_free_tier_rejects_diary_context_before_a_model(self):
+        """Keep private diary lines away from every hosted provider."""
+        with patch('coach.app.credited', new=AsyncMock(return_value={'mode': 'no_evidence', 'message': 'Fictional unavailable.', 'claims': [], 'sources': []})) as credited:
+            response = TestClient(app).post('/api/coach', json={
+                'question': 'Fictional question?', 'context': ['2026-01-05: fictional food logged']})
+        self.assertEqual(response.status_code, 403)
+        self.assertIn('Diary sharing is paused', response.json()['detail'])
+        credited.assert_not_called()

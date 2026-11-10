@@ -31,3 +31,8 @@ The schema-v5 profile holds opt-in avoided areas, seated-only, blocked pull-up/j
 ## New cloud direction (Yash, 10 Nov)
 
 Yash now requests Firebase cloud storage and AI access to his own saved diary/profile for analysis. This authorises a change from the earlier local-only direction; read `docs/handoff/firebase-diary.md` (from the repo root) before implementing it. The configuration template is prepared, but auth, migration, cloud repositories and diary-aware AI are not implemented yet. Existing local data and current request boundaries remain in place until that tested path ships. No existing records may be erased as an implicit part of setup.
+
+
+## Gemini diary decision, 10 Nov
+
+Yash confirmed Free Tier and chose to keep diary sharing off. UI/client/server gates now block context; general typed questions remain unchanged. Official Gemini Additional Terms distinguish unpaid input (product improvement/human review, no personal information) from API projects associated with active billing. No paid tier was inferred from a working key and no billing was enabled. See https://ai.google.dev/gemini-api/terms?authuser=00 and https://ai.google.dev/gemini-api/docs/billing . Reassess before any private-context route; do not fall back from private data to another provider automatically.

@@ -136,20 +136,17 @@ describe('AI chat', () => {
     expect(container.textContent).toContain('Fictional general claim.');
   });
 
-  it('never reads or sends the diary unless sharing is switched on', async () => {
-    const fetchMock = answering({ '/api/coach': GENERAL_ANSWER, '/api/nutritionist': IDEAS });
+  it('keeps diary sharing disabled for the current free-tier setup', async () => {
+    const fetchMock = answering({ '/api/coach': GENERAL_ANSWER });
     vi.stubGlobal('fetch', fetchMock);
     await show();
+    const sharing = container.querySelector<HTMLInputElement>('input[type="checkbox"]')!;
+    expect(sharing.disabled).toBe(true);
+    await act(async () => sharing.click());
     await say('What did I eat this week?');
     expect(loadDiary).not.toHaveBeenCalled();
     expect(sent(fetchMock)).toEqual([['/api/coach', { question: 'What did I eat this week?' }]]);
-
-    // Switch sharing on: the same kind of message now carries the summary lines, and nothing else new
-    await act(async () => container.querySelector<HTMLInputElement>('input[type="checkbox"]')!.click());
-    expect(container.textContent).toContain('one line per day');
-    await say('What should I eat tomorrow?');
-    expect(sent(fetchMock)[1]).toEqual(['/api/coach', { question: 'What should I eat tomorrow?', context: ['2026-01-05: food 1800 kcal (Fictional oats); training 1 session; sleep 7 h 30 min'] }]);
-    expect(container.querySelectorAll('.chat-reply .badge')[1]?.textContent).toBe('Nutritionist');
+    expect(container.textContent).toContain('Diary sharing is paused');
   });
 
   it('plans a session from the message, sending only what it says', async () => {

@@ -73,7 +73,7 @@ Organised by feature, one reason to change per module. Domain never imports stor
 2. **Snapshots are immutable.** Corrections, undo and deletes add a revision; nothing is edited in place.
 3. **One write = one IndexedDB transaction.** Every write carries an operation key (replay on retry) and an expected revision (conflict on a stale screen).
 4. **Nothing saves without the user confirming.** The parser, and any future AI, only fill drafts.
-5. **Diary sharing is explicit.** The current MVP keeps its diary/profile in IndexedDB. Optional services receive only the typed request fields, barcode digits, or a small metadata-free photo after a tap or the remembered photo opt-in. The separate seven-day switch sends bounded dated summary lines only when enabled and resets on reopening the AI screen; keep real diary sharing off until Yash chooses its permitted model provider. The Me-page account card is removed (Yash, 10 Nov); a developer-owned Firebase project is not user authentication or cloud sync. General multi-user sign-in and a possible Render PostgreSQL migration are later work. No telemetry; fictional fixtures only. Nothing saves without confirmation.
+5. **Diary sharing is explicit.** The current MVP keeps its diary/profile in IndexedDB. Optional services receive only the typed request fields, barcode digits, or a small metadata-free photo after a tap or the remembered photo opt-in. The separate seven-day switch sends bounded dated summary lines only when enabled and resets on reopening the AI screen; diary sharing is currently paused at the UI, client and server boundaries because Yash confirmed Gemini Free Tier (10 Nov). The Me-page account card is removed (Yash, 10 Nov); a developer-owned Firebase project is not user authentication or cloud sync. General multi-user sign-in and a possible Render PostgreSQL migration are later work. No telemetry; fictional fixtures only. Nothing saves without confirmation.
 6. **Round for display only** (`ui/format.ts`).
 
 ## Working rules
@@ -98,3 +98,6 @@ Yash now requests Firebase cloud storage and AI access to his own saved diary/pr
 ## MVP and interview decision (Yash, 10 Nov)
 
 Use `docs/milestones/interview-walkthrough.md` as the single interview walkthrough. Vercel frontend and Render backend are selected for hosting tomorrow. Remove the separate sign-in card from Me; general multi-user sign-in is later work. PostgreSQL on Render may replace the earlier Firestore/vector plan later; do not start a database migration for this MVP. This supersedes older account/cloud-plan notes. Existing diary data stays intact.
+
+
+Current privacy decision, 10 Nov: Yash confirmed the Gemini project is Free Tier and chose to keep diary sharing off. The sharing switch is disabled, the browser request helper rejects context without fetching, and the server returns 403 for context before calling a model. Generic typed messages still use the existing route. Google terms and account-tier review must precede any later Gemini-only private-context route; no billing was enabled.

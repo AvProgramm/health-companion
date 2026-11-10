@@ -21,6 +21,8 @@ const MESSAGES: ServiceMessages = {
  * The lines are a summary of recent days, and are only ever passed when the person has switched sharing on.
  */
 export async function askCoach(question: string, context: readonly string[] = []): Promise<CoachReply> {
-  const body = context.length > 0 ? { question, context } : { question };
+  // Ignore a diary-context request because Yash has not enabled a permitted paid route.
+  if (context.length > 0) throw new Error('Diary sharing is paused for the current free-tier setup. Send only your question.');
+  const body = { question };
   return readCoachReply(await postJson('/api/coach', body, COACH_TIMEOUT_MS, MESSAGES));
 }

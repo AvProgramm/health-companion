@@ -31,7 +31,7 @@ A later cloud diary may use Render PostgreSQL instead of Firestore. That is a fu
 2. Enter `actually 250 ml`. Check that the intended milk item changes, totals update and the old revision remains available. Undo/history demonstrate immutable corrections.
 3. Choose a plate photo. Review the AI names and counts, correct any mistakes and place the list in the composer. The photo action itself never saves a meal.
 4. Look up a packet barcode on Today, if available. Review the label basis. Foods contains the saved-food list, rather than duplicate capture screens.
-5. AI: send `Hi`, a protein question and `A 30 minute workout with no equipment`. Show the 30-minute plan and local eligibility checks. Keep the seven-day switch off until the diary-provider choice is settled; after approval, ask `how was my week?` and check its named dates and gaps.
+5. AI: send `Hi`, a protein question and `A 30 minute workout with no equipment`. Show the 30-minute plan and local eligibility checks. The seven-day switch is disabled for the confirmed free tier; after approval, ask `how was my week?` and check its named dates and gaps.
 6. Airplane mode: reopen the cached diary and show local entries/editing. An unavailable AI service is expected; saved local data must still work.
 7. Me: show profile/adaptations, number hiding and backup/export. Explain the later general sign-in/cloud-database plan. Do not show a redundant account-login card.
 
@@ -100,7 +100,7 @@ Without diary context, a food-idea request goes to the Nutritionist; when it lac
 
 With the sharing switch on, `loadWeekLines` reads seven local dates. It loads the latest meals, workouts and sleep, then calls existing domain summaries. Deleted meals and inactive components are excluded from food names. `weekLines` formats a bounded line per date. Gaps, unknown nutrition and partial totals have different text. At most seven lines of 200 characters reach `CoachRequest.context`; up to eight distinct food names appear per line, and long lines are clipped. This bounded view is not the full database or a complete nutrient history.
 
-The sharing switch starts off on every new AI screen. Loading occurs only when it is on and a message is sent. Shared lines route question/food messages to the Coach; workout planning still uses its own path. The model route currently chooses between Groq and Gemini through the shared availability queue. Yash has not selected the permitted diary provider yet: keep real diary sharing off until that decision is made. Do not claim that Google sign-in or Firestore is required for these local summaries.
+The sharing switch starts off on every new AI screen. Loading occurs only when it is on and a message is sent. Shared lines route question/food messages to the Coach; workout planning still uses its own path. The model route currently chooses between Groq and Gemini through the shared availability queue. Yash selected Gemini conditionally, then confirmed Free Tier and asked to keep sharing off. The UI is disabled and both request boundaries reject diary context before any provider call. A permitted paid-tier route is not enabled. Do not claim that Google sign-in or Firestore is required for these local summaries.
 
 ## What the server checks
 
@@ -155,3 +155,6 @@ For multiple servings, the service asks for one item/container and scales values
 A model passing every numeric check can still use the wrong food or portion. Compare the Weetabix demo estimate with its packet and use a checked saved food for the reliable offline backup. Explain the uncertainty instead of presenting the estimate as measured nutrition.
 
 Free-provider availability, package-database coverage and photo recognition are separate from UI correctness. Keep the recorded video as a fallback. Positive plate recognition and physical-phone capture require Yash's report; existing unit tests and a laptop screenshot do not establish those results.
+
+
+Current privacy decision, 10 Nov: Yash confirmed the Gemini project is Free Tier and chose to keep diary sharing off. The sharing switch is disabled, the browser request helper rejects context without fetching, and the server returns 403 for context before calling a model. Generic typed messages still use the existing route. Google terms and account-tier review must precede any later Gemini-only private-context route; no billing was enabled.

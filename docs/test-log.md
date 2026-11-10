@@ -460,3 +460,8 @@ This origin initially showed first-run setup and no foods. It is separate from t
 Positive real-plate recognition/camera controls, the packet barcode UI, actual phone airplane mode, and phone backup permissions remain NOT TESTED in this pass. Restore/erase, conflicts/replays and adaptation combinations are covered by automated tests; destructive real-diary restore/erase was not attempted in the browser. No assertion of independent clinical/nutrient accuracy is made. Real diary sharing remains off until Yash chooses its permitted provider. Phone results must be reported separately as PASS/FAIL/NOT TESTED.
 
 Before hosting: phone reload twice at the usual origin, download a backup, then test meal/correction/history, photo and barcode, Gym search/60-minute repeat setting, AI without diary sharing, sleep/workout persistence, and cold reopening after disconnecting USB and enabling airplane mode. Check Me has no Google card and number hiding works. Keep licence and diary-provider decisions separate from functional test results.
+
+
+## Confirmed Free Tier privacy gate (10 Nov, Codex)
+
+Yash selected Gemini subject to terms/tier review, then confirmed Free Tier and explicitly kept diary sharing off. New tests first failed for the enabled switch, unblocked client request and server accepting context. After the change: disabled UI, no diary loader/fetch on that path, and server 403 before a model. Existing pure summary/retrieval/safety tests remain; ordinary chat requests are unchanged. Full check (215 coach tests) and production build passed. No personal diary was sent and no billing/account setting changed.

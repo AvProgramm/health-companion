@@ -98,6 +98,9 @@ async def barcode(request: Request, item: BarcodeRequest):
 async def coach(request: Request, item: CoachRequest):
     """Return an answer checked against reviewed cards, or an honest reason for none."""
     check_local(request)
+    # Ignore diary context because the selected Gemini account is on the unpaid tier.
+    if item.context:
+        raise HTTPException(403, 'Diary sharing is paused for the current free-tier setup. Send only your question.')
     if not item.question.strip():
         raise HTTPException(422, 'Type a question first.')
     return await credited(lambda ask: answer_question(item.question.strip(), knowledge(), ask, item.context), lambda reply: reply.mode in ('answer', 'general'))

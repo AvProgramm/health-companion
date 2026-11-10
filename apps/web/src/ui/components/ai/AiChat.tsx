@@ -68,7 +68,8 @@ export function AiChat({ context, onDraft, loadDiary }: { context: TrainerContex
         {turn.answer === null && turn.error === null && <div className="skeleton skeleton-card" role="status" aria-label="Thinking" />}
       </div>)}</div>
 
-      <label className="choice"><input type="checkbox" checked={shareDiary} onChange={event => setShareDiary(event.target.checked)} /><span>Share my last 7 days with the AI</span></label>
+      <label className="choice"><input type="checkbox" disabled checked={shareDiary} onChange={event => setShareDiary(event.target.checked)} /><span>Share my last 7 days with the AI</span></label>
+      <p className="hint">Diary sharing is paused for the current free-tier setup. Only your typed message is sent.</p>
       {shareDiary && <p className="hint">Each message now also sends one line per day: energy total, food names, training sessions and sleep. Switch this off to send only your message.</p>}
 
       <form className="chat-form" onSubmit={handleSubmit}>
