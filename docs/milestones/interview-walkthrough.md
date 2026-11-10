@@ -13,6 +13,87 @@ This is the single interview script and feature/code tour for the MVP. Older mil
 - `ui/hooks`: the screen's short-term memory and action state.
 - `services/coach`: the optional laptop helpers for food and coaching.
 
+## Start here: explain it like I am 10
+
+**One sentence:** This app is a notebook that remembers your food, exercise and sleep, with optional helpers that suggest things for you to check.
+
+Think of a house. `ui/pages` are its rooms; `ui/components` are reusable furniture; `data` is the filing cabinet and the delivery desk; `domain` is the rulebook and calculator. `ui/hooks` keep track of what you are doing right now. `services/coach` is an outside helper you can call. The notebook still works when that helper cannot answer. The `.test` files are practice checks using made-up examples, not real diary entries.
+
+### Key files, one at a time
+
+These paths start at `apps/web/src/` unless a row says otherwise. This is the first reading route through the working app, not a claim that these are all the files. The complete feature tour below points to the remaining specialist areas.
+
+| File | Its job in plain English | If we removed it without replacing it |
+|---|---|---|
+| `ui/App.tsx` | Open the notebook, load saved foods/settings and choose which room to show. | The normal app entrance and tab switching break. |
+| `ui/pages/TodayView.tsx` | Put today's entry box, drafts, timeline and totals together. | The Today screen breaks. |
+| `ui/pages/GymView.tsx` | Put exercise choices and planning tools together. | The Gym screen breaks. |
+| `ui/pages/FoodsView.tsx` | Show the saved-food collection and its editing tools. | The Foods screen breaks. |
+| `ui/pages/AiView.tsx` | Put the chat on its own screen. | The AI tab breaks. |
+| `ui/pages/MeView.tsx` | Put profile, display and backup tools together. | The Me screen breaks. |
+| `ui/pages/FirstRunSetup.tsx` | Collect the starting body details before opening the diary. | The current first-run path breaks. |
+| `ui/components/today/Composer.tsx` | Show the text box and review action. | Typed entry through that box breaks. |
+| `ui/components/meals/DraftCard.tsx` | Show an editable meal before its Save button is pressed. | Meal review and that confirmation button break. |
+| `ui/components/meals/EstimateDraft.tsx` | Ask for missing food facts and show the waiting/error state. | Automatic lookup from an unknown-food row breaks. |
+| `ui/components/meals/EstimateResult.tsx` | Show a proposed food's source, range and review actions. | Reviewing an estimate breaks. |
+| `ui/components/meals/FoodEditor.tsx` | Let the person enter or correct food facts by hand. | The manual food fallback breaks. |
+| `ui/components/meals/PlatePhoto.tsx` | Show the chosen picture and connect its reading choices. | The photo capture card breaks. |
+| `ui/components/meals/PhotoFoodsReader.tsx` | Upload a small redrawn photo after permission and show food suggestions. | Hosted photo reading breaks. |
+| `ui/components/meals/BarcodeScan.tsx` | Accept a barcode and show a product for review. | The barcode capture card breaks. |
+| `ui/components/ai/AiChat.tsx` | Hold the current message and display replies. | The chat interaction breaks. |
+| `ui/components/ai/askAi.ts` | Send a question, food idea or workout request to the right helper. | Chat requests no longer reach their intended helper. |
+| `ui/hooks/useEntryPanel.ts` | Remember the open draft and coordinate its confirmed save. | Draft saving and correction coordination break. |
+| `ui/hooks/useDiaryDay.ts` | Load the chosen day's meals, exercise and sleep for the screen. | The day cannot load or refresh normally. |
+| `ui/hooks/useToday.ts` | Recheck the device clock, including after returning to the app. | Today stops following date changes while the page stays open. |
+| `domain/parsing/parseEntry.ts` | Decide whether typed words mean a meal, correction, workout, sleep or supported question. | Typed review cannot choose the right kind of draft. |
+| `domain/meals/revisions.ts` | Build the first meal record or a new corrected version. | Meal creation and history rules break. |
+| `domain/nutrition/scale.ts` | Work out nutrients for the amount actually eaten. | Portion calculations break. |
+| `domain/nutrition/day.ts` | Collect that day's food totals without hiding missing facts. | The day's food summary breaks. |
+| `domain/training/eligibility.ts` | Exclude exercises that fail the person's local rules. | Planning loses required exercise checks. |
+| `domain/training/planner.ts` | Search eligible exercise combinations for the chosen time. | Automatic session selection breaks. |
+| `domain/training/rounds.ts` | Add repeated blocks when that choice is enabled. | The planner loses its repeated-round option. |
+| `data/storage/connection.ts` | Open the local filing cabinet and wait for whole saves to finish. | Normal local reading and writing break. |
+| `data/storage/mealsRepo.ts` | File meals, their versions and retry receipts together. | Meals cannot be saved, corrected or read normally. |
+| `data/storage/foodsRepo.ts` | Keep the food facts and their saved versions. | Food lookup and saved-food editing break. |
+| `data/storage/logsRepo.ts` | Keep workout and sleep records. | Those logs cannot be saved or loaded normally. |
+| `data/storage/profileRepo.ts` | Keep confirmed versions of the person's settings. | Profile persistence breaks. |
+| `data/storage/backup/transfer.ts` | Export, restore or erase through the checked storage boundary. | Those backup actions break. |
+| `data/api/post.ts` | Carry requests to the optional service and handle failed requests. | Its dependent online helpers break; the local diary remains separate. |
+| `data/api/coach.ts` | Send a typed question; refuse diary context in the current setup. | Coach requests lose this browser boundary. |
+| `sw/service-worker.js` | Keep a copy of the app for offline reopening. | Offline reopening loses its app-shell support. |
+| `services/coach/coach/app.py` (repository root) | Receive helper requests and call the appropriate service function. | The optional Python API cannot serve the app normally. |
+| `services/coach/coach/pipeline.py` (repository root) | Try nutrition sources in the defined order and return a checked proposal. | Online nutrition estimates lose their pipeline. |
+
+Deleting an imported file usually stops the build as well as losing its job. The last column describes which responsibility is lost, not a promise that every other screen still builds.
+
+### Follow one button: Save meal
+
+1. You type `250 ml Fictional milk` and press Review entry. The parser reads it; it does not save it.
+2. Today shows `DraftCard`. Imagine the fictional saved label says 60 calories per 100 mL: the calculator works out 150 for 250 mL. A missing added-sugar value still says Unknown.
+3. You check the food, amount and date, then tap **Save meal**. `DraftCard` calls the save action supplied by Today.
+4. `useEntryPanel.saveDraft` asks the meal rulebook to make version 1. It gives this intended save a receipt number so retrying it need not create another meal.
+5. `mealsRepo.confirmMeal` checks that the meal can be calculated, then writes its meal header, version and receipt together in the browser's local filing cabinet. Either the whole save succeeds or none of it stays.
+6. `connection.runTransaction` waits for the browser's complete signal. Only then does the screen show Saved, close the draft and reload the day. The totals are recalculated from the stored meals.
+7. No model or cloud database is needed for this saved-food example. If you correct the amount later, the app adds a new version and keeps the old one. An edit from an out-of-date screen is refused for review.
+
+The screen is the waiter, `domain` is the calculator, and `data/storage` is the filing clerk. A suggestion and a saved diary entry are two different things.
+
+### Three things to understand before fixing bugs
+
+1. **What did the words become?** Inspect the parser result and draft. If the wrong food or amount appears before Save, start there.
+2. **What did the calculator receive?** Check the food label, portion, units and missing values. Do not turn Unknown into zero or ask the model to repair arithmetic.
+3. **What actually got saved and reread?** Check the save receipt, expected version, transaction and reload. A correct draft with a wrong saved day points here rather than to the parser.
+
+For an online-only failure, first check whether the laptop/hosted helper is reachable. A failed helper does not justify changing local diary calculations.
+
+### Three easy questions for Yash
+
+1. Which room shows today's entries, and which folder is the local filing cabinet?
+2. Does pressing Review entry save a meal? Which button confirms the meal?
+3. If a food label does not tell us added sugar, should the app show zero or Unknown, and why?
+
+Answer in your own words before reading the technical tour. Then explain the Save meal story without looking. Mark your actual review in the AI log; no AI-written guide proves you understand it yet.
+
 ## Opening: 30 seconds
 
 "Health Companion is a React and TypeScript PWA for food, exercise and sleep. The diary works locally in IndexedDB. Optional FastAPI services supply nutrition proposals, food-photo reading and coaching. Code owns arithmetic, revisions and hard exercise constraints; model responses are proposals that need confirmation. Missing nutrition stays unknown."
