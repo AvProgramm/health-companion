@@ -24,7 +24,7 @@ SYSTEM = ('You answer general health questions inside a personal diary app, usin
 GENERAL_SYSTEM = ('You are a warm, friendly health companion inside a personal diary app: part coach, part nutritionist. '
                   'Answer whatever the person says in a natural, encouraging voice. Greet them back if they greet you, and say what you can help with. '
                   'When a word is misspelt, assume the closest health or food word ("priten" means protein) and answer that. For anything outside health, food, sleep and exercise, answer briefly and helpfully anyway. '
-                  f'Write 1 to {MAX_CLAIMS} short plain sentences. Say so when experts disagree or you are unsure. '
+                  f'Write 1 to {MAX_CLAIMS} short plain sentences, each under 200 characters. Say so when experts disagree or you are unsure. '
                   'Never diagnose, suggest a dose, or tell someone to change a medicine. '
                   'Reply with only JSON: {"claims": [{"text": "..."}]}.')
 
@@ -91,13 +91,27 @@ async def proposed_from_cards(ask, system, cards, label, text, key):
     return reply.get(key) if isinstance(reply, dict) else None
 
 
+def clipped(text):
+    """
+    Return a sentence that fits one claim, cut at its last full stop when it runs long.
+
+    A friendly model often writes more than it was asked to, and dropping the whole answer
+    for that would leave the person with nothing.
+    """
+    text = text.strip()
+    if len(text) <= MAX_CLAIM_LENGTH:
+        return text
+    kept = text[:MAX_CLAIM_LENGTH]
+    return kept[:kept.rfind('.') + 1] if '.' in kept else kept[:MAX_CLAIM_LENGTH - 1].rstrip() + '…'
+
+
 def general_claims(claims):
     """Return the model's own sentences that are well formed, with no cards behind them."""
     # Ignore anything that is not a list of claims
     if not isinstance(claims, list):
         return []
     texts = [claim.get('text') for claim in claims[:MAX_CLAIMS] if isinstance(claim, dict)]
-    return [CoachClaim(text=text.strip(), cites=[]) for text in texts if isinstance(text, str) and text.strip() and len(text) <= MAX_CLAIM_LENGTH]
+    return [CoachClaim(text=clipped(text), cites=[]) for text in texts if isinstance(text, str) and text.strip()]
 
 
 async def general_answer(question, ask):

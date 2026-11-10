@@ -24,7 +24,7 @@ More training will not fix the first three. **Yash's decision for Friday: stop t
 
 Invariant 5 changed with Yash's approval: a photo may leave the device on an explicit tap.
 
-**Before anything else:** restart the coach service so `/api/photo` exists, serve the fresh build, and try in the browser pane and on the phone: one question, one food idea, one "30 minute workout", and one photo with "List every food with AI". Record what is observed in `docs/test-log.md`. Known gaps: the chat answers each message alone (no memory of earlier turns); a session's place and difficulty come only from words in the message.
+**Before anything else:** restart the coach service so `/api/photo` exists, serve the fresh build, and try in the browser pane and on the phone: one question, one food idea, one "30 minute workout", and one photo with "List every food with AI". Record what is observed in `docs/test-log.md`. Checked live on 10 Nov after restarting the service (generic text, through the proxy): "Hi", "How much priten is too much" and "how do I cook dal" each got a friendly general answer; before the restart the phone showed the old no-guidance line. Yash wants the chat to feel like an intelligent agent, not a question box. Known gaps: the chat answers each message alone (no memory of earlier turns); a session's place and difficulty come only from words in the message.
 
 ## What Yash asked for next, in his order of urgency
 

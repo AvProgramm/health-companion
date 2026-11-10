@@ -124,8 +124,14 @@ class AnswerTests(unittest.TestCase):
         self.assertEqual((reply.mode, reply.message), ('no_evidence', NO_EVIDENCE))
 
     def test_a_malformed_general_answer_is_not_shown(self):
-        reply = run('Fictional question', FakeRetriever([]), answering({'claims': [{'text': ''}, 'nonsense', {'text': 'x' * 301}]}))
+        reply = run('Fictional question', FakeRetriever([]), answering({'claims': [{'text': ''}, 'nonsense', {'text': 7}]}))
         self.assertEqual(reply.mode, 'no_evidence')
+
+    def test_a_long_general_answer_is_cut_at_a_full_stop(self):
+        # Seen on 10 Nov: a long answer about protein was dropped whole, leaving the no-guidance line
+        long_text = 'A fictional first sentence. ' + 'x' * 400
+        reply = run('Fictional question', FakeRetriever([]), answering({'claims': [{'text': long_text}]}))
+        self.assertEqual((reply.mode, reply.claims[0].text), ('general', 'A fictional first sentence.'))
 
     def test_a_refused_question_never_gets_a_general_answer(self):
         retriever = FakeRetriever([])
