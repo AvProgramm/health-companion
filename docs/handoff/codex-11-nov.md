@@ -53,3 +53,19 @@ Invariant 5 changed with Yash's approval: a photo may leave the device on an exp
 - A model's numbers are never trusted: keep every check in code.
 - Bug fix starts with a failing test. Files stay at or under 300 lines. Stage explicit paths; never force-push; push at each green check.
 - `compareCandidates` and the PyTorch loop need Yash's sign-off.
+
+## Chat memory: which kinds to add (Yash's idea, 10 Nov)
+
+Yash shared a list of seven kinds of agent memory and asked which fit this app. Today the chat has only two: **retrieval** (the reviewed cards in `rag/`) and **parametric** (whatever the hosted model already knows). Each message is answered alone.
+
+| Order | Kind | What it would be here | Where it lives | Why this order |
+|---|---|---|---|---|
+| 1 | **Working** (now) | Send the last few turns of this chat with each message, so "and for breakfast?" works | The screen's memory only, as now | Smallest change, biggest effect on "feels like an agent". Add a `history` field to the three request models, capped (for example 6 turns, 300 characters each), and run `check_safety` on the new message as today |
+| 2 | **Semantic** (facts) | Lasting facts he chooses to tell it: vegetarian, dislikes, goal, usual gym kit | A new immutable IndexedDB store on the phone, shown and editable in Me | The most interesting one for a health diary: the answers become personal while the facts stay on the device. Only the facts relevant to one message are sent with it, and he must be able to see and delete every fact (a `schema-migration` skill exists for the new store) |
+| 3 | **Episodic** (events) | "You slept 5 h on Tuesday and skipped legs" from the diary itself | Already on the phone: `week/weekOverview` builds one line per day | Powerful, but it means diary history leaving the device, which invariant 5 forbids. Only with his explicit approval, opt-in per message, and sending the summary lines, never raw entries |
+| 4 | **Prospective** (later) | "Remind me to log dinner", a weekly check-in | Local notifications from the service worker | Useful after hosting; no model needed |
+| - | Procedural | Already the code: the planner, the estimate checks, the safety rules | | Nothing to add |
+
+**A vector database (he mentioned Firestore):** not needed for items 1, 2 and 4, which are small and local. It becomes relevant only for accounts with memory across devices, or a much larger card library. That is the parked "accounts and per-user coaches" idea, and it would end "no accounts, nothing leaves the device", so it is his decision and comes after Friday. The current card search (BM25 and MiniLM in memory) is enough for the reviewed cards.
+
+**Recommended for Friday:** item 1 only. Item 2 is the best next milestone and a good interview talking point: memory the user can read, edit and erase, kept on the device.
