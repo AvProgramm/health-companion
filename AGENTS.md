@@ -19,3 +19,5 @@ Yash owns `compareCandidates` and the PyTorch training loop. Both exist now; cha
 Unfinished Milestone 5 work: read `docs/handoff/codex-m5.md` first.
 
 Local profile adaptations now use schema v5 and must apply to every planner path on the device. Read `docs/milestones/m5-profile-walkthrough.md`; a later schema addition starts at v6. Do not paste the profile into a service request or model prompt.
+
+Current priorities: read `docs/handoff/codex-11-nov.md`. Photo uploads need a per-photo tap or the explicitly enabled, device-only automatic-photo setting; its default is off. Never send diary or saved profile data.

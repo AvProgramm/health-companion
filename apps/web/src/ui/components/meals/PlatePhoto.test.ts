@@ -41,6 +41,7 @@ beforeEach(() => {
   URL.createObjectURL = vi.fn(() => 'blob:fictional');
   URL.revokeObjectURL = vi.fn();
   vi.clearAllMocks();
+  localStorage.clear();
   vi.mocked(loadDishFacts).mockResolvedValue(FACTS);
   vi.mocked(modelIsKept).mockResolvedValue(true);
   vi.mocked(shrinkPhoto).mockResolvedValue(SHRUNK);
@@ -51,6 +52,41 @@ beforeEach(() => {
 afterEach(async () => { await act(async () => root.unmount()); container.remove(); vi.unstubAllGlobals(); });
 
 describe('Photo of your plate', () => {
+  it('remembers automatic photo reading only after an explicit opt-in', async () => {
+    const fetchMock = vi.fn(async () => new Response(JSON.stringify({ mode: 'nothing', message: 'Nothing visible.', foods: [] }), { status: 200 }));
+    vi.stubGlobal('fetch', fetchMock);
+    await show();
+    const checkbox = container.querySelector<HTMLInputElement>('input[type="checkbox"]')!;
+    expect(checkbox.checked).toBe(false);
+    await act(async () => checkbox.click());
+    expect(fetchMock).not.toHaveBeenCalled();
+    await choosePhoto(false);
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    expect(onEntry).not.toHaveBeenCalled();
+    expect(recogniseDish).not.toHaveBeenCalled();
+
+    // Remount the card to check the stored choice, rather than just React state.
+    await act(async () => root.render(null));
+    await show();
+    expect(container.querySelector<HTMLInputElement>('input[type="checkbox"]')!.checked).toBe(true);
+    await choosePhoto(false);
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+    await act(async () => container.querySelector<HTMLInputElement>('input[type="checkbox"]')!.click());
+    await choosePhoto(false);
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+    expect(container.textContent).toContain('Only when you tap.');
+  });
+
+  it('does not upload twice when automatic reading is enabled after a manual request', async () => {
+    const fetchMock = vi.fn(async () => new Response(JSON.stringify({ mode: 'nothing', message: 'Nothing visible.', foods: [] }), { status: 200 }));
+    vi.stubGlobal('fetch', fetchMock);
+    await show();
+    await choosePhoto(false);
+    await act(async () => [...container.querySelectorAll('button')].find(button => button.textContent?.includes('List every food'))!.click());
+    await act(async () => container.querySelector<HTMLInputElement>('input[type="checkbox"]')!.click());
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+  });
+
   it('offers AI immediately without starting the large local model', async () => {
     await show();
     await choosePhoto(false);

@@ -2,6 +2,7 @@ import { useEffect, useState, type ChangeEvent } from 'react';
 import { Camera } from '@phosphor-icons/react';
 import { dishLabel, type DishFacts, type DishGuess } from '../../../domain/dish/dishModel';
 import { loadDishFacts, modelIsKept, recogniseDish } from '../../../vision/recogniseDish';
+import { readAutoPhoto, writeAutoPhoto } from '../../preferences';
 import { useBusy } from '../../hooks/useBusy';
 import { ErrorLine } from '../shared/NoticeLine';
 import { PhotoFoodsReader } from './PhotoFoodsReader';
@@ -28,6 +29,7 @@ function megabytes(bytes: number): string {
  * need the local model to be bundled or downloaded.
  */
 export function PlatePhoto({ onPick, onEntry }: { onPick: (dish: string) => void; onEntry: (entry: string) => void }) {
+  const [autoRead, setAutoRead] = useState(readAutoPhoto);
   const [facts, setFacts] = useState<DishFacts | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   // The chosen photo, kept so it can be sent on request
@@ -62,6 +64,12 @@ export function PlatePhoto({ onPick, onEntry }: { onPick: (dish: string) => void
     setPreviewUrl(URL.createObjectURL(photo));
   }
 
+  /** Keep automatic uploads under the device owner's control. */
+  function handleAutoPhoto(enabled: boolean) {
+    writeAutoPhoto(enabled);
+    setAutoRead(enabled);
+  }
+
   /** Read the plate locally only when the fallback is requested. */
   async function handleLocal() {
     // Ignore an absent photo or model because local recognition needs both.
@@ -84,9 +92,14 @@ export function PlatePhoto({ onPick, onEntry }: { onPick: (dish: string) => void
         <input className="visually-hidden" type="file" accept="image/*" disabled={busy} onChange={handlePhoto} />
       </label>
       <p className="hint">Choose a photo, then ask AI to list its foods. Check the names and amounts before using them. Nothing is saved here.</p>
+      <label className="check-label">
+        <input type="checkbox" checked={autoRead} onChange={event => handleAutoPhoto(event.target.checked)} />
+        Use AI automatically for photos on this device
+      </label>
+      <p className="hint">When enabled, choosing a photo sends a small redrawn copy to hosted AI. No diary or profile is sent. Turn this off to ask before each upload.</p>
       {previewUrl !== null && <img className="plate-preview" src={previewUrl} alt="The photo you chose" />}
 
-      {photo !== null && <PhotoFoodsReader key={photo.revision} photo={photo.file} onEntry={onEntry} />}
+      {photo !== null && <PhotoFoodsReader key={photo.revision} photo={photo.file} autoRead={autoRead} onEntry={onEntry} />}
       {facts !== null && <details>
         <summary>On-device fallback: one dish at a time</summary>
         <p className="hint">This model keeps the photo on this device. It suggests one dish, so it cannot list every food or count pieces.</p>

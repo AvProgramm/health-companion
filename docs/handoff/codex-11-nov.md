@@ -104,3 +104,10 @@ His idea: like the claim extractor in Veritaserum, first *extract* each food reg
 **Costs to say out loud:** SAM is hundreds of MB and slow in a browser, so this likely runs in the service, not on the phone, which changes the privacy story the same way Gemini does. Portion size (grams) is still unsolved; counting pieces is the only quantity this gives.
 
 **Rule before any of it ships:** the same sealed-test discipline as M6 and M7. Write the ship rule first: for example, on his own sealed plates, the pipeline must name more of the foods correctly than the Gemini reader's list, or it stays an experiment. For Friday, Gemini is the demo; this is the FIT3181 story of what comes next and why.
+
+
+## Codex continuation (10 Nov)
+
+- Pushed 04b61ee: the hosted photo action is available immediately, independently of local model download or even its presence in the build. The local single-dish model is an expandable fallback with an explicit action. Old replies are isolated by a per-selection React key. Walkthrough: `docs/milestones/m8-photo-flow-walkthrough.md`.
+- Yash answered the photo-consent question: add a remembered opt-in. The new checkbox defaults off, keeps its boolean on the device and can be turned off in the photo card. Only the metadata-free redraw is uploaded, never diary/profile data. Update invariant 5 to match that explicit approval; no automatic acceptance or saving was approved.
+- Fresh browser checks: friendly Coach greeting, two Nutritionist draft ideas, and a 30-of-30-minute no-equipment session. A generated blank image exercised the real photo endpoint and returned no foods/manual entry. No personal image was uploaded; positive recognition accuracy and physical phone checks remain unverified.
