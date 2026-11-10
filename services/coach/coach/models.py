@@ -1,4 +1,4 @@
-"""Validate the narrow food estimate boundary."""
+"""Validate every request and reply that crosses the service boundary."""
 from typing import Annotated, Literal
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 

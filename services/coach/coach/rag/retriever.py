@@ -1,8 +1,9 @@
 """Find the reviewed cards that answer a question, by words and by meaning."""
 from collections import defaultdict
+from functools import lru_cache
 from .bm25 import BM25Index
-from .cards import card_piece
-from .vectors import VectorIndex
+from .cards import card_piece, load_cards
+from .vectors import VectorIndex, load_encoder
 
 # The usual reciprocal-rank constant, which stops one list's top place dominating
 RRF_K = 60
@@ -66,3 +67,9 @@ class Retriever:
 
         # Return nothing rather than cards about something else
         return [self.cards[identifier] for identifier in ranking[:k]] if close_enough else []
+
+
+@lru_cache(maxsize=1)
+def knowledge():
+    """Return the retriever over the reviewed cards, built once on first use because it loads the encoder."""
+    return Retriever(load_cards(), load_encoder())

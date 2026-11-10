@@ -1,11 +1,8 @@
 """Serve two read-only tools to an MCP client over stdio, with hand-written JSON-RPC."""
 import json
 import sys
-from functools import lru_cache
 from pathlib import Path
-from .rag.cards import load_cards
-from .rag.retriever import Retriever
-from .rag.vectors import load_encoder
+from .rag.retriever import knowledge
 
 # The MCP revision this server speaks
 PROTOCOL_VERSION = '2025-06-18'
@@ -23,12 +20,6 @@ TOOL_LIST = [
     {'name': 'get_demo_day', 'description': 'Return one fictional diary day. Never real data.',
      'inputSchema': {'type': 'object', 'properties': {}, 'additionalProperties': False}},
 ]
-
-
-@lru_cache(maxsize=1)
-def knowledge():
-    """Return the retriever, built on the first search because it loads the encoder."""
-    return Retriever(load_cards(), load_encoder())
 
 
 def search_evidence(arguments):

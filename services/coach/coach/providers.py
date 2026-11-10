@@ -1,9 +1,8 @@
-"""Contact public composition databases before the optional Groq fallback."""
+"""Contact the public composition databases, which are asked before any hosted model."""
 import asyncio
 import os
 import httpx
 from .databases import average_matches, parse_off, parse_usda, portion_basis
-from .model_client import request_model
 
 # A short provider deadline leaves the manual diary responsive on a phone.
 DATABASE_TIMEOUT = 3.0
@@ -37,13 +36,3 @@ async def off_matches(client, name):
     })
     response.raise_for_status()
     return parse_off(response.json(), name)
-
-
-async def llm_estimate(name, portion_text, evidence=()):
-    """Ask Groq for an evidence-assisted proposal after composition lookup misses."""
-    key = os.getenv('GROQ_API_KEY', '')
-    if not key:
-        return None
-    return await request_model('https://api.groq.com/openai/v1/chat/completions', key,
-        os.getenv('GROQ_MODEL', 'openai/gpt-oss-20b'), 'Groq AI', 'https://groq.com/',
-        name, portion_text, portion_basis(portion_text), evidence, True)

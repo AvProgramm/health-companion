@@ -1,19 +1,20 @@
 """Choose composition data, public evidence and validated model fallbacks."""
 import asyncio
+from functools import partial
 from .availability import asking_order, send_to_back
-from .failures import PROVIDER_FAILURES
-from .providers import database_estimate, llm_estimate
-from .retrieval import search_nutrition
-from .gemini import gemini_estimate
-from .huggingface import hf_estimate
 from .enrichment import enrich_unknown
+from .failures import PROVIDER_FAILURES
+from .hosted_models import HOSTED_MODELS
+from .model_client import model_estimate
+from .providers import database_estimate
+from .retrieval import search_nutrition
 
 # Bound independent lookup stages before trying any model.
 LOOKUP_DEADLINE = 4.0
 # Model calls include their own socket deadline inside this total stage budget.
 MODEL_DEADLINE = 8.0
 # The hosted models an estimate can ask, by their name in the shared queue.
-ESTIMATE_MODELS = {'Groq': llm_estimate, 'Gemini': gemini_estimate, 'Hugging Face': hf_estimate}
+ESTIMATE_MODELS = {model_name: partial(model_estimate, model_name) for model_name in HOSTED_MODELS}
 
 
 async def attempt(provider, *args, deadline):

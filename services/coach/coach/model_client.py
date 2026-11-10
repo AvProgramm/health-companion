@@ -1,6 +1,8 @@
 """Validate hosted-model proposals and attach only real supplied citations."""
 import json
 import httpx
+from .databases import portion_basis
+from .hosted_models import HOSTED_MODELS
 from .models import Basis, Estimate
 from .prompts import estimate_prompt, estimate_schema
 
@@ -9,6 +11,23 @@ MODEL_TIMEOUT = 6.0
 
 # What the model is asked for when the user gave a count of servings
 ONE_SERVING = Basis(amount=1, unit='piece')
+
+
+async def model_estimate(model_name, name, portion_text, evidence=()):
+    """
+    Return one hosted model's validated proposal, or None when the laptop has no key for it.
+
+    Only Groq is sent our strict schema. The others get the shape from the prompt and
+    our own validation, because their guides do not promise that the strict schema works.
+    """
+    model = HOSTED_MODELS[model_name]
+
+    # Ignore the call when no key is set, because every hosted model is optional
+    key = model.key()
+    if not key:
+        return None
+    return await request_model(model.url, key, model.model(), f'{model_name} AI', model.website,
+        name, portion_text, portion_basis(portion_text), evidence, model.strict_schema)
 
 
 async def request_model(endpoint, token, model, provider, provider_url, name, portion_text, basis, evidence, strict_schema):

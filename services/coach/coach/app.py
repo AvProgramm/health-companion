@@ -1,5 +1,4 @@
 """Serve estimate and coach requests on the laptop loopback interface."""
-from functools import lru_cache
 from pathlib import Path
 from dotenv import load_dotenv
 from fastapi import FastAPI, HTTPException, Request
@@ -13,9 +12,7 @@ from .models import BarcodeReply, BarcodeRequest, CoachReply, CoachRequest, Esti
 from .nutritionist import suggest_meals
 from .pipeline import estimate_food
 from .rag.answer import answer_question
-from .rag.cards import load_cards
-from .rag.retriever import Retriever
-from .rag.vectors import load_encoder
+from .rag.retriever import knowledge
 from .trainer import evidence_tool, plan_session
 
 # Only the repository root .env is read; nothing is exposed through Vite.
@@ -34,12 +31,6 @@ async def invalid_request(_request, _error):
     return JSONResponse(status_code=422, content={'detail': 'Send only the fields this screen asks for.'})
 
 
-@lru_cache(maxsize=1)
-def knowledge():
-    """Return the retriever, built once on first use because it loads the encoder."""
-    return Retriever(load_cards(), load_encoder())
-
-
 def check_local(request):
     """Refuse a request from another site or one that is not JSON."""
     # Ignore an unrelated browser origin because this service is laptop-only.
@@ -50,9 +41,16 @@ def check_local(request):
         raise HTTPException(415, 'Send a JSON request.')
 
 
-def credited(reply, conversation, written_by_model):
-    """Return the reply naming who answered, only when the words on screen are a model's."""
-    return reply.model_copy(update={'answeredBy': conversation.answered_by}) if written_by_model else reply
+async def credited(coach_reply, written_by_model):
+    """
+    Return one coach's reply, naming the model that answered only when its words are on screen.
+
+    Each request gets its own conversation, so two people asking at once cannot be
+    credited with each other's model.
+    """
+    conversation = HostedConversation()
+    reply = await coach_reply(conversation)
+    return reply.model_copy(update={'answeredBy': conversation.answered_by}) if written_by_model(reply) else reply
 
 
 @app.post('/api/estimate', response_model=Estimate)
@@ -71,9 +69,7 @@ async def estimate(request: Request, item: EstimateRequest):
 async def trainer(request: Request, item: TrainerRequest):
     """Return ranked exercises for the goal, as a proposal the phone still checks."""
     check_local(request)
-    conversation = HostedConversation()
-    reply = await plan_session(item, EXERCISES, conversation, [evidence_tool(knowledge())])
-    return credited(reply, conversation, reply.source == 'ai')
+    return await credited(lambda ask: plan_session(item, EXERCISES, ask, [evidence_tool(knowledge())]), lambda reply: reply.source == 'ai')
 
 
 @app.post('/api/nutritionist', response_model=NutritionistReply)
@@ -82,9 +78,7 @@ async def nutritionist(request: Request, item: NutritionistRequest):
     check_local(request)
     if not item.goal.strip():
         raise HTTPException(422, 'Tell the Nutritionist what you are looking for.')
-    conversation = HostedConversation()
-    reply = await suggest_meals(item.goal.strip(), knowledge(), conversation)
-    return credited(reply, conversation, reply.mode == 'suggestions')
+    return await credited(lambda ask: suggest_meals(item.goal.strip(), knowledge(), ask), lambda reply: reply.mode == 'suggestions')
 
 
 @app.post('/api/barcode', response_model=BarcodeReply)
@@ -103,6 +97,4 @@ async def coach(request: Request, item: CoachRequest):
     check_local(request)
     if not item.question.strip():
         raise HTTPException(422, 'Type a question first.')
-    conversation = HostedConversation()
-    reply = await answer_question(item.question.strip(), knowledge(), conversation)
-    return credited(reply, conversation, reply.mode == 'answer')
+    return await credited(lambda ask: answer_question(item.question.strip(), knowledge(), ask), lambda reply: reply.mode == 'answer')

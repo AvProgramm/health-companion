@@ -5,7 +5,7 @@ import unittest
 from unittest.mock import AsyncMock, patch
 import httpx
 from coach.retrieval import WebEvidence, parse_search_results
-from coach.huggingface import hf_estimate
+from coach.model_client import model_estimate
 from coach.models import Estimate, Nutrients
 from coach.pipeline import estimate_food
 
@@ -90,7 +90,7 @@ class RetrievalTests(unittest.TestCase):
         client = httpx.AsyncClient
         with patch.dict('os.environ', {'HF_TOKEN': 'fictional-token'}):
             with patch('coach.model_client.httpx.AsyncClient', side_effect=lambda **kwargs: client(**kwargs, transport=httpx.MockTransport(respond))):
-                result = asyncio.run(hf_estimate('fictional oatcakes', '100 g', evidence))
+                result = asyncio.run(model_estimate('Hugging Face', 'fictional oatcakes', '100 g', evidence))
         self.assertEqual(result.sourceKind, 'ai_estimate')
         self.assertEqual(result.sources[0].url, 'https://example.org/oatcakes')
         self.assertEqual(json.loads(captured[0]['messages'][1]['content']), {'name': 'fictional oatcakes', 'portionText': '100 g'})
@@ -114,4 +114,4 @@ class RetrievalTests(unittest.TestCase):
         with patch.dict('os.environ', {'HF_TOKEN': 'fictional-token'}):
             with patch('coach.model_client.httpx.AsyncClient', side_effect=lambda **kwargs: original(**kwargs, transport=transport)):
                 with self.assertRaises(ValueError):
-                    asyncio.run(hf_estimate('fictional oatcakes', '100 g', evidence))
+                    asyncio.run(model_estimate('Hugging Face', 'fictional oatcakes', '100 g', evidence))

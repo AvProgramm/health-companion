@@ -6,8 +6,9 @@ from unittest.mock import AsyncMock, patch
 import httpx
 from fastapi.testclient import TestClient
 from coach.app import app
-from coach.gemini import GEMINI_DEFAULT_MODEL, gemini_estimate
+from coach.hosted_models import HOSTED_MODELS
 from coach.llm import HostedConversation
+from coach.model_client import model_estimate
 from coach.models import Nutrients
 from coach.pipeline import estimate_food
 
@@ -111,7 +112,7 @@ class HostedConversationTests(SwitchTestCase):
         self.assertEqual(gemini_request.headers['authorization'], 'Bearer fictional-gemini-key')
         body = json.loads(gemini_request.content)
         self.assertEqual(body['messages'], MESSAGES)
-        self.assertEqual(body['model'], GEMINI_DEFAULT_MODEL)
+        self.assertEqual(body['model'], HOSTED_MODELS['Gemini'].default_model)
         # Google's table of reasoning levels does not list this model, so the field stays out
         self.assertNotIn('reasoning_effort', body)
 
@@ -226,6 +227,12 @@ class EstimateSwitchTests(SwitchTestCase):
         self.assertEqual(self.hosts_asked(), [GEMINI_HOST])
         self.assertEqual(result.sources[-1].provider, 'Gemini AI')
 
+    def test_a_blank_model_setting_means_the_default_for_an_estimate_too(self):
+        """Send the default model when the setting is left blank, as the coaches already do."""
+        with patch.dict('os.environ', {'GROQ_MODEL': ''}):
+            self.estimate({GROQ_HOST: chat_reply(food_proposal())})
+        self.assertEqual(json.loads(self.requests[0].content)['model'], HOSTED_MODELS['Groq'].default_model)
+
     def test_a_failed_estimate_moves_that_model_back_for_next_time(self):
         """Go straight to the model that answered, without another wasted request."""
         replies = {GROQ_HOST: refused(), GEMINI_HOST: chat_reply(food_proposal())}
@@ -302,18 +309,18 @@ class EstimateSwitchTests(SwitchTestCase):
 
     def test_gemini_is_sent_only_the_food_and_portion(self):
         """Keep Gemini to the two fields a lookup may send, and label its result a model estimate."""
-        result = run_with_fake_providers(self.answering({GEMINI_HOST: chat_reply(food_proposal())}), gemini_estimate('fictional oatcakes', '100 g'))
+        result = run_with_fake_providers(self.answering({GEMINI_HOST: chat_reply(food_proposal())}), model_estimate('Gemini', 'fictional oatcakes', '100 g'))
         body = json.loads(self.requests[0].content)
         self.assertEqual(json.loads(body['messages'][1]['content']), {'name': 'fictional oatcakes', 'portionText': '100 g'})
         self.assertEqual(body['response_format'], {'type': 'json_object'})
-        self.assertEqual(body['model'], GEMINI_DEFAULT_MODEL)
+        self.assertEqual(body['model'], HOSTED_MODELS['Gemini'].default_model)
         self.assertEqual(self.requests[0].headers['authorization'], 'Bearer fictional-gemini-key')
         self.assertEqual(result.sourceKind, 'ai_estimate')
 
     def test_no_gemini_key_makes_no_request(self):
         """Return nothing and contact nobody when the laptop has no Gemini key."""
         with patch.dict('os.environ', {'GEMINI_API_KEY': ''}):
-            result = run_with_fake_providers(self.answering({}), gemini_estimate('fictional oatcakes', '100 g'))
+            result = run_with_fake_providers(self.answering({}), model_estimate('Gemini', 'fictional oatcakes', '100 g'))
         self.assertIsNone(result)
         self.assertEqual(self.requests, [])
 
