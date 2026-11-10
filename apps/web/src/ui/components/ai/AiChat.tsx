@@ -72,6 +72,7 @@ export function AiChat({ context, onDraft }: { context: TrainerContext; onDraft:
         <button type="submit" className="button" disabled={busy} aria-label="Send"><PaperPlaneRight size={20} weight="fill" /></button>
       </form>
       <p className="hint">Sends only the message you type. Leave out names and personal details. Your diary and saved profile stay on this device, and nothing here is saved.</p>
+      <p className="hint">Answers without sources are general information from the AI, not checked against reviewed guidance.</p>
     </section>
   );
 }

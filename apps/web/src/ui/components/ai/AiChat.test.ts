@@ -94,11 +94,13 @@ describe('AI chat', () => {
     expect(container.querySelectorAll('a')).toHaveLength(0);
   });
 
-  it('shows a general answer with its label and no sources', async () => {
+  it('shows a general answer as plain chat, with the unchecked note once in the footer', async () => {
     vi.stubGlobal('fetch', answering({ '/api/coach': GENERAL_ANSWER }));
     await show();
     await say('Fictional question?');
-    expect(container.textContent).toContain('not checked against reviewed guidance');
+    // Asked for on the phone on 10 Nov: the note belongs in the footer, not under every reply
+    expect(container.querySelector('.chat-reply')?.textContent).toBe('CoachFictional general claim.');
+    expect(container.textContent?.match(/not checked against reviewed guidance/g)).toHaveLength(1);
     expect(container.querySelector('.chat-reply p.body')?.textContent).toBe('Fictional general claim.');
     expect(container.querySelector('details')).toBeNull();
   });

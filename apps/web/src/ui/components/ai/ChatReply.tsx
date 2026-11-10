@@ -22,9 +22,9 @@ function Sources({ sources, open }: { sources: CoachSource[]; open: boolean }) {
 
 /** Display the Coach's sentences, each with the cards it cites when it has any. */
 function CoachAnswer({ reply }: { reply: CoachReply }) {
-  // A general answer reads as conversation, with its label underneath as a small note
+  // A general answer reads as conversation; the chat's footer says once that such answers are unchecked
   if (reply.mode === 'general') {
-    return <>{reply.claims.map(claim => <p key={claim.text} className="body">{claim.text}</p>)}<p className="hint">{reply.message}</p></>;
+    return <>{reply.claims.map(claim => <p key={claim.text} className="body">{claim.text}</p>)}</>;
   }
 
   return (
