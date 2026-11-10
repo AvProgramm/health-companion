@@ -52,3 +52,42 @@ Not checked: an actual sign-in, which needs Yash at the browser (Me, account car
 - A bug fix starts with a failing test. Files stay at or under 300 lines.
 - Stage explicit paths; never force-push; push at each green check.
 - `compareCandidates` and the PyTorch loop need Yash's sign-off.
+
+## Plan to Friday and the demo (agreed with Yash, 10 Nov evening)
+
+Yash reports that Google sign-in now works in the app (Claude did not see it). Port 8000 was restarted by him.
+
+### Before Friday
+
+| When | Do | Why |
+|---|---|---|
+| Tonight | Reload the phone twice and run every demo step below once | Most of 10 Nov's work has only passed unit tests, never the phone |
+| Tonight | Write any failure into `docs/test-log.md` and fix it, failing test first | A bug found on Thursday is too late |
+| Wed | Hosting: Yash picks the licence, deploy, check the hosted link on phone data | His deadline, and a link is safer than USB on the day |
+| Wed | Decide which model may receive diary lines; pin a stronger Gemini model for photos (`GEMINI_MODEL`) | Tempeh was read as fried chicken on the small model |
+| Thu | Walkthroughs in `docs/milestones/` for the chat, photo reader, automatic estimates and diary sharing, so Yash can explain each part himself | He will be asked how it works |
+| Thu | Yash records a 2-minute screen video of the demo | Backup if the network or a free tier fails live |
+| Fri morning | Start the service, run the demo once, keep the video open | |
+
+**Do not start before Friday:** Firestore sync, a vector database, the multi-food model. Sign-in existing is enough to talk about them. Do not refactor working demo paths this week.
+
+### Demo order (about 5 minutes)
+
+1. Type a meal, "2 weetabix and 300 ml milk": the estimate appears on its own with a range and sources, and nothing saves until he confirms.
+2. Correct it, "actually 250 ml": a new revision, the old one kept.
+3. Photo of a plate, "List every food with AI": several foods with counts land in the entry box and the estimates load.
+4. Barcode on the same screen, if a packet is handy.
+5. AI tab: "Hi" and a protein question; "A 30 minute workout with no equipment" (a session adapted to his profile); switch on "Share my last 7 days" and ask "how was my week?" (it answers from his diary and names the days with nothing logged).
+6. Airplane mode: the diary still opens and works.
+7. Me: Google sign-in; sync is the next step and is opt-in.
+
+Each of these seven must be checked on the phone and recorded in `docs/test-log.md` as PASS, FAIL or NOT TESTED before Friday.
+
+### Stories he will tell (keep the records they rest on intact)
+
+- A model that did not ship: the router head lost to keyword rules on a sealed test (`experiments/router/results/final.json`); the full ISIA retrain failed its ship rule (`experiments/vision/results/global_full_final.json`).
+- Why photos moved to Gemini: 94% on the benchmark, but one name per photo while his real plates had five foods (`docs/test-log.md`, 10 Nov).
+- Never trust model numbers: energy within 25% of 4 × protein + 4 × carbohydrate + 9 × fat, arithmetic in code, every estimate with a range.
+- What is next: segment, crop, classify; memory the user can read and delete.
+
+**Biggest risk:** a free model tier running out mid-demo. Steps 2 and 6 work offline, and step 1 does with a saved food.
