@@ -91,3 +91,14 @@ Each of these seven must be checked on the phone and recorded in `docs/test-log.
 - What is next: segment, crop, classify; memory the user can read and delete.
 
 **Biggest risk:** a free model tier running out mid-demo. Steps 2 and 6 work offline, and step 1 does with a saved food.
+
+
+## Codex rehearsal continuation (10 Nov, while Yash was away)
+
+At takeover the branch was clean at 1fef81b. Full check/build passed. Port 8000 was unreachable, so Codex started the current checkout's coach; `/api/firebase/config` returned 200 directly and through localhost:4173 without printing values. The initial phone checklist was pushed in 25b10cd.
+
+Yash then asked for all independent work while away. Codex prepared `m8-chat-and-diary-walkthrough.md`, `m8-capture-and-confirmation-walkthrough.md` and `m8-account-and-demo-walkthrough.md`, and added attribution rows to `docs/ai-log.md`. Invariant 5 now mentions the implemented seven-day switch and the pending permitted-provider decision. No model route changed and sharing stayed off.
+
+The browser meal draft, greeting, protein reply, 30-minute plan and ready account card were checked. A cached-shell reload passed with the preview briefly stopped; the preview was restarted. See `docs/test-log.md` for limits, including the unverified Weetabix serving assumption. No new diary entries were saved. The coach and preview were left running on loopback.
+
+Resume with phone step 1, not with a new feature. All seven phone results remain NOT TESTED in this rehearsal until Yash reports them. Then collect the licence/provider choices for Wednesday. Hosting, actual sign-in, real diary-sharing and phone radio-state checks are not completed by these browser observations. No sync, vector database, model training or working-path refactor was started.

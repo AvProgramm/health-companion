@@ -367,3 +367,21 @@ Phone results below are for this rehearsal only. Update from Yash's report, one 
 | 7 | Google sign-in on Me | NOT TESTED | Prior success was reported in the handover; this rehearsal has not been observed. |
 
 Firestore sync, vector storage and the multi-food experiment are deferred until after Friday. Hosting follows Yash's licence choice; changing the diary-model route requires his provider choice. No working demo path was refactored.
+
+
+### Independent laptop rehearsal while Yash was away (10 Nov, Codex)
+
+Browser pane on localhost:4173 after the fresh build; real coach on port 8000. These observations do not change any physical-phone NOT TESTED result above.
+
+| Check | Result | Scope and observation |
+|---|---|---|
+| Exact meal `2 weetabix and 300 ml milk` | PASS | Both requests started automatically. Weetabix showed an AI range/source, milk a USDA database range/source, both Not saved. Added sugar remained Unknown. Draft discarded; no food or meal accepted. This is a flow check, not verified serving/nutrition accuracy. Compare the Weetabix portion with the packet before the demo. |
+| Greeting `Hi` | PASS | Coach replied in the browser. Diary sharing stayed off. |
+| `How much protein is too much?` | PASS | A general answer appeared with the existing unchecked-information disclaimer. Its numerical/health claims were not independently validated; this result is not evidence of clinical accuracy. |
+| `A 30 minute workout with no equipment` | PASS | Browser showed six five-minute blocks, 30 of 30 minutes, with no diary write. Profile adaptation cases remain covered by automated tests rather than this unrestricted browser profile. |
+| Account card | PASS | Me showed the enabled Google sign-in button and explicit text that the diary has not been uploaded. No real sign-in attempted on Yash's behalf. |
+| Cached shell reload | PASS | Verified and briefly stopped only this checkout's Vite preview process. Reloaded the browser at the same origin: Today and the existing week display still rendered. Restarted preview immediately afterwards. This does not simulate phone radio state, all offline edits or external-network failures. |
+| Positive real plate, packet barcode, correction/save and physical phone | NOT TESTED | No new user phone observations or packet/photo supplied during this rehearsal. Existing automated coverage is separate. |
+| Real diary context | NOT TESTED | Sharing remained off pending Yash's provider choice. No private diary lines were sent. |
+
+`npm run check` and `npm --prefix apps/web run build` passed after preparing the walkthroughs. The existing chunk-size warning remains. Three explain-back documents and new AI attribution rows were prepared; no application path was refactored, no Firestore/vector work started, no sealed evaluation rerun and no model weight/photo download requested.
