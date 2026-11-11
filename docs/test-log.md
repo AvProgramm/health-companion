@@ -513,3 +513,11 @@ Yash asked for more than one database and an automatic fallback. Checked against
 Found on the way: the named-food estimator accepted that same broken record (fat 5 g beside 17.3 g saturated). `parse_off` now skips a record whose fats exceed its total fat (test written first).
 
 Honest state: a second database now answers many non-US packets. For a product whose record is wrong, the estimate by name is slow and sometimes fails, and then the packet-label reader is the path. On the phone the label reader read this packet as 576 kcal, fat 65, saturated 17.3, unsaturated 47.4, sodium 350, with protein, carbohydrate and sugars left unknown (Yash's screenshot; not yet compared line by line with the packet). NOT TESTED on the phone: the automatic lookup after a scan, and the second database.
+
+## 11 Nov, 22:00: phone results and open items for 12 Nov (Samsung SM-S918B, localhost:4173)
+
+- AI tab: greeting only once PASS (9ceef3b); back+abs session reads areas PASS (7401ff9); weight-loss question PASS when typed correctly, PARTIAL with typos (word search misses the strength card); model still appends the question's goal to card claims; diary sharing disabled PASS; refusal NOT TESTED.
+- Known limit: library labels "Close-Grip Push-Up off of a Dumbbell" as body only.
+- BUG for 12 Nov: typing an exercise on Today ("did 30 min run" style) is drafted as FOOD. Reproduce with Yash's exact phrase as a failing test in parse.test.ts first (workoutEntry parser order/keywords).
+- Request for 12 Nov: let a Gym plan be logged to the diary as a workout from the Gym tab (reuse the existing workout save path; nothing saves without confirmation).
+- NOT TESTED yet: Gym, meal correction on phone, workout/sleep, offline, Me/backup, layout. Then Render (render.yaml at root, b63ee75) and Vercel (copy deploy/vercel.json.example with the real Render host).
