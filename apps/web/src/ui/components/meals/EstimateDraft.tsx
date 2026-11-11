@@ -36,9 +36,9 @@ export function EstimateDraft({ name: initialName, portionText: initialPortion, 
     return () => { mounted.current = false; };
   }, []);
 
-  // Look up an explicit portion automatically and leave an unspecified one for the user.
+  // Look up a recognised food automatically. A blank portion asks for a typical-serving proposal.
   useEffect(() => {
-    if (name.trim() !== '' && !portionMissing) void loadEstimate();
+    if (name.trim() !== '') void loadEstimate();
     // Run once for the food this row started with; later edits are sent by the button
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -86,7 +86,6 @@ export function EstimateDraft({ name: initialName, portionText: initialPortion, 
         <input className="input" maxLength={80} placeholder="e.g. 150 g or 2 slices" value={portionText} disabled={busy} onChange={(event) => { setPortionText(event.target.value); setEstimate(null); }} />
       </Field>
       </div>
-      {portionMissing && <p className="hint">Enter a portion or request a typical-serving estimate.</p>}
       <button type="button" className="button button-secondary estimate-trigger" disabled={busy || name.trim() === ''} onClick={loadEstimate}>
         {portionMissing ? 'Estimate a typical serving' : lookupLabel}
       </button>

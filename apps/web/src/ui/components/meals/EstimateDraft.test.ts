@@ -106,17 +106,19 @@ describe('estimate draft', () => {
 });
 
 describe('portions left open after a photo', () => {
-  // Typed on the phone on 11 Nov. The missing portion caused an automatic typical-serving guess.
-  it('waits for a portion or an explicit typical-serving request', async () => {
-    const fetchMock = vi.fn().mockResolvedValue({ ok: true, json: async () => proposal });
+  // Typed on the phone on 11 Nov. Look up a typical serving when the portion is open.
+  it('automatically shows a typical serving without saving it', async () => {
+    const typical = { ...proposal, basis: { amount: 1, unit: 'piece' } };
+    const fetchMock = vi.fn().mockResolvedValue({ ok: true, json: async () => typical });
+    const onUse = vi.fn();
     vi.stubGlobal('fetch', fetchMock);
     await act(async () => root.render(createElement(EstimateDraft, {
-      name: 'salted rgg fish', portionText: '', hideNumbers: false, onUse: vi.fn(), onEdit: vi.fn(),
+      name: 'salted rgg fish', portionText: '', hideNumbers: false, onUse, onEdit: vi.fn(),
     })));
-    expect(fetchMock).not.toHaveBeenCalled();
-    expect(container.textContent).toContain('Enter a portion');
-    await tap('Estimate a typical serving');
+    expect(fetchMock).toHaveBeenCalledTimes(1);
     expect(JSON.parse(fetchMock.mock.calls[0]![1].body)).toEqual({ name: 'salted rgg fish', portionText: '' });
+    expect(container.textContent).toContain('For 1 typical serving');
+    expect(onUse).not.toHaveBeenCalled();
   });
 
   // Reported on the phone on 11 Nov: the returned count had a generic piece basis.
@@ -192,7 +194,6 @@ describe('phone estimate regression', () => {
       range: Object.fromEntries(Object.keys(proposal.range).map((key) => [key, null])),
     }) }));
     await act(async () => root.render(createElement(EstimateDraft, { name: 'nasi lemak', portionText: '', hideNumbers: false, onUse, onEdit: vi.fn() })));
-    await tap('Estimate a typical serving');
     expect(container.textContent).toContain('No nutrition values');
     expect([...container.querySelectorAll('button')].some((button) => button.textContent === 'Use estimate')).toBe(false);
     expect(onUse).not.toHaveBeenCalled();
@@ -220,10 +221,6 @@ describe('counted photo containers', () => {
       rows: parsed.items.map(toDraftRow), foods: new Map(), currentFoods: [], hideNumbers: false, dateLabel: 'today', busy: false,
       onRowsChange: vi.fn(), onSave, onCancel: vi.fn(), onCreateFood: vi.fn(), onUseEstimate, onEditEstimate: vi.fn(),
     })));
-    if (portionText === '') {
-      expect(fetchMock).not.toHaveBeenCalled();
-      await tap('Estimate a typical serving');
-    }
     expect(JSON.parse(fetchMock.mock.calls[0]![1].body)).toEqual({ name, portionText });
     expect(onUseEstimate).not.toHaveBeenCalled();
     expect(onSave).not.toHaveBeenCalled();
