@@ -1,10 +1,11 @@
+import type { Category } from '../training/catalogue';
 import type { Difficulty, Setting } from '../training/packs';
 
 /** Which helper a chat message is for, with what the Trainer needs read from the words. */
 export type ChatIntent =
   | { kind: 'coach' }
   | { kind: 'nutritionist' }
-  | { kind: 'trainer'; minutes: number; setting: Setting; difficulty: Difficulty };
+  | { kind: 'trainer'; minutes: number; setting: Setting; difficulty: Difficulty; areas: readonly Category[] };
 
 // The session length assumed when the message names none, matching the Trainer card's default
 const DEFAULT_MINUTES = 45;
@@ -35,6 +36,21 @@ const DIFFICULTY_WORDS: readonly [RegExp, Difficulty][] = [
   [/\b(easy|gentle|light|beginner|new to)\b/, 'easy'],
   [/\b(hard|tough|intense|advanced|expert|challenging)\b/, 'hard'],
 ];
+// A session balances the whole body unless the message names areas
+const ALL_AREAS: readonly Category[] = ['push', 'pull', 'legs', 'core'];
+// Words that name a body area; "back" followed by a direction ("back into training") is not one
+const AREA_WORDS: readonly [RegExp, Category][] = [
+  [/\b(chest|pecs?|shoulders?|triceps?|push day)\b/, 'push'],
+  [/\b(back(?! (to|into|in|at|on|from)\b)|lats?|biceps?|pull day)\b/, 'pull'],
+  [/\b(legs?|quads?|hamstrings?|glutes?|calves|lower body)\b/, 'legs'],
+  [/\b(abs|abdominals?|core|obliques?)\b/, 'core'],
+];
+
+/** Return the body areas a message names, or every area when it names none. */
+function readAreas(clean: string): readonly Category[] {
+  const named = AREA_WORDS.filter(([pattern]) => pattern.test(clean)).map(([, area]) => area);
+  return named.length > 0 ? named : ALL_AREAS;
+}
 
 /** Return the session length a message asks for, within what the service accepts. */
 function readMinutes(clean: string): number {
@@ -58,7 +74,7 @@ export function chatIntent(text: string): ChatIntent {
   if (TRAINER_WORDS.test(clean) && !QUESTION_START.test(clean)) {
     const setting = SETTING_WORDS.find(([pattern]) => pattern.test(clean))?.[1] ?? 'bodyweight';
     const difficulty = DIFFICULTY_WORDS.find(([pattern]) => pattern.test(clean))?.[1] ?? 'medium';
-    return { kind: 'trainer', minutes: readMinutes(clean), setting, difficulty };
+    return { kind: 'trainer', minutes: readMinutes(clean), setting, difficulty, areas: readAreas(clean) };
   }
   return NUTRITIONIST_WORDS.test(clean) ? { kind: 'nutritionist' } : { kind: 'coach' };
 }
