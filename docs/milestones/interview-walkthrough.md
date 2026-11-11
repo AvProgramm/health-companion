@@ -219,7 +219,7 @@ The on-device SigLIP2 model is a separate fallback. It predicts one label for th
 
 ## Barcode path
 
-The barcode card is on Today beside photo capture. Two readers on the device must agree before a photo fills the barcode field. The person checks the digits before lookup. The service searches USDA Branded Foods and requires the exact GTIN and a known mass or volume basis. On a miss it searches selected retailer catalogues through Tavily. Code requires the same barcode, one explicit per-100 basis and consistent values. If the checked labels agree, it picks the most complete one and keeps unknown fields blank. If the search cannot verify a label, the person can explicitly send a nutrition panel photo or enter the packet values. Review the source and basis before saving.
+The barcode card is on Today beside photo capture. Two on-device readers check the photo. Agreement fills the barcode field. A single reading or a disagreement gives the person a choice to check against the packet. Lookup requires a separate tap. The service searches USDA Branded Foods and requires the exact GTIN and a known mass or volume basis. On a miss it searches selected retailer catalogues through Tavily. Code requires the same barcode, one explicit per-100 basis and consistent values. If the checked labels agree, it picks the most complete one and keeps unknown fields blank. If the search cannot verify a label, the person can explicitly send a nutrition panel photo or enter the packet values. Review the source and basis before saving.
 
 ## Automatic estimates
 

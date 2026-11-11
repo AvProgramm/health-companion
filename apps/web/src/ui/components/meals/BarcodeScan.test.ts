@@ -82,14 +82,18 @@ describe('Scan a barcode', () => {
     expect(JSON.parse(fetchMock.mock.calls[0]![1].body)).toEqual({ code: '9556001234567' });
   });
 
-  it.each(['9310947004582', null])('does not prefill the phone misread when the other reading is %j', async (checked) => {
+  it.each([
+    { native: '9310947048982', checked: '9310947004582', chosen: '9310947004582' },
+    { native: '9310947048982', checked: null, chosen: '9310947048982' },
+    { native: null, checked: '9310947004582', chosen: '9310947004582' },
+  ])('lets the person check a scan before lookup when the two readers do not agree', async ({ native, checked, chosen }) => {
     vi.mocked(confirmBarcode).mockResolvedValueOnce(checked);
-    const fetchMock = vi.fn();
+    const fetchMock = vi.fn().mockResolvedValue({ ok: true, status: 200, json: async () => REPLY });
     vi.stubGlobal('fetch', fetchMock);
     const close = vi.fn();
     vi.stubGlobal('createImageBitmap', vi.fn().mockResolvedValue({ close }));
     vi.stubGlobal('BarcodeDetector', class {
-      detect = vi.fn().mockResolvedValue([{ rawValue: '9310947048982' }]);
+      detect = vi.fn().mockResolvedValue(native === null ? [] : [{ rawValue: native }]);
     });
     await act(async () => root.render(createElement(BarcodeScan, { onFound })));
 
@@ -97,10 +101,21 @@ describe('Scan a barcode', () => {
     const photo = container.querySelector<HTMLInputElement>('input[type="file"]')!;
     Object.defineProperty(photo, 'files', { value: [new File(['fictional'], 'barcode.jpg')] });
     await act(async () => photo.dispatchEvent(new Event('change', { bubbles: true })));
-    expect(container.querySelector<HTMLInputElement>('#barcode-code')?.value).toBe('');
-    expect(container.querySelector('[role="alert"]')?.textContent).toContain('type the number');
-    expect(fetchMock).not.toHaveBeenCalled();
+    const field = container.querySelector<HTMLInputElement>('#barcode-code')!;
+    expect(field.value).toBe('');
     expect(close).toHaveBeenCalledOnce();
+    expect(fetchMock).not.toHaveBeenCalled();
+
+    // The displayed choice must be explicitly confirmed before it fills the field.
+    const choice = [...container.querySelectorAll('button')].find(button => button.textContent === `Use ${chosen}`);
+    expect(choice).toBeDefined();
+    if (native !== null && checked !== null) expect(container.textContent).toContain(native);
+    await act(async () => choice!.click());
+    expect(field.value).toBe(chosen);
+    expect(fetchMock).not.toHaveBeenCalled();
+
+    await act(async () => container.querySelector('form')!.requestSubmit());
+    expect(JSON.parse(fetchMock.mock.calls[0]![1].body)).toEqual({ code: chosen });
   });
 
   it('asks for the packet values when the database record conflicts', async () => {

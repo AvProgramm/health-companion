@@ -13,12 +13,13 @@ interface Region {
 }
 
 /** Return a crop around the detected barcode, clipped to the original image. */
-function barcodeRegion(bitmap: ImageBitmap, bounds: DOMRectReadOnly): Region {
+function barcodeRegion(bitmap: ImageBitmap, bounds: DOMRectReadOnly, padHeight = true): Region {
   const padding = Math.max(bounds.width, bounds.height) * EDGE_PADDING;
   const x = Math.max(0, bounds.x - padding);
-  const y = Math.max(0, bounds.y - padding);
+  const verticalPadding = padHeight ? padding : 0;
+  const y = Math.max(0, bounds.y - verticalPadding);
   const right = Math.min(bitmap.width, bounds.right + padding);
-  const bottom = Math.min(bitmap.height, bounds.bottom + padding);
+  const bottom = Math.min(bitmap.height, bounds.bottom + verticalPadding);
   return { x, y, width: right - x, height: bottom - y };
 }
 
@@ -34,9 +35,12 @@ export async function confirmBarcode(bitmap: ImageBitmap, bounds?: DOMRectReadOn
   ]);
   const reader = new MultiFormatOneDReader(hints);
   const full = { x: 0, y: 0, width: bitmap.width, height: bitmap.height };
-  const regions = bounds === undefined ? [full] : [barcodeRegion(bitmap, bounds), full];
+  // Keep horizontal quiet space in both crops. Try the bar height without nearby text first.
+  const regions = bounds === undefined ? [full] : [
+    barcodeRegion(bitmap, bounds, false), barcodeRegion(bitmap, bounds), full,
+  ];
 
-  // Try the smaller crop first, then the original frame if its edges were cut off.
+  // Try a wider crop and the whole frame if the first crop cannot be read.
   for (const region of regions) {
     if (!(region.width > 0 && region.height > 0)) continue;
     const scale = Math.min(1, LONGEST_SIDE / Math.max(region.width, region.height));
