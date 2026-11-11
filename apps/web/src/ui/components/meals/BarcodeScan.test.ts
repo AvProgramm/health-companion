@@ -117,7 +117,7 @@ describe('Scan a barcode', () => {
   it('says what to do when the barcode is not known', async () => {
     vi.stubGlobal('fetch', vi.fn().mockResolvedValue({ ok: false, status: 404, json: async () => ({}) }));
     await lookUp('9556001234567');
-    expect(container.querySelector('[role="alert"]')?.textContent).toContain('not in Open Food Facts');
+    expect(container.querySelector('[role="alert"]')?.textContent).toContain('No matching label was found');
     expect(onFound).not.toHaveBeenCalled();
   });
 

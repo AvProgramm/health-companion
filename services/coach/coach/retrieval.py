@@ -78,6 +78,24 @@ async def search_nutrition(name, portion_text):
     return parse_search_results(response.json(), name)
 
 
+async def search_barcode_labels(code, domains):
+    """Retrieve bounded retailer excerpts using only the scanned barcode."""
+    key = os.getenv('TAVILY_API_KEY', '')
+    if not key:
+        return []
+    async with httpx.AsyncClient(timeout=4.0) as client:
+        response = await client.post('https://api.tavily.com/search', headers={'Authorization': f'Bearer {key}'}, json={
+            'query': f'"{code}" barcode product nutrition label energy fat per 100 g',
+            'search_depth': 'basic', 'max_results': 5, 'include_domains': list(domains),
+            'include_answer': False, 'include_raw_content': False, 'include_images': False,
+        })
+    response.raise_for_status()
+    payload = response.json()
+    if not isinstance(payload, dict) or not isinstance(payload.get('results'), list):
+        raise ValueError('The public label search returned an invalid result.')
+    return parse_search_results(payload, code)
+
+
 async def search_missing_nutrients(name, portion_text, missing):
     """Search once for missing labels with two small snippets and no generated answer."""
     key = os.getenv('TAVILY_API_KEY', '')

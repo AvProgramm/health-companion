@@ -18,7 +18,7 @@ const MESSAGES: ServiceMessages = {
   notRunning: `The laptop service is not running. ${FALLBACK}`,
   busy: `The food database is busy. Try again shortly. ${FALLBACK}`,
   failed: (status) => {
-    if (status === 404) return `That barcode is not in Open Food Facts. ${PACKET_FALLBACK}`;
+    if (status === 404) return `No matching label was found for this barcode. ${PACKET_FALLBACK}`;
     if (status === 409) return `The database record has conflicting nutrition values. ${PACKET_FALLBACK}`;
     return `The lookup returned an error (HTTP ${status}). ${FALLBACK}`;
   },

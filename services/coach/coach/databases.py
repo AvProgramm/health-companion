@@ -23,6 +23,8 @@ KJ_PER_KCAL = 4.184
 # Allow normal label rounding when comparing independently printed energy units.
 ENERGY_REL_TOLERANCE = 0.05
 ENERGY_ABS_TOLERANCE = 5
+# Allow normal rounding when comparing a fat total with its components.
+FAT_ROUNDING_G = 0.5
 # The canonical and explicit kJ fields report the same measurement.
 SAME_UNIT_ROUNDING_KJ = 1
 
@@ -49,6 +51,14 @@ def energy_units_conflict(kcal, kilojoules):
     return kcal is not None and kilojoules is not None and not math.isclose(
         kcal, kilojoules / KJ_PER_KCAL, rel_tol=ENERGY_REL_TOLERANCE, abs_tol=ENERGY_ABS_TOLERANCE,
     )
+
+
+def label_values_conflict(kcal, kilojoules, fat, *fat_components):
+    """Check whether printed energy or fat values contradict one another."""
+    if energy_units_conflict(kcal, kilojoules):
+        return True
+    known_total = sum(value for value in fat_components if value is not None)
+    return fat is not None and known_total > fat + FAT_ROUNDING_G
 
 
 def off_energy_kcal(nutriments):

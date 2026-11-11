@@ -20,13 +20,19 @@ async def database_estimate(name, portion_text):
 
 async def usda_matches(client, name):
     """Search USDA with the laptop key, without sending any diary context."""
+    payload = await search_usda(client, {'query': name, 'pageSize': 5, 'requireAllWords': True})
+    return parse_usda(payload, name)
+
+
+async def search_usda(client, query):
+    """Return USDA search data using the laptop key."""
     key = os.getenv('USDA_API_KEY', '')
     if not key:
-        return []
+        return {'foods': []}
     response = await client.post('https://api.nal.usda.gov/fdc/v1/foods/search',
-        params={'api_key': key}, json={'query': name, 'pageSize': 5, 'requireAllWords': True})
+                                 params={'api_key': key}, json=query)
     response.raise_for_status()
-    return parse_usda(response.json(), name)
+    return response.json()
 
 
 async def off_matches(client, name):

@@ -8,8 +8,7 @@ from starlette.middleware.trustedhost import TrustedHostMiddleware
 from .cloud.config import web_config
 from .cloud.session import verify_session
 from .http_policy import read_http_policy
-from .barcode import BarcodeRecordConflict, look_up_barcode
-from .barcode_verify import verify_barcode_label
+from .barcode import look_up_barcode
 from .exercises import load_library
 from .failures import PROVIDER_FAILURES
 from .llm import COACH_MODELS, PHOTO_MODELS, HostedConversation
@@ -92,15 +91,13 @@ async def nutritionist(request: Request, item: NutritionistRequest):
 async def barcode(request: Request, item: BarcodeRequest):
     """Return one packaged food's label values; only the barcode number is sent."""
     check_local(request)
-    # Try a second source when a conflict leaves no usable values.
+    # Distinguish an unavailable provider from a completed search without a match.
     try:
         found = await look_up_barcode(item.code)
-    except BarcodeRecordConflict as problem:
-        found = await verify_barcode_label(item.code, problem.name, problem.unit)
-        if found is None:
-            raise HTTPException(409, str(problem)) from problem
+    except PROVIDER_FAILURES:
+        raise HTTPException(503, 'Barcode lookup is temporarily unavailable.') from None
     if found is None:
-        raise HTTPException(404, 'That barcode is not in Open Food Facts.')
+        raise HTTPException(404, 'No matching label was found for this barcode.')
     return found
 
 

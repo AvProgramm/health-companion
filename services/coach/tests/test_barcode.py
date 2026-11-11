@@ -1,157 +1,103 @@
-"""Check the barcode lookup against fictional Open Food Facts replies."""
-import asyncio
+"""Check packaged-food lookup against fictional branded and retailer records."""
+import json
 import unittest
-import httpx
 from unittest.mock import AsyncMock, patch
+
+import httpx
 from fastapi.testclient import TestClient
+
 from coach.app import app
-from coach.barcode import barcode_reply
-
-# A fictional product as Open Food Facts returns it
-PRODUCT = {'code': '9556001234567', 'product_name': 'Fictional oat biscuit', 'product_quantity_unit': 'g',
-           'nutriments': {'energy-kcal_100g': 400, 'proteins_100g': 10, 'sodium_100g': 0.3}}
+from coach.retrieval import WebEvidence
 
 
-class BarcodeReplyTests(unittest.TestCase):
-    def test_label_values_are_per_100_units_and_unknowns_stay_unknown(self):
-        reply = barcode_reply({'status': 1, 'product': PRODUCT}, '9556001234567')
-        self.assertEqual(reply.name, 'Fictional oat biscuit')
-        self.assertEqual((reply.estimate.basis.amount, reply.estimate.basis.unit), (100, 'g'))
-        self.assertEqual(reply.estimate.nutrients.kcal, 400)
-        # 0.3 g of sodium per 100 g, as milligrams
-        self.assertAlmostEqual(reply.estimate.nutrients.sodium_mg, 300)
-        self.assertIsNone(reply.estimate.nutrients.fat_g)
-
-    def test_kilojoule_only_label_has_calories_on_the_same_basis(self):
-        """Convert the per-100-unit value and ignore the per-serving value."""
-        product = {**PRODUCT, 'nutriments': {'energy-kj_100g': 418.4, 'energy-kj_serving': 83.68}}
-        reply = barcode_reply({'status': 1, 'product': product}, PRODUCT['code'])
-        self.assertAlmostEqual(reply.estimate.nutrients.kcal, 100, places=9)
-        self.assertEqual((reply.estimate.basis.amount, reply.estimate.basis.unit), (100, 'g'))
-        self.assertIsNone(reply.estimate.nutrients.protein_g)
-
-    def test_qualified_amounts_are_not_exact_label_values(self):
-        """Keep estimated and bounded nutrients blank while retaining an exact zero."""
-        # Reported on the phone on 11 Nov: estimated added sugar appeared as exact zero.
-        product = {**PRODUCT, 'nutriments': {
-            'energy_100g': 2410, 'energy-kj_100g': 2410,
-            'energy-kcal_100g': 52.2, 'energy-kcal_modifier': '~',
-            'added-sugars_100g': 0, 'added-sugars_modifier': '~',
-            'proteins_100g': 1, 'proteins_modifier': '<',
-            'sodium_100g': 0,
-        }}
-        reply = barcode_reply({'status': 1, 'product': product}, PRODUCT['code'])
-        self.assertAlmostEqual(reply.estimate.nutrients.kcal, 576, places=1)
-        self.assertIsNone(reply.estimate.nutrients.added_sugar_g)
-        self.assertIsNone(reply.estimate.nutrients.protein_g)
-        self.assertEqual(reply.estimate.nutrients.sodium_mg, 0)
-
-    def test_a_liquid_keeps_its_unit(self):
-        reply = barcode_reply({'status': 1, 'product': {**PRODUCT, 'product_quantity_unit': 'ml'}}, '9556001234567')
-        self.assertEqual(reply.estimate.basis.unit, 'mL')
-
-    def test_an_unknown_barcode_gives_nothing(self):
-        self.assertIsNone(barcode_reply({'status': 0}, '9556001234567'))
-
-    def test_a_product_with_no_name_or_no_values_gives_nothing(self):
-        self.assertIsNone(barcode_reply({'status': 1, 'product': {**PRODUCT, 'product_name': ''}}, '9556001234567'))
-        self.assertIsNone(barcode_reply({'status': 1, 'product': {**PRODUCT, 'nutriments': {}}}, '9556001234567'))
-
-    def test_the_code_comes_from_the_request_when_the_reply_omits_it(self):
-        product = {key: value for key, value in PRODUCT.items() if key != 'code'}
-        self.assertIsNotNone(barcode_reply({'status': 1, 'product': product}, '9556001234567'))
+# Match the phone's input shape with fictional public records and nutrients.
+CODE = '9556001234567'
+FOOD = {
+    'description': 'Fictional oat drink', 'dataType': 'Branded', 'fdcId': 17,
+    'gtinUpc': '0' + CODE, 'servingSizeUnit': 'ml', 'publishedDate': '2026-11-01',
+    'foodNutrients': [
+        {'nutrientId': 1008, 'unitName': 'KCAL', 'value': 50},
+        {'nutrientId': 1093, 'unitName': 'MG', 'value': 30},
+    ],
+}
+RETAIL = WebEvidence('source-1', 'Fictional oat spread', 'https://www.woolworths.com.au/example',
+                     f'Barcode {CODE}. Nutrition per 100 g. Energy 418.4 kJ. Total fat 8 g. Sodium 30 mg.')
 
 
 class BarcodeEndpointTests(unittest.TestCase):
     def test_only_digits_are_accepted(self):
+        """Reject invalid barcode inputs at the boundary."""
         for code in ('abc', '123', '1' * 15):
             with self.subTest(code=code):
                 self.assertEqual(TestClient(app).post('/api/barcode', json={'code': code}).status_code, 422)
 
     def test_extra_fields_are_refused(self):
-        self.assertEqual(TestClient(app).post('/api/barcode', json={'code': '9556001234567', 'diary': []}).status_code, 422)
+        """Send only the product identity."""
+        response = TestClient(app).post('/api/barcode', json={'code': CODE, 'diary': []})
+        self.assertEqual(response.status_code, 422)
 
     def test_another_site_is_refused(self):
-        self.assertEqual(TestClient(app).post('/api/barcode', json={'code': '9556001234567'}, headers={'origin': 'https://example.org'}).status_code, 403)
+        """Keep the same browser origin boundary as other coach routes."""
+        response = TestClient(app).post('/api/barcode', json={'code': CODE}, headers={'origin': 'https://example.org'})
+        self.assertEqual(response.status_code, 403)
 
-    def test_canonical_energy_resolves_the_unit_conflict_without_ai(self):
-        """Use OFF's canonical energy when a separate calorie entry disagrees."""
-        # Observed on 11 Nov, using a fictional product and a consistent fat label.
-        product = {**PRODUCT, 'nutriments': {
-            'energy_100g': 2410, 'energy-kj_100g': 2410, 'energy-kcal_100g': 52.2,
-            'energy-kj_serving': 241, 'fat_100g': 65, 'saturated-fat_100g': 17.3,
-        }}
-        transport = httpx.MockTransport(
-            lambda _request: httpx.Response(200, json={'status': 1, 'product': product}),
-        )
-        client_class = httpx.AsyncClient
-        verifier = AsyncMock(return_value=None)
-        with patch('coach.barcode.httpx.AsyncClient',
-                   side_effect=lambda **options: client_class(**options, transport=transport)), \
-                patch('coach.app.verify_barcode_label', verifier):
-            response = TestClient(app).post('/api/barcode', json={'code': PRODUCT['code']})
-
+    def test_an_exact_usda_record_uses_its_own_basis(self):
+        """Ignore a different barcode and use the current exact record without web search."""
+        different = {**FOOD, 'gtinUpc': '9556001234568', 'description': 'Different oat drink'}
+        older = {**FOOD, 'fdcId': 18, 'publishedDate': '2025-01-01', 'description': 'Older oat drink'}
+        response, search = self.lookup([different, older, FOOD], [])
         self.assertEqual(response.status_code, 200)
-        estimate = response.json()['estimate']
-        self.assertAlmostEqual(estimate['nutrients']['kcal'], 576, places=1)
-        self.assertEqual(estimate['nutrients']['fat_g'], 65)
-        self.assertEqual(estimate['sources'][0]['provider'], 'Open Food Facts')
-        verifier.assert_not_awaited()
+        draft = response.json()
+        self.assertEqual(draft['name'], 'Fictional oat drink')
+        self.assertEqual(draft['estimate']['basis'], {'amount': 100, 'unit': 'mL'})
+        self.assertEqual(draft['estimate']['nutrients']['sodium_mg'], 30)
+        self.assertIsNone(draft['estimate']['nutrients']['fat_g'])
+        self.assertEqual(draft['estimate']['sources'][0]['provider'], 'USDA')
+        search.assert_not_awaited()
 
-    def test_a_conflicting_record_keeps_the_usable_fields_for_review(self):
-        """Open a partial draft without running the verifier when some values are usable."""
-        # Reported on the phone on 11 Nov, with a fictional product and code.
-        for nutriments, kept, withheld, note in (
-            ({'energy_100g': 2410, 'energy-kj_100g': 2410, 'energy-kcal_100g': 52.2,
-              'fat_100g': 5, 'saturated-fat_100g': 17.3,
-              'monounsaturated-fat_100g': 33.3, 'polyunsaturated-fat_100g': 12.1},
-             {'kcal': 576.003824}, ('fat_g', 'satfat_g', 'unsatfat_g'), 'fat'),
-            ({'energy-kcal_100g': 52.2, 'energy-kj_100g': 2410, 'fat_100g': 65},
-             {'fat_g': 65}, ('kcal',), 'energy'),
-            ({'energy_100g': 2410, 'energy-kj_100g': 200, 'fat_100g': 65},
-             {'fat_g': 65}, ('kcal',), 'energy'),
-        ):
-            with self.subTest(nutriments=nutriments):
-                response, verifier = self.lookup_nutriments(nutriments)
-                self.assertEqual(response.status_code, 200)
-                draft = response.json()
-                self.assertIn(note, draft['reviewNote'])
-                self.assertEqual(draft['estimate']['basis'], {'amount': 100, 'unit': 'g'})
-                self.assertEqual(draft['estimate']['sources'][0]['provider'], 'Open Food Facts')
-                for key, value in kept.items():
-                    self.assertAlmostEqual(draft['estimate']['nutrients'][key], value, places=5)
-                for key in withheld:
-                    self.assertIsNone(draft['estimate']['nutrients'][key])
-                    self.assertIsNone(draft['estimate']['range'][key])
-                verifier.assert_not_awaited()
+    def test_a_branded_miss_can_use_one_checked_retailer_label(self):
+        """Return exact printed retailer values after the database misses."""
+        response, search = self.lookup([{**FOOD, 'gtinUpc': '9556001234568'}], [RETAIL])
+        self.assertEqual(response.status_code, 200)
+        draft = response.json()
+        self.assertEqual(draft['estimate']['basis'], {'amount': 100, 'unit': 'g'})
+        self.assertEqual(draft['estimate']['nutrients']['fat_g'], 8)
+        self.assertEqual(draft['estimate']['sources'][0]['url'], RETAIL.url)
+        search.assert_awaited_once()
 
-    def test_a_conflict_without_usable_values_still_offers_the_packet_fallback(self):
-        """Keep the fallback when there is nothing left to prefill."""
-        response, verifier = self.lookup_nutriments({'fat_100g': 5, 'saturated-fat_100g': 17.3})
-        self.assertEqual(response.status_code, 409)
+    def test_a_database_outage_can_use_the_retailer(self):
+        """Keep the second source available if the first provider times out."""
+        response, search = self.lookup(None, [RETAIL])
+        self.assertEqual(response.status_code, 200)
+        search.assert_awaited_once()
+
+    def test_a_missing_exact_match_does_not_return_the_old_database_values(self):
+        """Offer the packet fallback for the phone-reported barcode when no source can verify it."""
+        response, search = self.lookup([], [], code='9310947004582')
+        self.assertEqual(response.status_code, 404)
         self.assertNotIn('estimate', response.json())
-        verifier.assert_awaited_once_with(PRODUCT['code'], PRODUCT['product_name'], 'g')
+        search.assert_awaited_once()
 
-    def lookup_nutriments(self, nutriments):
-        """Look up a fictional record and track whether verification was needed."""
-        product = {**PRODUCT, 'nutriments': nutriments}
-        transport = httpx.MockTransport(
-            lambda _request: httpx.Response(200, json={'status': 1, 'product': product}),
-        )
+    def test_an_outage_is_distinguished_from_a_database_miss(self):
+        """Report a temporary failure if a source was unavailable and no match was found."""
+        response, _ = self.lookup(None, [])
+        self.assertEqual(response.status_code, 503)
+
+    def lookup(self, foods, evidence, code=CODE):
+        """Call the barcode API with a fictional USDA reply and bounded web evidence."""
+        def respond(request):
+            self.assertEqual(request.url.host, 'api.nal.usda.gov')
+            self.assertEqual(json.loads(request.content)['query'], code)
+            if foods is None:
+                raise httpx.ReadTimeout('Fictional timeout')
+            return httpx.Response(200, json={'foods': foods})
+
+        transport = httpx.MockTransport(respond)
         client_class = httpx.AsyncClient
-        verifier = AsyncMock(return_value=None)
-        with patch('coach.barcode.httpx.AsyncClient',
-                   side_effect=lambda **options: client_class(**options, transport=transport)), \
-                patch('coach.app.verify_barcode_label', verifier):
-            response = TestClient(app).post('/api/barcode', json={'code': PRODUCT['code']})
-        return response, verifier
-
-    def test_an_unknown_product_is_a_404(self):
-        async def nothing(_code):
-            return None
-        with patch('coach.app.look_up_barcode', nothing):
-            self.assertEqual(TestClient(app).post('/api/barcode', json={'code': '9556001234567'}).status_code, 404)
-
-
-if __name__ == '__main__':
-    unittest.main()
+        search = AsyncMock(return_value=evidence)
+        with patch.dict('os.environ', {'USDA_API_KEY': 'fictional'}), \
+                patch('coach.barcode.httpx.AsyncClient',
+                      side_effect=lambda **options: client_class(**options, transport=transport)), \
+                patch('coach.barcode_verify.search_barcode_labels', search, create=True):
+            response = TestClient(app).post('/api/barcode', json={'code': code})
+        return response, search

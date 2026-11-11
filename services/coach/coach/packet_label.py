@@ -3,8 +3,7 @@ import re
 
 from pydantic import ValidationError
 
-from .barcode import has_conflicting_nutrition
-from .databases import KJ_PER_KCAL, Match, average_matches, number, unsaturated
+from .databases import KJ_PER_KCAL, Match, average_matches, label_values_conflict, number, unsaturated
 from .models import BarcodeReply, Basis, Nutrients, Source
 
 # Accept exact printed values with units. Inequalities and invented units stay unknown.
@@ -69,12 +68,8 @@ def checked_packet(reply, code, name):
     mono, poly = values.pop('monofat_g'), values.pop('polyfat_g')
     if values['unsatfat_g'] is None:
         values['unsatfat_g'] = number(unsaturated({'mono': mono, 'poly': poly}))
-    if has_conflicting_nutrition({
-        'energy-kcal_100g': values['kcal'], 'energy-kj_100g': kilojoules,
-        'fat_100g': values['fat_g'], 'saturated-fat_100g': values['satfat_g'],
-        'monounsaturated-fat_100g': values['unsatfat_g'] if values['unsatfat_g'] is not None else mono,
-        'polyunsaturated-fat_100g': poly if values['unsatfat_g'] is None else None,
-    }):
+    fat_parts = (values['unsatfat_g'],) if values['unsatfat_g'] is not None else (mono, poly)
+    if label_values_conflict(values['kcal'], kilojoules, values['fat_g'], values['satfat_g'], *fat_parts):
         return None
     if values['kcal'] is None and kilojoules is not None:
         values['kcal'] = kilojoules / KJ_PER_KCAL
