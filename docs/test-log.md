@@ -465,3 +465,11 @@ Before hosting: phone reload twice at the usual origin, download a backup, then 
 ## Confirmed Free Tier privacy gate (10 Nov, Codex)
 
 Yash selected Gemini subject to terms/tier review, then confirmed Free Tier and explicitly kept diary sharing off. New tests first failed for the enabled switch, unblocked client request and server accepting context. After the change: disabled UI, no diary loader/fetch on that path, and server 403 before a model. Existing pure summary/retrieval/safety tests remain; ordinary chat requests are unchanged. Full check (215 coach tests) and production build passed. No personal diary was sent and no billing/account setting changed. Latest hosting preparation and runtime checks: [10 Nov report](testing/2026-11-10-hosting-preparation.md).
+
+## Claude repair handover (11 Nov, 21:08 phone report)
+
+Latest screenshot displays the correct printed barcode 9310947004582 and “No matching label was found”. Digit entry is correct in this observation; whether scan agreement, a choice or manual entry supplied it is not shown. The spread's online label lookup remains unresolved. Do not mark barcode end-to-end PASS. Packet-label photo -> reviewed food -> save/reload is still NOT TESTED on the phone.
+
+Yash stopped Codex application changes and requested a full handover and a Claude code-cleanup review. The current state, historical failures, audit targets and separate phone/laptop gates are now at the top of CLAUDE.md. Older step 5/7 instructions above are superseded: Gemini Free Tier diary sharing stays disabled; Me tests local profile/backup, not Google sign-in. Hosting is prepared but not verified as deployed.
+
+Documentation-only checkpoint. Baseline npm run check passed; no application code, provider route, stored data or runtime process was changed in preparing this handover.

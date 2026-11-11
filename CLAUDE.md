@@ -1,5 +1,86 @@
 # Health Companion
 
+## Current handover to Claude Code — 11 Nov 2026, after phone barcode failures
+
+Read this section before older milestone/handover notes. Yash has stopped Codex application changes because repeated barcode fixes have not delivered a dependable flow. He asks Claude to audit and simplify the affected code, finish the tests below, and explain the result plainly. Do not add another provider or patch before reproducing the failure and reviewing the existing path.
+
+### Checkout, save point and scope
+
+- Actual checkout: `C:\Users\User\OneDrive - Monash University\Desktop\HealthCompanion`. Do not assume the similarly named Documents/ChatGPT folder is the working repository.
+- Branch: `feat/ai-trainer`. Application save point: `9754eab`, pushed; working tree was clean when this documentation handover began. Run `git status` and `git log` on takeover to detect later changes.
+- Codex ran `npm run check` successfully before this documentation update. The application checkpoint had also passed check/build. Passing automated tests has NOT established barcode reliability or nutrition accuracy.
+- Keep one interview guide: `docs/milestones/interview-walkthrough.md`; detailed observations: `docs/test-log.md`. Older handovers contain superseded instructions about cloud sync, sign-in and diary sharing.
+- Target hosts remain Vercel frontend and Render backend. `deploy/README.md` and templates are preparation only; no hosted acceptance is recorded. Interview: Fri 13 Nov, 1:35 pm MYT.
+- MIT covers original code; third-party datasets/models/dependencies retain their own terms. Gemini is Free Tier: diary sharing stays blocked in UI, client and service. Do not enable it for the demo.
+- No Firestore/vector/PostgreSQL migration, new authentication, model ensemble, downloads, training or sealed-evaluation rerun in this repair. Keep the local diary intact.
+
+### What has been built
+
+- M1–M3: IndexedDB diary, food labels, parser, review/confirm, immutable correction/undo history, workout/sleep logs, backup/restore, offline shell. Schema v5 now includes chosen exercises and local profile.
+- M4: offline exercise search, custom/chosen cards, deterministic eligibility, target-duration planner and optional repeated rounds. The trained intent router lost to keyword rules and does not ship.
+- M5: Trainer, Nutritionist and Coach chat, bounded tools, reviewed-card retrieval, safety gates, local profile/adaptations; MCP stdio tested, actual client connection not established by this handover.
+- M6/M7: local photo-model experiments and exported single-dish fallback; the main multi-food photo flow uses Gemini. Evaluation limitations remain in the existing walkthroughs; benchmark scores are not real-plate accuracy.
+- UI organised into pages/components/hooks with I/O in data/api, data/storage and data/diary. Me has local profile/storage/backup, no separate Google account card.
+- Recent meal fixes: inline amount corrections, published biscuit serving counts, preservation of cup/bowl text, automatic typical-serving estimates for open portions. Sources/ranges/Not saved remain visible; Use estimate and Save meal are separate confirmations.
+- Recent photo fixes: do not invent uncertain quantities, warn on omitted/unidentified foods, check the full plate, retain user editing before nutrition lookup. Yash confirmed beef recognition and the salmon/radish/egg example after retests; exact quantities and nutrient accuracy were not established.
+- Capture is on Today; Foods is the saved-food list. Hosted uploads require the relevant explicit action or remembered plate-photo opt-in. Barcode scanning itself remains on-device.
+
+### Current barcode pipeline and what actually failed
+
+1. `ui/components/meals/BarcodeScan.tsx` uses the browser BarcodeDetector and `vision/confirmBarcode.ts` (ZXing, tighter/padded crops/full frame). Agreement fills digits; one reading or disagreement shows choices. The person must tap Look up. No barcode photo is sent by that scan.
+2. `data/api/barcode.ts` posts only digits to /api/barcode. `coach/barcode.py` requires an exact USDA Branded GTIN with a usable basis. It then tries `coach/barcode_verify.py` and Tavily retailer excerpts. This route no longer uses Open Food Facts; the separate named-food estimator still can.
+3. Retailer checks require a listed retailer domain, explicit matching barcode, one per-100 g/mL basis and compatible values. Code picks the most complete agreeing label; no AI agent ranks sources and no public database is edited.
+4. `PacketLabelCapture.tsx` plus /api/barcode/label and `coach/packet_label.py` allow a separate explicitly submitted nutrition-panel photo. Gemini transcribes; code validates barcode/basis, converts kJ, and keeps unreadable or bounded values unknown. This is an editable draft, not guaranteed fact-checking.
+5. Latest phone screenshot at 21:08 shows correct digits `9310947004582` and “No matching label was found”. The lookup is still unsuccessful for Yash's packet. A screenshot of correct digits does not establish whether they were auto-filled, selected or typed.
+6. Earlier the same photo yielded `9310947048982`. Both numbers pass EAN checksum; checksum alone cannot settle this. The strict two-reader fix then rejected a clear photo, prompting the current choice/crop fix.
+7. Earlier OFF imports showed 52.2 kcal on a 100 g basis alongside 2410 kJ, contradictory fat fields, qualified values treated as exact and sodium differing from the packet. Subsequent patches alternated rejection, partial drafts and source replacement. These are real reported failures, not a completed barcode acceptance.
+8. One prior product-specific exception was removed. Do not reintroduce hardcoded product codes/nutrients or silently substitute a nearby product. The packet image is diagnostic evidence; do not commit personal photos or diary data as fixtures.
+9. Last recorded live lookup: exact USDA example `009800830022` returned a draft; Yash's spread returned no verified label. This is limited coverage evidence, not proof that all barcodes work.
+10. A local crop of Yash's clear photo decoded the correct digits using ZXing. Choice UI unit tests passed. Repeated physical-phone scan reliability, packet-label transcription and save/reload remain unverified.
+
+### The code mess Claude must review and resolve
+
+- Audit the chain of small fixes from `090695c` through `9754eab` before changing behaviour. Key commits: `9c1ac96` packet reader, `3f34ea0` source replacement, `cd8782e` strict agreement, `9754eab` confirmation choices. Do not blindly revert the chain or discard fixes to privacy/unknown values.
+- Separate scan failure, ambiguous digits, unavailable service, verified no-match and conflicting label in the flow. The current repeated error/fallback experience leaves Yash stuck; the fallback has not completed phone acceptance.
+- Review duplicated or obsolete validation, fallback messages, imports and tests after OFF was removed from this route. Shared OFF parsing still serves named-food estimates; establish callers before deleting anything.
+- Review the retailer extractor's narrow coverage: fixed domains, mandatory explicit GTIN in an excerpt, rejection of mixed columns, and almost exact cross-source numeric agreement can reject legitimate labels. Do not weaken identity/unit checks merely to make this product pass. First measure which stage rejects evidence; distinguish extraction failure from no coverage.
+- Review browser support and error paths: capture currently depends on native BarcodeDetector even though ZXing exists; native exceptions and invalid candidate readings deserve targeted tests. These are audit targets, not reproduced additional phone failures.
+- Review unit and provenance handling end to end: per-serving versus per-100, g versus mL, kJ/kcal, sodium units, bounds such as <1 g, missing versus true zero, AI-transcribed versus database facts. Do not combine nutrients from different recipes/revisions or round stored values.
+- Improve a missing-label path only after agreeing its acceptance test: make packet transcription reachable and understandable, with a reviewable source/basis and no automatic upload or save. Do not promise an AI verifier can create missing database coverage.
+- Keep changes small: suggest a Git save point, reproduce with failing tests, simplify one responsibility/folder at a time, remove proven dead code, check/build, show the diff. Preserve FIT3080 comments, SOLID where useful, YAGNI, files <=300 lines, explicit staging and green pushes. Reserved planner/training functions still require Yash's sign-off.
+- This handover is not a full architecture audit. The evidenced problem is repeated barcode rework with incomplete end-to-end acceptance. Claude must inspect and identify actual dead/duplicated code before claiming it cleaned everything.
+
+### Physical-phone acceptance remaining before hosting
+
+Use the same localhost origin, reload the rebuilt app twice and export a backup first. Guide Yash one test at a time; record PASS/FAIL/NOT TESTED and the build/commit. Do not clear his storage to fix stale results.
+
+| Area | Existing evidence | Still required |
+|---|---|---|
+| Meal estimates | Initial serving bug FAIL; Yash reported fresh cereal lookup working after deselecting the old saved food | Retest fresh cereal against its own packet, source/basis/range, no save before confirmation; saved old versions must remain unchanged |
+| Inline correction | Automated regression passed | Phone `200ml milk no wait 300ml`: review the intended correction, never send `no wait` as food name |
+| Correction/undo | Phone PASS: milk 300→250→300 mL | Open revision history, reload and verify persistence and no unintended duplicate |
+| Plate photo | Phone workflow PASS on selected examples; model mistakes observed | Check edit/remove/missing ingredient, opt-in off/on, changing photo during a pending request, quota/unreachable fallback and no unintended save |
+| Barcode scan | Latest screenshot has correct digits; previous wrong reads and rejection FAIL | Repeat the same image; test a different packet, rotation, one-reader disagreement, manual entry and no request before Look up |
+| Barcode nutrition | Current spread lookup unresolved/no match | Complete packet-label fallback with source/basis, compare every visible value, keep <1/missing unknown, confirm food then reload; test a verified lookup from another product |
+| AI tab | Earlier laptop greeting/Trainer checks only | Greeting, general nutrition question, no-kit timed session, refusal case, diary-sharing disabled; confirm no diary/profile request fields |
+| Gym | Earlier laptop 60-minute/search checks | Offline search/add/remove, arbitrary duration, repeated rounds on/off, truthful shortfall, profile restrictions applied to local and AI plans |
+| Workout/sleep | Earlier isolated laptop save/reload passed | Phone workout and overnight sleep review/save/reload; distinguish time in bed from reported sleep |
+| Offline | Earlier laptop cached-shell reload passed | Disconnect USB and disable Wi-Fi/mobile data, close/reopen app, view and edit a saved-food meal, undo; service errors must leave diary usable |
+| Me/backup | Earlier laptop checks only | Profile/adaptations, hide numbers, export/download; restore a fictional backup on a separate test origin/device, never erase the real diary |
+| Layout/date | Screenshots show usable main flow with long cards | Keyboard and bottom-dock access to actions, scroll/close sheets, date change on device clock; no destructive clock/data manipulation needed |
+
+### Laptop acceptance remaining before hosting
+
+- Fresh `npm run check` and `npm --prefix apps/web run build` after repairs; distinguish unit/mock tests from live API/browser/phone tests. Existing large-bundle warning is not resolved by a passing build.
+- Verify port 8000 belongs to this checkout's current service and preview 4173 serves the new assets. GET /api/health directly and via preview. A 200 proves reachability, not provider availability or label correctness. Never print config/key values.
+- Reproduce barcode cases through the production preview: repeated supplied-photo decode locally, other products, disagreement, incorrect digits, no-match, timeout/quota, packet mismatch, missing name and multi-column labels. Keep remote uploads explicit.
+- Add/retain generic fictional boundary regressions for exact GTIN, units/basis, conflicting recipes, <1 values, nulls, source selection and draft-only persistence. Inspect actual network payloads using fictional records.
+- Exercise packet-reader UI through review/confirm/reload on an isolated fictional diary. Its automated validation tests alone are insufficient acceptance.
+- Recheck privacy gates (context blocked before model), local storage transaction/revision/backup paths, offline unavailable-provider behaviour and the unaffected meal/photo/Gym paths after simplification.
+- Audit deployment readiness in `deploy/README.md`: Linux dependencies, Render startup/memory/cold start, exact origins, Vercel /api rewrite, missing model files/cache, model endpoint abuse/quota controls and secrets only on backend. Resolve or explicitly document limits before public exposure.
+- Hosting itself is separate acceptance: actual URLs, HTTPS health through Vercel, phone on mobile data without USB, optional AI outage and offline reopen. A hosted origin has separate IndexedDB; no diary transfers automatically.
+- Update this section, the test log, the single interview walkthrough and AI contribution log with honest final outcomes. Teach Yash the folder map and one save-button story, then quiz him; do not claim he understands until he explains it.
+
 A free, local-first diary for balancing food, exercise and sleep. It remembers what was logged, accepts corrections, and always shows what it knows versus what it estimated. Built in six days (8–13 Nov 2026) by Yash, with Claude Code (architecture, frontend) and Codex (Python backend, PyTorch). Yash reviews every diff and explains the code himself.
 
 ## Beginner-readable architecture and refactoring (Yash, 10 Nov)
@@ -87,7 +168,7 @@ Organised by feature, one reason to change per module. Domain never imports stor
 
 Current repeated-round planner and wrap-up: read `docs/handoff/claude-code.md` and `docs/milestones/m4-repeated-rounds-walkthrough.md`. Repetition is explicitly selectable; the earlier distinct-only duration notes are historical.
 
-Current work: read `docs/handoff/codex-11-nov.md`. Verify the AI chat and the photo reader, then make Gemini the main photo path and fetch estimates automatically. Earlier rules and later ideas: `docs/handoff/codex-m5.md`.
+Current work is the 11 Nov repair handover at the top of this file. The photo path and automatic estimates already exist; do not rebuild them from the historical codex-11-nov.md checklist.
 
 
 ## New cloud direction (Yash, 10 Nov)
