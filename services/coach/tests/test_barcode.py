@@ -30,6 +30,22 @@ class BarcodeReplyTests(unittest.TestCase):
         self.assertEqual((reply.estimate.basis.amount, reply.estimate.basis.unit), (100, 'g'))
         self.assertIsNone(reply.estimate.nutrients.protein_g)
 
+    def test_qualified_amounts_are_not_exact_label_values(self):
+        """Keep estimated and bounded nutrients blank while retaining an exact zero."""
+        # Reported on the phone on 11 Nov: estimated added sugar appeared as exact zero.
+        product = {**PRODUCT, 'nutriments': {
+            'energy_100g': 2410, 'energy-kj_100g': 2410,
+            'energy-kcal_100g': 52.2, 'energy-kcal_modifier': '~',
+            'added-sugars_100g': 0, 'added-sugars_modifier': '~',
+            'proteins_100g': 1, 'proteins_modifier': '<',
+            'sodium_100g': 0,
+        }}
+        reply = barcode_reply({'status': 1, 'product': product}, PRODUCT['code'])
+        self.assertAlmostEqual(reply.estimate.nutrients.kcal, 576, places=1)
+        self.assertIsNone(reply.estimate.nutrients.added_sugar_g)
+        self.assertIsNone(reply.estimate.nutrients.protein_g)
+        self.assertEqual(reply.estimate.nutrients.sodium_mg, 0)
+
     def test_a_liquid_keeps_its_unit(self):
         reply = barcode_reply({'status': 1, 'product': {**PRODUCT, 'product_quantity_unit': 'ml'}}, '9556001234567')
         self.assertEqual(reply.estimate.basis.unit, 'mL')

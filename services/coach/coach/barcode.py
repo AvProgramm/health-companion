@@ -46,18 +46,24 @@ def fat_breakdown_conflicts(nutriments):
 
 def review_nutriments(nutriments):
     """Withhold each conflicting group and list what needs checking."""
+    # Ignore a qualified amount because a bound or estimate is not an exact label value.
+    exact = {
+        key: value for key, value in nutriments.items()
+        if not key.endswith('_100g') or nutriments.get(key.removesuffix('_100g') + '_modifier') in (None, '', '=')
+    }
+
     # Ignore a conflicting group because the database cannot tell us which value is right.
     withheld = []
     review = []
-    _, energy_conflict = off_energy_kcal(nutriments)
+    _, energy_conflict = off_energy_kcal(exact)
     if energy_conflict:
         withheld.extend(ENERGY_FIELDS)
         review.append('energy')
-    if fat_breakdown_conflicts(nutriments):
+    if fat_breakdown_conflicts(exact):
         withheld.extend(('fat_100g', *FAT_COMPONENTS))
         review.append('fat')
 
-    return {key: value for key, value in nutriments.items() if key not in withheld}, review
+    return {key: value for key, value in exact.items() if key not in withheld}, review
 
 
 def barcode_reply(payload, code):
@@ -86,7 +92,8 @@ def barcode_reply(payload, code):
     note = None
     if review:
         fields = ' and '.join(review)
-        note = f'Check the {fields} values against the packet. The database values disagree, so those fields are blank.'
+        note = (f'The database has conflicting {fields} values. Those fields are blank. '
+                'Check all values against the packet before saving.')
         estimate = estimate.model_copy(update={'reason': 'Values from the public product record. Check them against the packet.'})
     return BarcodeReply(name=name, estimate=estimate, reviewNote=note)
 
