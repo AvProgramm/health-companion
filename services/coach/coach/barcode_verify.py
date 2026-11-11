@@ -26,15 +26,15 @@ MIXED_BASIS = re.compile(
 CHECKED_FIELDS = ('kcal', 'protein_g', 'carbs_g', 'fibre_g', 'total_sugar_g',
                   'added_sugar_g', 'fat_g', 'satfat_g', 'sodium_mg')
 
-# Keep only the exact per-100-g values that agree between the photographed packet
-# and the retailer's label. The label's "<1 g" entries remain unknown.
+# Keep the exact per-100-g values from the photographed packet. The retailer
+# corroborates energy and total and saturated fat. The "<1 g" entries remain unknown.
 REVIEWED_LABELS = {
     '9310947004582': (
         'Table Lands Olive Oil Spread',
         Match(
             Nutrients(kcal=2410 / KJ_PER_KCAL, protein_g=None, carbs_g=None, fibre_g=None,
                       total_sugar_g=None, added_sugar_g=None, fat_g=65, satfat_g=17.3,
-                      unsatfat_g=None, sodium_mg=None),
+                      unsatfat_g=35.3 + 12.1, sodium_mg=350),
             Source(provider='Packet label and Woolworths', description='Tablelands Olive Oil Spread, per 100 g.',
                    url='https://www.woolworths.com.au/Shop/ProductDetails/348977/tablelands-health-smart-olive-oil-spread'),
         ),
@@ -107,7 +107,8 @@ async def verify_barcode_label(code, name, unit, search=search_nutrition, ask=No
     if reviewed is not None:
         label_name, match = reviewed
         return label_reply(label_name, match, Basis(amount=100, unit=match.unit),
-                           'Checked against the packet and retailer label. Energy converted from 2410 kJ.')
+                           'Energy converted from 2410 kJ. Sodium and unsaturated fat come from the packet. '
+                           'Protein, carbohydrate and total sugar are listed as less than 1 g.')
 
     basis = Basis(amount=100, unit=unit)
     try:

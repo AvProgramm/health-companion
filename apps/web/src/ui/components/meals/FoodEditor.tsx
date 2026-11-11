@@ -47,8 +47,7 @@ export function FoodEditor({ previous, initialFood, initialName, initialUnit, on
   const [values, setValues] = useState<Record<NutrientKey, string>>(() => {
     const start = {} as Record<NutrientKey, string>;
     for (const key of EDITABLE_NUTRIENTS) {
-      const value = seed?.nutrients[key];
-      start[key] = value === undefined || value === null ? '' : String(value);
+      start[key] = nutrientInputText(key, seed?.nutrients[key]);
     }
     return start;
   });
@@ -63,10 +62,13 @@ export function FoodEditor({ previous, initialFood, initialName, initialUnit, on
 
     let food: FoodVersion;
     try {
-      // A blank field means the label did not say, which is saved as unknown
+      // Keep the unrounded original behind an unchanged display. A cleared field is unknown.
       const nutrients: Partial<Record<NutrientKey, NutrientValue>> = {};
       for (const key of EDITABLE_NUTRIENTS) {
-        nutrients[key] = readOptional(values[key], NUTRIENT_LABELS[key].label);
+        const original = seed?.nutrients[key];
+        nutrients[key] = original != null && values[key] === nutrientInputText(key, original)
+          ? original
+          : readOptional(values[key], NUTRIENT_LABELS[key].label);
       }
       const amount = Number(basisAmount.trim().replace(',', '.'));
       // Keep where a seed's numbers were found only while the person still says the same source
@@ -112,7 +114,7 @@ export function FoodEditor({ previous, initialFood, initialName, initialUnit, on
 
         <fieldset className="fieldset">
           <legend className="label">Nutrition</legend>
-          <p className="hint">Leave a field blank if the label does not say. It will show as unknown, never as zero.</p>
+          <p className="hint">Leave a field blank when the label gives no exact value, including “less than” values.</p>
           <div className="grid-2">
             {EDITABLE_NUTRIENTS.map((key) => (
               <label key={key} className="field">
@@ -120,6 +122,7 @@ export function FoodEditor({ previous, initialFood, initialName, initialUnit, on
                 <input
                   className="input"
                   inputMode="decimal"
+                  placeholder="Unknown"
                   value={values[key]}
                   onChange={(event) => setValues({ ...values, [key]: event.target.value })}
                 />
@@ -156,6 +159,12 @@ export function FoodEditor({ previous, initialFood, initialName, initialUnit, on
       </form>
     </Sheet>
   );
+}
+
+/** Format energy for the editor while leaving unknown inputs empty. */
+function nutrientInputText(key: NutrientKey, value: NutrientValue | undefined): string {
+  if (value == null) return '';
+  return key === 'kcal' ? String(Number(value.toFixed(1))) : String(value);
 }
 
 /**

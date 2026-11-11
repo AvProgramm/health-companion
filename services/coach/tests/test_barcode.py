@@ -88,6 +88,8 @@ class BarcodeEndpointTests(unittest.TestCase):
         self.assertAlmostEqual(result['nutrients']['kcal'], 576.0, places=1)
         self.assertEqual(result['nutrients']['fat_g'], 65)
         self.assertEqual(result['nutrients']['satfat_g'], 17.3)
+        self.assertAlmostEqual(result['nutrients']['unsatfat_g'], 47.4, places=9)
+        self.assertEqual(result['nutrients']['sodium_mg'], 350)
         self.assertIsNone(result['nutrients']['protein_g'])
         self.assertNotEqual(result['sources'][0]['provider'], 'Open Food Facts')
 

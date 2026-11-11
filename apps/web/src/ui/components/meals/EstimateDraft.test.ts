@@ -174,6 +174,27 @@ describe('manual estimate editing', () => {
     expect(onSave.mock.calls[0]![0].range).toBeUndefined();
   });
 
+  // Reported on the phone on 11 Nov: a converted energy value exposed every decimal.
+  it('shows rounded energy and marks blank nutrients without losing precision on save', async () => {
+    const onSave = vi.fn().mockResolvedValue(undefined);
+    const initialFood = {
+      ...estimatedFood('Fictional oats', readEstimate(proposal), 'food'),
+      nutrients: { ...proposal.nutrients, kcal: 576.0038240917781 },
+      source: { kind: 'label' as const },
+    };
+    await act(async () => root.render(createElement(FoodEditor, { initialFood, onSave, onClose: vi.fn() })));
+    const inputs = [...container.querySelectorAll('label')];
+    const energy = inputs.find(label => label.textContent?.includes('Energy (kcal)'))?.querySelector('input');
+    const protein = inputs.find(label => label.textContent?.includes('Protein (g)'))?.querySelector('input');
+    expect(energy?.value).toBe('576');
+    expect(protein?.placeholder).toBe('Unknown');
+    expect(protein?.value).toBe('');
+
+    await tap('Save food');
+    expect(onSave.mock.calls[0]![0].nutrients.kcal).toBe(576.0038240917781);
+    expect(onSave.mock.calls[0]![0].nutrients.protein_g).toBeNull();
+  });
+
   it('keeps a scanned label as a label, and where it was found', async () => {
     // Found while testing on 9 Nov: a scanned Nutella saved with the badge "My estimate".
     const onSave = vi.fn().mockResolvedValue(undefined);
