@@ -15,7 +15,11 @@ const MESSAGES: ServiceMessages = {
   unreachable: `Could not reach the laptop. ${FALLBACK}`,
   notRunning: `The laptop service is not running. ${FALLBACK}`,
   busy: `The food database is busy. Try again shortly. ${FALLBACK}`,
-  failed: (status) => (status === 404 ? `That barcode is not in Open Food Facts. ${FALLBACK}` : `The lookup returned an error (HTTP ${status}). ${FALLBACK}`),
+  failed: (status) => {
+    if (status === 404) return `That barcode is not in Open Food Facts. ${FALLBACK}`;
+    if (status === 409) return `The database record has conflicting nutrition values. ${FALLBACK}`;
+    return `The lookup returned an error (HTTP ${status}). ${FALLBACK}`;
+  },
 };
 
 /** Return the digits of a barcode, or throw what to fix. */

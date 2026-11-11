@@ -8,7 +8,7 @@ from starlette.middleware.trustedhost import TrustedHostMiddleware
 from .cloud.config import web_config
 from .cloud.session import verify_session
 from .http_policy import read_http_policy
-from .barcode import look_up_barcode
+from .barcode import BarcodeRecordConflict, look_up_barcode
 from .exercises import load_library
 from .llm import COACH_MODELS, PHOTO_MODELS, HostedConversation
 from .models import BarcodeReply, BarcodeRequest, CoachReply, CoachRequest, EstimateRequest, Estimate, NutritionistReply, NutritionistRequest, PhotoReply, PhotoRequest, TrainerReply, TrainerRequest
@@ -89,7 +89,11 @@ async def nutritionist(request: Request, item: NutritionistRequest):
 async def barcode(request: Request, item: BarcodeRequest):
     """Return one packaged food's label values; only the barcode number is sent."""
     check_local(request)
-    found = await look_up_barcode(item.code)
+    # Distinguish a matched record with conflicting numbers from a missing barcode.
+    try:
+        found = await look_up_barcode(item.code)
+    except BarcodeRecordConflict as problem:
+        raise HTTPException(409, str(problem)) from problem
     if found is None:
         raise HTTPException(404, 'That barcode is not in Open Food Facts.')
     return found

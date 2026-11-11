@@ -1,6 +1,7 @@
 """Check the barcode lookup against fictional Open Food Facts replies."""
 import asyncio
 import unittest
+import httpx
 from unittest.mock import patch
 from fastapi.testclient import TestClient
 from coach.app import app
@@ -48,6 +49,25 @@ class BarcodeEndpointTests(unittest.TestCase):
 
     def test_another_site_is_refused(self):
         self.assertEqual(TestClient(app).post('/api/barcode', json={'code': '9556001234567'}, headers={'origin': 'https://example.org'}).status_code, 403)
+
+    def test_conflicting_database_nutrition_is_not_offered_as_a_label(self):
+        """Refuse conflicting energy units or a fat breakdown above total fat."""
+        # Reported on the phone on 11 Nov: 52.2 kcal and 2410 kJ were both per 100 g.
+        for nutriments in (
+            {'energy-kcal_100g': 52.2, 'energy-kj_100g': 2410, 'fat_100g': 65},
+            {'energy-kcal_100g': 576, 'fat_100g': 5, 'saturated-fat_100g': 17.3},
+        ):
+            with self.subTest(nutriments=nutriments):
+                product = {**PRODUCT, 'nutriments': nutriments}
+                transport = httpx.MockTransport(
+                    lambda _request: httpx.Response(200, json={'status': 1, 'product': product}),
+                )
+                client_class = httpx.AsyncClient
+                with patch('coach.barcode.httpx.AsyncClient',
+                           side_effect=lambda **options: client_class(**options, transport=transport)):
+                    response = TestClient(app).post('/api/barcode', json={'code': PRODUCT['code']})
+                self.assertEqual(response.status_code, 409)
+                self.assertNotIn('estimate', response.json())
 
     def test_an_unknown_product_is_a_404(self):
         async def nothing(_code):

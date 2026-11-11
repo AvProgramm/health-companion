@@ -1,7 +1,6 @@
 import { useState, type ChangeEvent, type FormEvent } from 'react';
 import { lookUpBarcode, readBarcodeDigits } from '../../../data/api/barcode';
 import type { FoodVersion } from '../../../domain/nutrition/types';
-import { errorText } from '../../format';
 import { useBusy } from '../../hooks/useBusy';
 import { ErrorLine } from '../shared/NoticeLine';
 
@@ -27,7 +26,7 @@ function barcodeReader(): BarcodeReader | null {
  */
 export function BarcodeScan({ onFound }: { onFound: (food: FoodVersion) => void }) {
   const [code, setCode] = useState('');
-  const { busy, error, setError, run } = useBusy();
+  const { busy, error, run } = useBusy();
   const canScan = barcodeReader() !== null;
 
   /** Look up one barcode number and pass on what it finds. */
@@ -46,18 +45,18 @@ export function BarcodeScan({ onFound }: { onFound: (food: FoodVersion) => void 
 
     // Ignore a cancelled camera, because there is nothing to read
     if (photo === undefined || reader === null) return;
-    setError(null);
-    try {
-      const found = await reader.detect(await createImageBitmap(photo));
-      if (found[0] === undefined) {
-        setError('No barcode found. Hold it flat and close, or type the number.');
-        return;
-      }
-      setCode(found[0].rawValue);
-      await lookUp(found[0].rawValue);
-    } catch (problem) {
-      setError(errorText(problem));
-    }
+    setCode('');
+    await run(async () => {
+      // Decode on the device and release the photo once its digits have been read.
+      const bitmap = await createImageBitmap(photo);
+      const found = await reader.detect(bitmap).finally(() => bitmap.close());
+      const numbers = [...new Set(found.map((item) => item.rawValue.trim()))];
+      if (numbers.length === 0) throw new Error('No barcode found. Hold it flat and close, or type the number.');
+      if (numbers.length > 1) throw new Error('More than one barcode was found. Frame one code, or type its number.');
+
+      // Let the person confirm the digits before sending any lookup.
+      setCode(readBarcodeDigits(numbers[0]!));
+    });
   }
 
   /** Look up the number that was typed. */
@@ -74,7 +73,7 @@ export function BarcodeScan({ onFound }: { onFound: (food: FoodVersion) => void 
         <input id="barcode-code" className="input" inputMode="numeric" autoComplete="off" aria-label="Barcode number" placeholder="Or type the number" style={{ flex: 1 }} value={code} onChange={event => setCode(event.target.value)} />
         <button type="submit" className="button button-secondary" disabled={busy}>{busy ? 'Looking…' : 'Look up'}</button>
       </form>
-      <p className="hint">Only the barcode number is sent. You check the label values before anything is saved.</p>
+      <p className="hint">Check the digits against the packet before tapping Look up. Only the barcode number is sent. Compare any result with the packet label.</p>
       <ErrorLine error={error} />
     </section>
   );
