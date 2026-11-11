@@ -130,6 +130,9 @@ export function FoodEditor({ previous, initialFood, initialName, initialUnit, on
 
         <fieldset className="fieldset">
           <legend className="label">Where the numbers came from</legend>
+          {initialFood?.source.kind === 'label' && initialFood.source.reference !== undefined && (
+            <p className="hint" style={{ overflowWrap: 'anywhere' }}>{initialFood.source.reference}</p>
+          )}
           <div className="row">
             <label className="choice">
               <input type="radio" name="source" checked={sourceKind === 'label'} onChange={() => setSourceKind('label')} />

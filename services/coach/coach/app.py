@@ -9,6 +9,7 @@ from .cloud.config import web_config
 from .cloud.session import verify_session
 from .http_policy import read_http_policy
 from .barcode import BarcodeRecordConflict, look_up_barcode
+from .barcode_verify import verify_barcode_label
 from .exercises import load_library
 from .llm import COACH_MODELS, PHOTO_MODELS, HostedConversation
 from .models import BarcodeReply, BarcodeRequest, CoachReply, CoachRequest, EstimateRequest, Estimate, NutritionistReply, NutritionistRequest, PhotoReply, PhotoRequest, TrainerReply, TrainerRequest
@@ -93,7 +94,9 @@ async def barcode(request: Request, item: BarcodeRequest):
     try:
         found = await look_up_barcode(item.code)
     except BarcodeRecordConflict as problem:
-        raise HTTPException(409, str(problem)) from problem
+        found = await verify_barcode_label(item.code, problem.name, problem.unit)
+        if found is None:
+            raise HTTPException(409, str(problem)) from problem
     if found is None:
         raise HTTPException(404, 'That barcode is not in Open Food Facts.')
     return found

@@ -25,6 +25,12 @@ FAT_COMPONENTS = ('saturated-fat_100g', 'monounsaturated-fat_100g', 'polyunsatur
 class BarcodeRecordConflict(ValueError):
     """Report a matching product whose nutrition cannot be used safely."""
 
+    def __init__(self, name, unit):
+        """Keep only the public product name and basis for a second lookup."""
+        super().__init__('The database record has conflicting nutrition values. Use the packet label.')
+        self.name = name
+        self.unit = unit
+
 
 def has_conflicting_nutrition(nutriments):
     """Check for energy units or a fat breakdown that contradict each other."""
@@ -44,16 +50,18 @@ def barcode_reply(payload, code):
     """Return one product's label values per 100 g or mL, or None if it cannot be used."""
     # Ignore an unknown barcode or a malformed reply
     product = payload.get('product') if isinstance(payload, dict) and payload.get('status') == 1 else None
-    if not isinstance(product, dict) or not str(product.get('product_name', '')).strip():
+    name = product.get('product_name') if isinstance(product, dict) else None
+    if not isinstance(name, str) or not name.strip():
         return None
+    name = name.strip()[:80]
 
     # Ignore contradictory values because the database cannot tell us which entry to trust.
     nutriments = product.get('nutriments')
     if isinstance(nutriments, dict) and has_conflicting_nutrition(nutriments):
-        raise BarcodeRecordConflict('The database record has conflicting nutrition values. Use the packet label.')
+        unit = 'mL' if product.get('product_quantity_unit') in ('ml', 'mL') else 'g'
+        raise BarcodeRecordConflict(name, unit)
 
-    # Reuse the search parser, so a missing label value stays unknown here too
-    name = product['product_name'].strip()[:80]
+    # Reuse the search parser, so a missing label value stays unknown here too.
     matches = parse_off({'products': [{'code': code, **product}]}, name)
     if not matches:
         return None

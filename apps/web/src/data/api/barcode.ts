@@ -2,8 +2,8 @@ import { estimatedFood, readEstimate } from '../../domain/nutrition/estimates';
 import type { FoodVersion } from '../../domain/nutrition/types';
 import { postJson, type ServiceMessages } from './post';
 
-// One bounded call to a public food database, plus the proxy hop
-const BARCODE_TIMEOUT_MS = 12000;
+// Allow a bounded label verification after a conflicting database record.
+const BARCODE_TIMEOUT_MS = 20000;
 // The barcode lengths used on packaged food
 const BARCODE_DIGITS = /^\d{8,14}$/;
 // What still works when a lookup fails

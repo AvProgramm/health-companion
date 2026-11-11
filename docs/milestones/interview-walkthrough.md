@@ -219,7 +219,7 @@ The on-device SigLIP2 model is a separate fallback. It predicts one label for th
 
 ## Barcode path
 
-The barcode card is on Today beside photo capture; Foods is the saved-food list. Scanning fills the digits for the person to check before lookup. Only those digits go to the optional service. Records with conflicting energy units or a fat breakdown above the total are refused. `coach/barcode.py` uses Open Food Facts. Missing products, missing fields and an unreachable service must remain understandable outcomes. Database label values still need checking against the packet, because records and serving bases can differ. Nothing is saved just by looking up a code.
+The barcode card is on Today beside photo capture; Foods is the saved-food list. Scanning fills the digits for the person to check before lookup. Only those digits go to the optional service. Conflicting records trigger a checked label lookup. A reviewed label takes priority. For other products, AI selects a candidate source ID while code checks the barcode, basis and printed values. When evidence is insufficient, the app asks for the packet values. `coach/barcode.py` uses Open Food Facts. Missing products, missing fields and an unreachable service must remain understandable outcomes. Database label values still need checking against the packet, because records and serving bases can differ. Nothing is saved just by looking up a code.
 
 ## Automatic estimates
 

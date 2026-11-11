@@ -45,9 +45,9 @@ def compatible_factor(content, target):
     return target.amount * target_scale / (amount * source_scale)
 
 
-def explicit_value(content, key):
+def explicit_value(content, key, unit=None):
     """Read a single explicit nutrient amount without guessing a missing label."""
-    unit = UNITS.get(key, 'g')
+    unit = unit or UNITS.get(key, 'g')
     pattern = rf'\b{LABELS[key]}\s*[:=]?\s*(\d+(?:\.\d+)?)\s*{unit}\b'
     values = {float(value) for value in re.findall(pattern, content, re.I)}
     if len(values) != 1:
