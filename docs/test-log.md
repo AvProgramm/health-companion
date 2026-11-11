@@ -473,3 +473,28 @@ Latest screenshot displays the correct printed barcode 9310947004582 and “No m
 Yash stopped Codex application changes and requested a full handover and a Claude code-cleanup review. The current state, historical failures, audit targets and separate phone/laptop gates are now at the top of CLAUDE.md. Older step 5/7 instructions above are superseded: Gemini Free Tier diary sharing stays disabled; Me tests local profile/backup, not Google sign-in. Hosting is prepared but not verified as deployed.
 
 Documentation-only checkpoint. Baseline npm run check passed; no application code, provider route, stored data or runtime process was changed in preparing this handover.
+
+## Barcode repair (11 Nov 2026, 21:30 to 22:15, Claude Code, commit 9376cf3)
+
+**Why the phone's packet found nothing.** The digits 9310947004582 are correct. Each source was asked directly with only that number:
+
+| Source | What it holds for 9310947004582 |
+|---|---|
+| USDA branded foods | Nothing. It lists products sold in the United States; this spread is Australian |
+| Retailer web search (removed) | 0 excerpts. Also 0 for six other real barcodes from Australia, Britain and Malaysia, and 0 for the US code USDA does hold |
+| Open Food Facts (not used for barcodes) | A record with 52.2 kcal beside 2410 kJ, and total fat 5 g beside 35.3 g monounsaturated. It contradicts itself, so it cannot be trusted |
+
+So "not in the database" is the true answer for this packet, and the packet's own label is the only good source.
+
+**What changed.** The retailer search and its 150 lines are gone, because in seven tries it never returned anything and only delayed the same answer. A miss is now a next step, not a red error: the packet-label reader opens under a plain notice. "Could not ask the database" reads differently from "not there". Scanning no longer needs the browser's own barcode reader; the bundled one runs alone and asks the person to confirm. The scan logic moved out of the card into `vision/scanBarcode.ts`.
+
+| Check | Where | Result |
+|---|---|---|
+| `npm run check` and build | Laptop | PASS: coach 228, router 33, vision 92, web tests green |
+| Miss for 9310947004582 | Live service through the preview | 404 in 1.7 s |
+| Exact match for 009800830022 | Live service through the preview | 200 in 0.9 s, per 100 g, source USDA |
+| Miss shows the notice and opens the label reader | Browser pane at 375 px, fictional profile | PASS, no red error |
+| Scan choices, reader missing or throwing, non-barcode reading, outage wording | Unit tests | PASS |
+| Scan from the camera, label photo read, compare, save, reload | Phone | NOT TESTED |
+
+Not established: that the label reader transcribes this packet correctly. Its output is a draft to compare with the packet.
