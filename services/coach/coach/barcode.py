@@ -5,12 +5,16 @@ import httpx
 
 from .databases import average_matches, label_values_conflict, number, parse_off, parse_usda
 from .models import BarcodeReply, Basis
-from .pipeline import estimate_food
+from .availability import asking_order, send_to_back
+from .failures import PROVIDER_FAILURES
+from .pipeline import ESTIMATE_MODELS
 from .providers import search_usda
 
 
 # Keep each database within the time the phone waits for a barcode.
 DATABASE_TIMEOUT = 4.0
+# Long enough for one model to answer, short enough that two tries fit the phone's wait
+MODEL_TIMEOUT = 7.0
 # USDA documents these as the two possible bases for branded nutrient records.
 BRANDED_UNITS = {'g', 'grm', 'ml', 'mlt'}
 # Open Food Facts asks every client to say who is calling
@@ -106,9 +110,25 @@ async def off_product(client, code):
     return product if isinstance(product, dict) else None
 
 
+async def model_estimate_by_name(name):
+    """
+    Return the first hosted model's checked estimate for a product name, or None when none can answer.
+
+    Each model is asked in turn, because on 11 Nov one returned no values for a product
+    another estimated in under two seconds.
+    """
+    for model_name in asking_order(ESTIMATE_MODELS):
+        try:
+            return await asyncio.wait_for(ESTIMATE_MODELS[model_name](name, '100 g', ()), MODEL_TIMEOUT)
+        except PROVIDER_FAILURES:
+            # Ask this model last next time, because it could not answer now
+            send_to_back(model_name)
+    return None
+
+
 async def estimate_by_name(name):
     """Return an estimate for the product's name, said plainly to be an estimate and not its label."""
-    estimate = await estimate_food(name, '100 g')
+    estimate = await model_estimate_by_name(name)
     if estimate is None:
         return None
     reason = f'No trustworthy label was found for this barcode, so this is an estimate for "{name}". Compare it with your packet. {estimate.reason}'

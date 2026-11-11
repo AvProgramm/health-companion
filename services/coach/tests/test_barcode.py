@@ -90,14 +90,16 @@ class BarcodeEndpointTests(unittest.TestCase):
         Estimate by the product's name when its record cannot be trusted, and say so.
 
         Seen on the phone on 11 Nov with 9310947004582: the record held 52.2 kcal beside
-        2410 kJ and 5 g of fat beside 35.3 g of monounsaturated fat.
+        2410 kJ and 5 g of fat beside 35.3 g of monounsaturated fat. Live, the first model
+        returned no values and the second estimated it in under two seconds.
         """
-        by_name = AsyncMock(return_value=BY_NAME)
-        with patch('coach.barcode.estimate_food', by_name):
+        empty = AsyncMock(side_effect=ValueError('No nutrition values were returned.'))
+        answers = AsyncMock(return_value=BY_NAME)
+        with patch.dict('coach.barcode.ESTIMATE_MODELS', {'Groq': empty, 'Gemini': answers, 'Hugging Face': empty}),                 patch('coach.barcode.asking_order', lambda models: ['Groq', 'Gemini', 'Hugging Face']),                 patch('coach.barcode.send_to_back'):
             response = self.lookup([], product=BROKEN)
         self.assertEqual(response.status_code, 200)
         draft = response.json()
-        by_name.assert_awaited_once_with('Fictional oat spread', '100 g')
+        answers.assert_awaited_once_with('Fictional oat spread', '100 g', ())
         self.assertEqual((draft['name'], draft['match']), ('Fictional oat spread', 'name'))
         self.assertEqual(draft['estimate']['nutrients']['fat_g'], 52)
         self.assertEqual(draft['estimate']['sourceKind'], 'ai_estimate')
@@ -109,8 +111,9 @@ class BarcodeEndpointTests(unittest.TestCase):
         self.assertEqual(response.status_code, 404)
         self.assertNotIn('estimate', response.json())
 
-    def test_a_named_product_nobody_can_estimate_is_a_plain_miss(self):
-        with patch('coach.barcode.estimate_food', AsyncMock(return_value=None)):
+    def test_a_named_product_no_model_can_estimate_is_a_plain_miss(self):
+        empty = AsyncMock(side_effect=ValueError('No nutrition values were returned.'))
+        with patch.dict('coach.barcode.ESTIMATE_MODELS', {'Groq': empty, 'Gemini': empty, 'Hugging Face': empty}), patch('coach.barcode.send_to_back'):
             self.assertEqual(self.lookup([], product=BROKEN).status_code, 404)
 
     def test_an_outage_is_distinguished_from_a_database_miss(self):
