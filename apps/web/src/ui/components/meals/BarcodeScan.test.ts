@@ -3,7 +3,10 @@ import { act, createElement } from 'react';
 import { createRoot, type Root } from 'react-dom/client';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { readBarcodeDigits } from '../../../data/api/barcode';
+import { confirmBarcode } from '../../../vision/confirmBarcode';
 import { BarcodeScan } from './BarcodeScan';
+
+vi.mock('../../../vision/confirmBarcode', () => ({ confirmBarcode: vi.fn() }));
 
 vi.mock('../../../vision/shrinkPhoto', () => ({
   shrinkPhoto: vi.fn().mockResolvedValue('data:image/jpeg;base64,ZmFrZQ=='),
@@ -58,7 +61,8 @@ describe('Scan a barcode', () => {
     expect(onFound.mock.calls[0]![0]).toMatchObject({ name: 'Fictional oat biscuit', basis: { amount: 100, unit: 'g' } });
   });
 
-  it('shows scanned digits before looking up the product', async () => {
+  it('shows agreed scan digits before looking up the product', async () => {
+    vi.mocked(confirmBarcode).mockResolvedValueOnce('9556001234567');
     const fetchMock = vi.fn().mockResolvedValue({ ok: true, status: 200, json: async () => REPLY });
     vi.stubGlobal('fetch', fetchMock);
     vi.stubGlobal('createImageBitmap', vi.fn().mockResolvedValue({ close: vi.fn() }));
@@ -76,6 +80,27 @@ describe('Scan a barcode', () => {
 
     await act(async () => container.querySelector('form')!.requestSubmit());
     expect(JSON.parse(fetchMock.mock.calls[0]![1].body)).toEqual({ code: '9556001234567' });
+  });
+
+  it.each(['9310947004582', null])('does not prefill the phone misread when the other reading is %j', async (checked) => {
+    vi.mocked(confirmBarcode).mockResolvedValueOnce(checked);
+    const fetchMock = vi.fn();
+    vi.stubGlobal('fetch', fetchMock);
+    const close = vi.fn();
+    vi.stubGlobal('createImageBitmap', vi.fn().mockResolvedValue({ close }));
+    vi.stubGlobal('BarcodeDetector', class {
+      detect = vi.fn().mockResolvedValue([{ rawValue: '9310947048982' }]);
+    });
+    await act(async () => root.render(createElement(BarcodeScan, { onFound })));
+
+    // Observed on the phone on 11 Nov. Both numbers pass the EAN checksum.
+    const photo = container.querySelector<HTMLInputElement>('input[type="file"]')!;
+    Object.defineProperty(photo, 'files', { value: [new File(['fictional'], 'barcode.jpg')] });
+    await act(async () => photo.dispatchEvent(new Event('change', { bubbles: true })));
+    expect(container.querySelector<HTMLInputElement>('#barcode-code')?.value).toBe('');
+    expect(container.querySelector('[role="alert"]')?.textContent).toContain('type the number');
+    expect(fetchMock).not.toHaveBeenCalled();
+    expect(close).toHaveBeenCalledOnce();
   });
 
   it('asks for the packet values when the database record conflicts', async () => {

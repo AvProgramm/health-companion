@@ -3,6 +3,7 @@ import { lookUpBarcode, readBarcodeDigits, readPacketLabel } from '../../../data
 import type { FoodVersion } from '../../../domain/nutrition/types';
 import { useBusy } from '../../hooks/useBusy';
 import { ErrorLine } from '../shared/NoticeLine';
+import { confirmBarcode } from '../../../vision/confirmBarcode';
 import { shrinkPhoto } from '../../../vision/shrinkPhoto';
 import { PacketLabelCapture } from './PacketLabelCapture';
 
@@ -13,7 +14,7 @@ const LABEL_LONGEST_SIDE = 1280;
 
 /** The part of the browser's barcode reader this card uses; it exists on Android Chrome. */
 interface BarcodeReader {
-  detect: (image: ImageBitmap) => Promise<{ rawValue: string }[]>;
+  detect: (image: ImageBitmap) => Promise<{ rawValue: string; boundingBox?: DOMRectReadOnly }[]>;
 }
 
 /** Return the browser's on-device barcode reader, or null where there is none. */
@@ -56,13 +57,24 @@ export function BarcodeScan({ onFound }: { onFound: (food: FoodVersion, reviewNo
     await run(async () => {
       // Decode on the device and release the photo once its digits have been read.
       const bitmap = await createImageBitmap(photo);
-      const found = await reader.detect(bitmap).finally(() => bitmap.close());
-      const numbers = [...new Set(found.map((item) => item.rawValue.trim()))];
-      if (numbers.length === 0) throw new Error('No barcode found. Hold it flat and close, or type the number.');
-      if (numbers.length > 1) throw new Error('More than one barcode was found. Frame one code, or type its number.');
+      try {
+        const found = await reader.detect(bitmap);
+        const numbers = [...new Set(found.map((item) => item.rawValue.trim()))];
+        if (numbers.length === 0) throw new Error('No barcode found. Hold it flat and close, or type the number.');
+        if (numbers.length > 1) throw new Error('More than one barcode was found. Frame one code, or type its number.');
 
-      // Let the person confirm the digits before sending any lookup.
-      setCode(readBarcodeDigits(numbers[0]!));
+        // Ignore a single reading because two different numbers can both pass the checksum.
+        const digits = readBarcodeDigits(numbers[0]!);
+        const checked = await confirmBarcode(bitmap, found[0]?.boundingBox);
+        if (checked === null || checked.padStart(14, '0') !== digits.padStart(14, '0')) {
+          throw new Error('Could not confirm the barcode. Take a closer photo of the bars or type the number printed below them.');
+        }
+
+        // Let the person check the digits before sending any lookup.
+        setCode(digits);
+      } finally {
+        bitmap.close();
+      }
     });
   }
 

@@ -6,6 +6,7 @@ Third-party software, assets, datasets, model backbones and training data retain
 
 - The pinned exercise text is from yuhonas/free-exercise-db under the Unlicense. Its licence remains in `data/exercises/free-exercise-db/LICENSE.md`; provenance and hashes are in `docs/data/exercise-dataset.md`. Original source photographs are not bundled.
 - Geist font software uses the SIL Open Font License 1.1. The installed font package's licence is copied unchanged into `apps/web/public/licenses/geist.txt` for the web build.
+- The on-device ZXing for JS barcode reader ships with the Apache 2.0 licence and additional notices in `apps/web/public/licenses/zxing.txt`. Licences for its dependencies are in the same directory.
 - Phosphor Icons uses MIT. Its installed package licence is copied unchanged into `apps/web/public/licenses/phosphor.txt` for the web build.
 - React, Vite, ONNX Runtime and other dependencies retain their upstream licences and notices. The root MIT licence does not replace them. Keep generated dependency notices intact.
 - Food databases and hosted model services have separate attribution, usage and data-processing terms. A source badge does not transfer ownership of their records to this project.
