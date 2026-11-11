@@ -60,6 +60,19 @@ class ListFoodsTests(unittest.TestCase):
         self.assertEqual((reply.mode, reply.message, reply.foods[0].entry), ('foods', LISTED, '12 almonds'))
         self.assertEqual(ask.sent[1]['content'][1]['image_url']['url'], IMAGE)
 
+    def test_photo_prompt_limits_guesses_and_duplicate_portions(self):
+        """Tell the vision model how to handle ambiguous proteins and mixed sides."""
+        ask = answering({'foods': []})
+        run(ask)
+        prompt = ask.sent[0]['content']
+
+        # Check the instructions sent with the fictional image, independent of a model reply.
+        self.assertIn('one entry per separately served food', prompt)
+        self.assertIn('Count ingredients inside a mixed side only as part of that side', prompt)
+        self.assertIn('Coating and sauce alone cannot distinguish fish from chicken', prompt)
+        self.assertIn('Omit a food if no useful name is supported', prompt)
+        self.assertIn('Use grams or millilitres only for an explicitly visible measurement', prompt)
+
     def test_no_usable_food_says_so(self):
         self.assertEqual((run(answering({'foods': []})).mode, run(answering({'nonsense': 1})).message), ('nothing', NOTHING))
 

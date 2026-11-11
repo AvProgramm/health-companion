@@ -106,3 +106,11 @@ Current privacy decision, 10 Nov: Yash confirmed the Gemini project is Free Tier
 ## Hosting preparation checkpoint (10 Nov)
 
 Original code is MIT; read LICENSE and THIRD_PARTY_NOTICES.md for scope. deploy/ contains reviewed examples, not a live deployment. Exact host/origin configuration and a credential-free /api/health endpoint preserve local defaults. See docs/testing/2026-11-10-hosting-preparation.md for checks and pending hosted/phone gates.
+
+
+## Photo recognition follow-up after the interview (Yash, 11 Nov)
+
+- Compare Gemini with the already installed Ollama vision model `qwen3.5:4b` on the same labelled plates. Include coated proteins, mixed sides and countable items. Record dish accuracy, duplicate portions, useful abstentions, latency and quota failures.
+- Add a bounded laptop fallback for a Gemini quota error, timeout or unusable reply if local Qwen meets the latency budget. Keep one photo response validator and the existing draft confirmation. Render needs a reachable backup of its own. Evaluate a separate Groq vision setting (`qwen/qwen3.8-27b`) or a served Hugging Face vision model if access and cost fit. The current text model settings do not configure vision.
+- If model voting improves the benchmark, align candidates by plate region, normalise equivalent names and weight each model using measured reliability. Let uncertain regions ask for a confirmation. Raw token log probabilities across providers are incomparable. For likelihood-based ranking, use one local verifier to score the same fixed candidates per region. Score a small shortlist directly and consider beam search only when joint plate combinations make enumeration expensive.
+- Route the selected photo through the existing consent boundary and keep diary and profile data on the device. Use fictional test fixtures. Keep the manual entry path and make no write until confirmation.

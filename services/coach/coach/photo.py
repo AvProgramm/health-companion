@@ -16,15 +16,25 @@ SEPARATOR = re.compile(r'[,+&]|\b(and|with|plus)\b', re.IGNORECASE)
 # Portions are fine, but energy and nutrient amounts come only from the estimate step
 NUTRIENT_WORD = re.compile(r'\b(k?cal|calories?|protein|carbs?|fat|sugar|sodium)\b', re.IGNORECASE)
 
-# What the model is told; what it returns is still checked in code
-SYSTEM = ('You look at one photo of food or drink for a personal diary app. List each separate food or drink you can see, '
-          'up to 8, largest first. For each give a short everyday "name" in English (no brand names), an "amount" (a number: count '
-          'the pieces when they can be counted, such as 12 almonds) and a "unit", one of: piece, bowl, cup, plate, glass, can, slice, '
-          'spoon, g, ml. Never state calories or nutrients. If there is no food in the photo, return an empty list. '
-          'Reply with only JSON: {"foods": [{"name": "...", "amount": 1, "unit": "piece"}]}.')
+# Group served portions and name only what the image supports.
+SYSTEM = (
+    'Look at one photo of food or drink for a personal diary app. Return one entry per separately served food '
+    'or drink you can see, up to 8, largest first. Count ingredients inside a mixed side only as part of that side. '
+    'For example, list a cucumber salad once when the cucumber belongs to the salad. '
+    'Use the most specific everyday English name supported by the visible food, without brand names. '
+    'Coating and sauce alone cannot distinguish fish from chicken. Do not infer the protein, sauce or recipe '
+    'from colour alone. Use a broader name when it is still informative, such as rice if the variety is unclear. '
+    'Omit a food if no useful name is supported. '
+    'Give each entry a name, a numeric amount and one unit: piece, bowl, cup, plate, glass, can, slice, spoon, g, ml. '
+    'Count visible pieces where possible. For an uncountable portion, use a rough household measure, including '
+    'fractions when appropriate. Use a plate only when that food occupies a full plate on its own. '
+    'Use grams or millilitres only for an explicitly visible measurement of the portion shown. '
+    'Never state calories or nutrients. Return an empty list if no food can be identified. '
+    'Reply with only JSON: {"foods": [{"name": "...", "amount": 1, "unit": "piece"}]}.'
+)
 
 # What the person reads with the list
-LISTED = 'What the photo seems to show. Check the amounts, then send it to the entry box for an estimate. Nothing is saved yet.'
+LISTED = 'Check the suggested foods and amounts. Put them in the entry box to edit or add anything missing. Nothing is saved yet.'
 # What the person reads when the model could not be asked or found nothing usable
 NOTHING = 'No foods could be read from this photo. Type what you ate in the entry box instead.'
 
