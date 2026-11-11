@@ -1,12 +1,10 @@
-"""Look up an exact barcode using branded and public product labels."""
+"""Look up an exact barcode in the branded food database, or say plainly that it is not there."""
 import asyncio
 
 import httpx
 
-from .barcode_verify import label_reply, look_up_web_label
-from .databases import label_values_conflict, parse_usda
-from .failures import PROVIDER_FAILURES
-from .models import Basis
+from .databases import average_matches, label_values_conflict, parse_usda
+from .models import BarcodeReply, Basis
 from .providers import search_usda
 
 
@@ -44,29 +42,23 @@ def usda_barcode_reply(payload, code):
     if nutrients.kcal is None or label_values_conflict(
             nutrients.kcal, None, nutrients.fat_g, nutrients.satfat_g, nutrients.unsatfat_g):
         return None
-    return label_reply(food['description'].strip()[:80], match, Basis(amount=100, unit=match.unit),
-                       'Exact barcode match in USDA FoodData Central. Compare the values with your packet.')
+    estimate = average_matches([match], Basis(amount=100, unit=match.unit))
+    reason = 'Exact barcode match in USDA FoodData Central. Compare the values with your packet.'
+    return BarcodeReply(name=food['description'].strip()[:80], estimate=estimate.model_copy(update={'reason': reason}))
 
 
 async def look_up_barcode(code):
-    """Try USDA, then a checked retailer label, sending only the barcode."""
-    primary_failed = False
-    try:
-        async with httpx.AsyncClient(timeout=BRANDED_TIMEOUT) as client:
-            payload = await asyncio.wait_for(search_usda(client, {
-                'query': code, 'dataType': ['Branded'], 'pageSize': 10,
-            }), BRANDED_TIMEOUT)
-        if not isinstance(payload, dict) or not isinstance(payload.get('foods'), list):
-            raise ValueError('The branded food provider returned an invalid result.')
-        found = usda_barcode_reply(payload, code)
-        if found is not None:
-            return found
-    except PROVIDER_FAILURES:
-        # Keep the public label lookup available when USDA is unavailable.
-        primary_failed = True
+    """
+    Return the branded record for one barcode, or None when the database does not hold it.
 
-    # Treat an outage differently from a confirmed miss if neither source can help.
-    found = await look_up_web_label(code)
-    if found is None and primary_failed:
-        raise TimeoutError('The branded food lookup is unavailable.')
-    return found
+    Only the barcode is sent. A miss is an honest answer: the packet's own label is then
+    the source, read by the person or by the label reader. A provider failure raises, so
+    the caller can tell "not there" from "could not ask".
+    """
+    async with httpx.AsyncClient(timeout=BRANDED_TIMEOUT) as client:
+        payload = await asyncio.wait_for(search_usda(client, {
+            'query': code, 'dataType': ['Branded'], 'pageSize': 10,
+        }), BRANDED_TIMEOUT)
+    if not isinstance(payload, dict) or not isinstance(payload.get('foods'), list):
+        raise ValueError('The branded food provider returned an invalid result.')
+    return usda_barcode_reply(payload, code)

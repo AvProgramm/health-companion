@@ -7,6 +7,13 @@ export interface ServiceMessages {
   failed: (status: number) => string;
 }
 
+/** A reply the service sent with an error status, kept so a caller can tell a miss from a failure. */
+export class ServiceError extends Error {
+  constructor(message: string, readonly status: number) {
+    super(message);
+  }
+}
+
 /**
  * Return the parsed JSON reply from a laptop service, or throw a message the person can act on.
  *
@@ -24,7 +31,7 @@ export async function postJson(path: string, body: unknown, timeoutMs: number, m
     throw new Error(problem instanceof DOMException && problem.name === 'TimeoutError' ? messages.slow : messages.unreachable);
   }
   if (!response.ok) {
-    throw new Error(statusMessage(response.status, messages));
+    throw new ServiceError(statusMessage(response.status, messages), response.status);
   }
   return response.json();
 }

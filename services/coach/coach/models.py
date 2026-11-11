@@ -161,10 +161,9 @@ class Estimate(StrictModel):
 
 
 class BarcodeReply(StrictModel):
-    """Return one packaged food's label values and any note needed for review."""
+    """Return one packaged food's name and label values, as a draft to review."""
     name: str = Field(min_length=1, max_length=80)
     estimate: Estimate
-    reviewNote: str | None = Field(default=None, max_length=240)
 
 
 class PhotoRequest(StrictModel):

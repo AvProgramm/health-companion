@@ -1,13 +1,12 @@
-"""Check packaged-food lookup against fictional branded and retailer records."""
+"""Check packaged-food lookup against fictional branded records."""
 import json
 import unittest
-from unittest.mock import AsyncMock, patch
+from unittest.mock import patch
 
 import httpx
 from fastapi.testclient import TestClient
 
 from coach.app import app
-from coach.retrieval import WebEvidence
 
 
 # Match the phone's input shape with fictional public records and nutrients.
@@ -20,8 +19,6 @@ FOOD = {
         {'nutrientId': 1093, 'unitName': 'MG', 'value': 30},
     ],
 }
-RETAIL = WebEvidence('source-1', 'Fictional oat spread', 'https://www.woolworths.com.au/example',
-                     f'Barcode {CODE}. Nutrition per 100 g. Energy 418.4 kJ. Total fat 8 g. Sodium 30 mg.')
 
 
 class BarcodeEndpointTests(unittest.TestCase):
@@ -42,10 +39,10 @@ class BarcodeEndpointTests(unittest.TestCase):
         self.assertEqual(response.status_code, 403)
 
     def test_an_exact_usda_record_uses_its_own_basis(self):
-        """Ignore a different barcode and use the current exact record without web search."""
+        """Ignore a different barcode and use the current exact record."""
         different = {**FOOD, 'gtinUpc': '9556001234568', 'description': 'Different oat drink'}
         older = {**FOOD, 'fdcId': 18, 'publishedDate': '2025-01-01', 'description': 'Older oat drink'}
-        response, search = self.lookup([different, older, FOOD], [])
+        response = self.lookup([different, older, FOOD])
         self.assertEqual(response.status_code, 200)
         draft = response.json()
         self.assertEqual(draft['name'], 'Fictional oat drink')
@@ -53,38 +50,30 @@ class BarcodeEndpointTests(unittest.TestCase):
         self.assertEqual(draft['estimate']['nutrients']['sodium_mg'], 30)
         self.assertIsNone(draft['estimate']['nutrients']['fat_g'])
         self.assertEqual(draft['estimate']['sources'][0]['provider'], 'USDA')
-        search.assert_not_awaited()
 
-    def test_a_branded_miss_can_use_one_checked_retailer_label(self):
-        """Return exact printed retailer values after the database misses."""
-        response, search = self.lookup([{**FOOD, 'gtinUpc': '9556001234568'}], [RETAIL])
-        self.assertEqual(response.status_code, 200)
-        draft = response.json()
-        self.assertEqual(draft['estimate']['basis'], {'amount': 100, 'unit': 'g'})
-        self.assertEqual(draft['estimate']['nutrients']['fat_g'], 8)
-        self.assertEqual(draft['estimate']['sources'][0]['url'], RETAIL.url)
-        search.assert_awaited_once()
+    def test_a_contradictory_record_is_not_returned(self):
+        """Treat a label whose saturated fat exceeds its total fat as no usable match."""
+        broken = {**FOOD, 'foodNutrients': FOOD['foodNutrients'] + [
+            {'nutrientId': 1004, 'unitName': 'G', 'value': 5}, {'nutrientId': 1258, 'unitName': 'G', 'value': 17}]}
+        self.assertEqual(self.lookup([broken]).status_code, 404)
 
-    def test_a_database_outage_can_use_the_retailer(self):
-        """Keep the second source available if the first provider times out."""
-        response, search = self.lookup(None, [RETAIL])
-        self.assertEqual(response.status_code, 200)
-        search.assert_awaited_once()
+    def test_a_miss_says_so_at_once_without_searching_the_web(self):
+        """
+        Answer a barcode the database does not hold with a plain miss.
 
-    def test_a_missing_exact_match_does_not_return_the_old_database_values(self):
-        """Offer the packet fallback for the phone-reported barcode when no source can verify it."""
-        response, search = self.lookup([], [], code='9310947004582')
+        Seen on the phone on 11 Nov with 9310947004582: the retailer search behind the miss
+        returned nothing for seven codes tried, and only added a wait before the same answer.
+        """
+        response = self.lookup([{**FOOD, 'gtinUpc': '9556001234568'}], code='9310947004582')
         self.assertEqual(response.status_code, 404)
         self.assertNotIn('estimate', response.json())
-        search.assert_awaited_once()
 
     def test_an_outage_is_distinguished_from_a_database_miss(self):
-        """Report a temporary failure if a source was unavailable and no match was found."""
-        response, _ = self.lookup(None, [])
-        self.assertEqual(response.status_code, 503)
+        """Report a temporary failure when the database could not be asked."""
+        self.assertEqual(self.lookup(None).status_code, 503)
 
-    def lookup(self, foods, evidence, code=CODE):
-        """Call the barcode API with a fictional USDA reply and bounded web evidence."""
+    def lookup(self, foods, code=CODE):
+        """Call the barcode API with a fictional USDA reply; a request to any other host fails the test."""
         def respond(request):
             self.assertEqual(request.url.host, 'api.nal.usda.gov')
             self.assertEqual(json.loads(request.content)['query'], code)
@@ -94,10 +83,10 @@ class BarcodeEndpointTests(unittest.TestCase):
 
         transport = httpx.MockTransport(respond)
         client_class = httpx.AsyncClient
-        search = AsyncMock(return_value=evidence)
-        with patch.dict('os.environ', {'USDA_API_KEY': 'fictional'}), \
-                patch('coach.barcode.httpx.AsyncClient',
-                      side_effect=lambda **options: client_class(**options, transport=transport)), \
-                patch('coach.barcode_verify.search_barcode_labels', search, create=True):
-            response = TestClient(app).post('/api/barcode', json={'code': code})
-        return response, search
+        with patch.dict('os.environ', {'USDA_API_KEY': 'fictional', 'TAVILY_API_KEY': 'fictional'}), \
+                patch('httpx.AsyncClient', side_effect=lambda **options: client_class(**options, transport=transport)):
+            return TestClient(app).post('/api/barcode', json={'code': code})
+
+
+if __name__ == '__main__':
+    unittest.main()

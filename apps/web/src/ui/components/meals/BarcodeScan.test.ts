@@ -2,7 +2,7 @@
 import { act, createElement } from 'react';
 import { createRoot, type Root } from 'react-dom/client';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { readBarcodeDigits } from '../../../data/api/barcode';
+import { readBarcodeDigits } from '../../../domain/nutrition/barcodeDigits';
 import { confirmBarcode } from '../../../vision/confirmBarcode';
 import { BarcodeScan } from './BarcodeScan';
 
@@ -118,29 +118,6 @@ describe('Scan a barcode', () => {
     expect(JSON.parse(fetchMock.mock.calls[0]![1].body)).toEqual({ code: chosen });
   });
 
-  it('asks for the packet values when the database record conflicts', async () => {
-    vi.stubGlobal('fetch', vi.fn().mockResolvedValue({ ok: false, status: 409, json: async () => ({}) }));
-    await lookUp('9556001234567');
-    expect(container.querySelector('[role="alert"]')?.textContent).toContain('conflicting nutrition values');
-    expect(onFound).not.toHaveBeenCalled();
-  });
-
-  it('passes the partial food and its review note to the editor', async () => {
-    const reviewNote = 'Check the fat values against the packet. The database values disagree, so those fields are blank.';
-    const estimate = { ...REPLY.estimate, nutrients: { ...NUTRIENTS, fat_g: null, satfat_g: null },
-      range: { ...RANGE, fat_g: null, satfat_g: null } };
-    vi.stubGlobal('fetch', vi.fn().mockResolvedValue({
-      ok: true, status: 200, json: async () => ({ ...REPLY, estimate, reviewNote }),
-    }));
-
-    await lookUp('9556001234567');
-
-    expect(onFound).toHaveBeenCalledWith(
-      expect.objectContaining({ nutrients: expect.objectContaining({ kcal: 400, fat_g: null, satfat_g: null }) }),
-      reviewNote,
-    );
-  });
-
   it('keeps an unknown label value unknown', async () => {
     vi.stubGlobal('fetch', vi.fn().mockResolvedValue({ ok: true, status: 200, json: async () => REPLY }));
     await lookUp('9556001234567');
@@ -154,11 +131,33 @@ describe('Scan a barcode', () => {
     expect(onFound.mock.calls[0]![0].source.reference).toContain('Open Food Facts');
   });
 
-  it('says what to do when the barcode is not known', async () => {
+  it('treats a barcode the database does not hold as the next step, not an error', async () => {
+    // Seen on the phone on 11 Nov with a spread sold in Australia: correct digits, then a dead-end error
     vi.stubGlobal('fetch', vi.fn().mockResolvedValue({ ok: false, status: 404, json: async () => ({}) }));
-    await lookUp('9556001234567');
-    expect(container.querySelector('[role="alert"]')?.textContent).toContain('No matching label was found');
+    expect(container.querySelector('details')?.open).toBe(false);
+    await lookUp('9310947004582');
+    expect(container.querySelector('[role="alert"]')).toBeNull();
+    expect(container.querySelector('[role="status"]')?.textContent).toContain('not in the food database');
+    expect(container.querySelector('details')?.open).toBe(true);
     expect(onFound).not.toHaveBeenCalled();
+  });
+
+  it('forgets the miss as soon as the digits change', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue({ ok: false, status: 404, json: async () => ({}) }));
+    await lookUp('9310947004582');
+    const field = container.querySelector<HTMLInputElement>('#barcode-code')!;
+    await act(async () => {
+      Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value')!.set!.call(field, '9310947004583');
+      field.dispatchEvent(new Event('input', { bubbles: true }));
+    });
+    expect(container.querySelector('[role="status"]')).toBeNull();
+  });
+
+  it('says the database could not be asked, which is different from a miss', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue({ ok: false, status: 503, json: async () => ({}) }));
+    await lookUp('9310947004582');
+    expect(container.querySelector('[role="alert"]')?.textContent).toContain('could not be reached just now');
+    expect(container.querySelector('[role="status"]')).toBeNull();
   });
 
   it('asks for digits before calling anything', async () => {
@@ -191,8 +190,36 @@ describe('Scan a barcode', () => {
     expect(onFound).toHaveBeenCalledOnce();
   });
 
-  it('hides the camera where the browser cannot read barcodes', () => {
-    expect(container.textContent).not.toContain('Take a photo of the barcode');
-    expect(container.textContent).toContain('Read a packet label with AI');
+  it.each([
+    ['has no barcode reader of its own', undefined],
+    ['has a reader that throws', class { detect = vi.fn().mockRejectedValue(new Error('Fictional reader failure')); }],
+  ])('still scans with the bundled reader where the browser %s, and asks the person to confirm', async (_case, Detector) => {
+    vi.mocked(confirmBarcode).mockResolvedValueOnce('9310947004582');
+    vi.stubGlobal('createImageBitmap', vi.fn().mockResolvedValue({ close: vi.fn() }));
+    if (Detector !== undefined) vi.stubGlobal('BarcodeDetector', Detector);
+    const photo = container.querySelector<HTMLInputElement>('input[type="file"]')!;
+    Object.defineProperty(photo, 'files', { value: [new File(['fictional'], 'barcode.jpg')] });
+    await act(async () => photo.dispatchEvent(new Event('change', { bubbles: true })));
+    expect(container.querySelector<HTMLInputElement>('#barcode-code')?.value).toBe('');
+    expect([...container.querySelectorAll('button')].some(button => button.textContent === 'Use 9310947004582')).toBe(true);
+  });
+
+  it('says what to do when neither reader can read the photo', async () => {
+    vi.mocked(confirmBarcode).mockResolvedValueOnce(null);
+    vi.stubGlobal('createImageBitmap', vi.fn().mockResolvedValue({ close: vi.fn() }));
+    const photo = container.querySelector<HTMLInputElement>('input[type="file"]')!;
+    Object.defineProperty(photo, 'files', { value: [new File(['fictional'], 'barcode.jpg')] });
+    await act(async () => photo.dispatchEvent(new Event('change', { bubbles: true })));
+    expect(container.querySelector('[role="alert"]')?.textContent).toContain('type the number printed below the bars');
+  });
+
+  it('ignores a reading that is not a barcode number', async () => {
+    vi.mocked(confirmBarcode).mockResolvedValueOnce('9310947004582');
+    vi.stubGlobal('createImageBitmap', vi.fn().mockResolvedValue({ close: vi.fn() }));
+    vi.stubGlobal('BarcodeDetector', class { detect = vi.fn().mockResolvedValue([{ rawValue: 'https://example.org/qr' }]); });
+    const photo = container.querySelector<HTMLInputElement>('input[type="file"]')!;
+    Object.defineProperty(photo, 'files', { value: [new File(['fictional'], 'barcode.jpg')] });
+    await act(async () => photo.dispatchEvent(new Event('change', { bubbles: true })));
+    expect([...container.querySelectorAll('button')].filter(button => button.textContent?.startsWith('Use ')).map(button => button.textContent)).toEqual(['Use 9310947004582']);
   });
 });

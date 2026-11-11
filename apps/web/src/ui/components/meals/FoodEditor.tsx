@@ -4,7 +4,7 @@ import { NUTRIENT_KEYS, type FoodVersion, type NutrientKey, type NutrientValue, 
 import type { Unit } from '../../../domain/shared/units';
 import { NUTRIENT_LABELS, errorText } from '../../format';
 import { Sheet } from '../shared/Sheet';
-import { ErrorLine, NoticeLine } from '../shared/NoticeLine';
+import { ErrorLine } from '../shared/NoticeLine';
 import { Field } from '../shared/Field';
 import { useBusy } from '../../hooks/useBusy';
 
@@ -23,7 +23,6 @@ interface FoodEditorProps {
   // The version being edited, or undefined for a new food
   previous?: FoodVersion;
   initialFood?: FoodVersion;
-  reviewNote?: string;
   // A name and unit to start with, e.g. the words the composer could not match
   initialName?: string;
   initialUnit?: Unit;
@@ -35,7 +34,7 @@ interface FoodEditorProps {
  * The label editor. Saving an existing food creates its next version, so meals
  * saved earlier keep the numbers they were saved with.
  */
-export function FoodEditor({ previous, initialFood, initialName, initialUnit, reviewNote, onSave, onClose }: FoodEditorProps) {
+export function FoodEditor({ previous, initialFood, initialName, initialUnit, onSave, onClose }: FoodEditorProps) {
   const seed = initialFood ?? previous;
   const startUnit = seed?.basis.unit ?? initialUnit ?? 'g';
   const [name, setName] = useState(seed?.name ?? initialName ?? '');
@@ -93,7 +92,6 @@ export function FoodEditor({ previous, initialFood, initialName, initialUnit, re
   return (
     <Sheet title={previous === undefined ? 'Add a food' : `Edit ${previous.name}`} onClose={onClose}>
       <form className="form" onSubmit={handleSubmit} noValidate>
-        {reviewNote !== undefined && <NoticeLine notice={{ kind: 'conflict', text: reviewNote }} />}
         <Field label="Name">
           <input className="input" value={name} onChange={(event) => setName(event.target.value)} autoComplete="off" />
         </Field>

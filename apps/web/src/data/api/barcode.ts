@@ -1,65 +1,56 @@
 import { estimatedFood, readEstimate } from '../../domain/nutrition/estimates';
 import type { FoodVersion } from '../../domain/nutrition/types';
-import { postJson, type ServiceMessages } from './post';
+import { postJson, ServiceError, type ServiceMessages } from './post';
 
-// Allow a bounded label verification after a conflicting database record.
+// One database lookup, or one photo read by a hosted model, plus the proxy hop
 const BARCODE_TIMEOUT_MS = 20000;
-// The barcode lengths used on packaged food
-const BARCODE_DIGITS = /^\d{8,14}$/;
 // What still works when a lookup fails
-const FALLBACK = 'You can add the food by hand from its label.';
-// A missing or conflicting database label can be checked from the packet itself.
-const PACKET_FALLBACK = 'Read a packet label with AI or add the food by hand.';
+const FALLBACK = 'You can read the packet label below, or add the food by hand.';
 
 // What each kind of failure means for someone waiting on a lookup
-const MESSAGES: ServiceMessages = {
+const LOOKUP_MESSAGES: ServiceMessages = {
   slow: `The lookup took too long. Try again. ${FALLBACK}`,
-  unreachable: `Could not reach the laptop. ${FALLBACK}`,
-  notRunning: `The laptop service is not running. ${FALLBACK}`,
-  busy: `The food database is busy. Try again shortly. ${FALLBACK}`,
-  failed: (status) => {
-    if (status === 404) return `No matching label was found for this barcode. ${PACKET_FALLBACK}`;
-    if (status === 409) return `The database record has conflicting nutrition values. ${PACKET_FALLBACK}`;
-    return `The lookup returned an error (HTTP ${status}). ${FALLBACK}`;
-  },
+  unreachable: `Could not reach the service. ${FALLBACK}`,
+  notRunning: `The service is not running. ${FALLBACK}`,
+  busy: `The food database could not be reached just now. Try again shortly. ${FALLBACK}`,
+  failed: (status) => `The lookup returned an error (HTTP ${status}). ${FALLBACK}`,
 };
 
-/** Return the digits of a barcode, or throw what to fix. */
-export function readBarcodeDigits(text: string): string {
-  const digits = text.replace(/\s/g, '');
-  if (!BARCODE_DIGITS.test(digits)) {
-    throw new Error('Enter the 8 to 14 digits printed under the barcode.');
+// What each kind of failure means for someone waiting on a label photo to be read
+const LABEL_MESSAGES: ServiceMessages = {
+  ...LOOKUP_MESSAGES,
+  busy: 'The label reader is unavailable right now. Try again, or add the food by hand.',
+  failed: (status) => status === 409
+    ? 'The photo shows a different barcode. Check the digits and the packet.'
+    : 'Could not read that label. Use a clear photo of the nutrition panel, and type the product name if it is not on the photo.',
+};
+
+/**
+ * Return a food built from one barcode's database label, or null when the database does not hold it.
+ *
+ * Only the number is sent. A miss is an answer, not a failure, so the screen can move
+ * on to the packet's own label instead of showing an error.
+ */
+export async function lookUpBarcode(code: string, id: string): Promise<FoodVersion | null> {
+  try {
+    return labelFood(await postJson('/api/barcode', { code }, BARCODE_TIMEOUT_MS, LOOKUP_MESSAGES), id);
+  } catch (problem) {
+    // The service answers 404 only after the database was asked and had no such product
+    if (problem instanceof ServiceError && problem.status === 404) return null;
+    throw problem;
   }
-  return digits;
-}
-
-/** Return a food built from one barcode's label values, sending only the number. */
-export async function lookUpBarcode(code: string, id: string): Promise<{ food: FoodVersion; reviewNote?: string }> {
-  const reply = await postJson('/api/barcode', { code }, BARCODE_TIMEOUT_MS, MESSAGES);
-  const food = labelFood(reply, id);
-
-  // A service without a review note can still return a complete draft.
-  const reviewNote = (reply as { reviewNote?: unknown }).reviewNote;
-  return typeof reviewNote === 'string' && reviewNote.trim() !== '' ? { food, reviewNote } : { food };
 }
 
 /** Return an editable label from one explicitly submitted packet photo. */
 export async function readPacketLabel(code: string, name: string, image: string, id: string): Promise<FoodVersion> {
-  const reply = await postJson('/api/barcode/label', { code, name, image }, BARCODE_TIMEOUT_MS, {
-    ...MESSAGES,
-    busy: 'The label reader is unavailable right now. Try again or add the food by hand.',
-    failed: (status) => status === 409
-      ? 'The photo shows a different barcode. Check the digits and packet.'
-      : 'Could not read that label. Use a clear nutrition panel photo and enter the product name if needed.',
-  });
-  return labelFood(reply, id);
+  return labelFood(await postJson('/api/barcode/label', { code, name, image }, BARCODE_TIMEOUT_MS, LABEL_MESSAGES), id);
 }
 
 /** Validate a label reply before opening it for review. */
 function labelFood(value: unknown, id: string): FoodVersion {
   const reply = value as { name?: unknown; estimate?: unknown } | null;
   if (reply === null || typeof reply.name !== 'string' || reply.name.trim() === '') {
-    throw new Error(`That product has no usable name. ${FALLBACK}`);
+    throw new Error('That product has no usable name. Add the food by hand from its label.');
   }
   const food = estimatedFood(reply.name, readEstimate(reply.estimate), id);
   // Keep label provenance in the editor for both database and photo drafts.
