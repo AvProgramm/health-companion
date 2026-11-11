@@ -26,6 +26,7 @@ class Match:
     nutrients: Nutrients
     source: Source
     unit: str = 'g'
+    amount: float = 100
 
 
 def number(value):
@@ -122,11 +123,13 @@ def average_matches(matches, basis):
     compatible = [match for match in matches if match.unit == unit]
     if not compatible:
         return None
-    multiplier = basis.amount * (1000 if basis.unit in ('kg', 'L') else 1) / 100
+    # Express the request in the records' unit and scale from each published amount.
+    target_amount = basis.amount * (1000 if basis.unit in ('kg', 'L') else 1)
+    scaled = [(match.nutrients.model_dump(), target_amount / match.amount) for match in compatible]
     values = {}
     ranges = {}
     for key in Nutrients.model_fields:
-        known = [getattr(match.nutrients, key) * multiplier for match in compatible if getattr(match.nutrients, key) is not None]
+        known = [nutrients[key] * factor for nutrients, factor in scaled if nutrients[key] is not None]
         values[key] = sum(known) / len(known) if known else None
         ranges[key] = {'low': min(known), 'high': max(known)} if known else None
     return Estimate(basis=basis, nutrients=Nutrients(**values), range=ranges, sourceKind='database',

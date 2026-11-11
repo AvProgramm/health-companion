@@ -5,6 +5,7 @@ from .availability import asking_order, send_to_back
 from .enrichment import enrich_unknown
 from .failures import PROVIDER_FAILURES
 from .hosted_models import HOSTED_MODELS
+from .label_estimates import label_estimate
 from .model_client import model_estimate
 from .providers import database_estimate
 from .retrieval import search_nutrition
@@ -27,7 +28,12 @@ async def attempt(provider, *args, deadline):
 
 
 async def estimate_food(name, portion_text, database=database_estimate, retrieval=search_nutrition, models=ESTIMATE_MODELS):
-    """Return database values first, then evidence-assisted model proposals."""
+    """Return a matching label or database values before an evidence-assisted model proposal."""
+    # Keep the exact label together, including values the manufacturer did not publish.
+    label = label_estimate(name, portion_text)
+    if label is not None:
+        return label
+
     result = await attempt(database, name, portion_text, deadline=LOOKUP_DEADLINE)
     if result is not None:
         return await enrich_unknown(name, portion_text, result)

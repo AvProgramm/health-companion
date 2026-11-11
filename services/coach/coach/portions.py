@@ -1,4 +1,5 @@
 """Read explicit portions without converting a container into grams."""
+import math
 import re
 from .models import Basis
 
@@ -19,6 +20,17 @@ def portion_basis(text):
     unit = (match[2] or 'piece').lower()
     unit = 'piece' if unit in _COUNT_WORDS else {'ml': 'mL', 'l': 'L'}.get(unit, unit)
     return Basis(amount=float(match[1].replace(',', '.')), unit=unit)
+
+
+def explicit_piece_basis(text):
+    """Return a positive bare count or an explicit number of pieces."""
+    match = _PORTION.fullmatch(text)
+    # Ignore a named serving or container because its item count was not stated.
+    if match is None or (match[2] or 'piece').lower() not in ('piece', 'pieces'):
+        return None
+    # Ignore a non-positive or non-finite count because it cannot scale a label.
+    amount = float(match[1].replace(',', '.'))
+    return Basis(amount=amount, unit='piece') if math.isfinite(amount) and amount > 0 else None
 
 
 def one_serving_text(text):

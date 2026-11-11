@@ -19,9 +19,8 @@ const UNIT_WORDS: Record<string, Unit> = {
   piece: 'piece', pieces: 'piece', pc: 'piece', pcs: 'piece',
 };
 
-// A correction inside one item: "250ml of milk actually 300ml", "2 weetabix no 3"
-// The words may repeat and a number may follow with no space, but "nothing" is not "no"
-const INLINE_CORRECTION = /[\s,]+(?:(?:actually|no|sorry|i\s+mean|make\s+(?:that|it)|or\s+rather)(?![a-z])[\s,:-]*)+/;
+// Match "milk no wait 300ml" or "milk actually 300ml"; "nothing" is not "no".
+const INLINE_CORRECTION = /[\s,]+(?:(?:no\s+wait|actually|no|sorry|i\s+mean|make\s+(?:that|it)|or\s+rather)(?![a-z])[\s,:-]*)+/;
 
 export interface LeadingAmount {
   amount: number | null;

@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { estimateInput } from '../nutrition/estimateInput';
 import { parseEntry } from './parseEntry';
 import type { ParseResult } from './types';
 import { TEST_FOODS } from '../../test/testFoods';
@@ -74,6 +75,21 @@ describe('parseEntry: meals', () => {
       { food: 'demo_milk', quantity: { amount: 250, unit: 'mL' }, problem: null },
     ]);
     expect(parseEntry('no, actually 250ml', TEST_FOODS)).toEqual({ kind: 'correction', amount: { amount: 250, unit: 'mL' }, foodHint: null });
+  });
+
+  // Typed on the phone on 11 Nov
+  it('reads "no wait" as an explicit replacement before nutrition lookup', () => {
+    const text = '200ml milk no wait 300ml';
+    expect(itemsOf(parseEntry(text, TEST_FOODS))).toEqual([
+      { food: 'demo_milk', quantity: { amount: 300, unit: 'mL' }, problem: null },
+    ]);
+    expect(estimateInput(text, '')).toEqual({ name: 'milk', portionText: '300 mL' });
+  });
+
+  it('keeps a food name when "no wait" is followed by words without an amount', () => {
+    expect(estimateInput('200ml milk no wait sugar', '')).toEqual({
+      name: 'milk no wait sugar', portionText: '200 mL',
+    });
   });
 
   it('joins a correction split off by a comma to the item before it', () => {

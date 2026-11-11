@@ -358,7 +358,7 @@ Phone results below are for this rehearsal only. Update from Yash's report, one 
 
 | Step | Test | Result | Observation |
 |---|---|---|---|
-| 1 | `2 weetabix and 300 ml milk`, automatic estimates and explicit save | FAIL (estimate accuracy) | 11 Nov, physical phone over USB: draft showed both requested portions, sources, ranges and Not saved. Later totals are consistent with the two estimates, but the screenshot does not establish the exact saved meal count. Weetabix was estimated at 272 kcal for two pieces; the [UK Original label](https://weetabix.co.uk/our-products/original-classic/weetabix/) lists 136 kcal for two biscuits. Also observed: `200ml milk no wait 300ml` treated the trailing correction as part of the food name and estimated 200 mL. |
+| 1 | `2 weetabix and 300 ml milk`, automatic estimates and explicit save | FAIL (estimate accuracy) | 11 Nov, physical phone over USB: draft showed both requested portions, sources, ranges and Not saved. Later totals are consistent with the two estimates, but the screenshot does not establish the exact saved meal count. Weetabix was estimated at 272 kcal for two pieces; the [UK Original label](https://weetabix.co.uk/our-products/original-classic/weetabix/) lists 136 kcal for two biscuits. Also observed: `200ml milk no wait 300ml` treated the trailing correction as part of the food name and estimated 200 mL. Both inputs now have regression tests. Retest the new build on the phone before marking this row PASS. |
 | 2 | `actually 250 ml`, immutable correction | NOT TESTED | Awaiting step 1. |
 | 3 | Photo reader, counted foods into entry box and estimates | NOT TESTED | Awaiting earlier steps. |
 | 4 | Barcode on Today | NOT TESTED | Requires a packet; record NOT TESTED if unavailable. |
