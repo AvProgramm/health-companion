@@ -171,6 +171,11 @@ class PhotoRequest(StrictModel):
     image: str = Field(pattern=r'^data:image/jpeg;base64,[A-Za-z0-9+/=]+$', max_length=1_500_000)
 
 
+class PacketLabelRequest(BarcodeRequest, PhotoRequest):
+    """Accept the selected label photo, confirmed digits and optional product name."""
+    name: str = Field(default='', max_length=80)
+
+
 class PhotoFood(StrictModel):
     """Hold one food seen in a photo: its name, and how it would be typed in the diary."""
     name: str = Field(min_length=1, max_length=40)

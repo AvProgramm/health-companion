@@ -1,11 +1,15 @@
 import { useState, type ChangeEvent, type FormEvent } from 'react';
-import { lookUpBarcode, readBarcodeDigits } from '../../../data/api/barcode';
+import { lookUpBarcode, readBarcodeDigits, readPacketLabel } from '../../../data/api/barcode';
 import type { FoodVersion } from '../../../domain/nutrition/types';
 import { useBusy } from '../../hooks/useBusy';
 import { ErrorLine } from '../shared/NoticeLine';
+import { shrinkPhoto } from '../../../vision/shrinkPhoto';
+import { PacketLabelCapture } from './PacketLabelCapture';
 
 // The packaged-food barcode formats, which is all a nutrition lookup can use
 const FOOD_FORMATS = ['ean_13', 'ean_8', 'upc_a', 'upc_e'];
+// Preserve more detail for small printed nutrition values.
+const LABEL_LONGEST_SIDE = 1280;
 
 /** The part of the browser's barcode reader this card uses; it exists on Android Chrome. */
 interface BarcodeReader {
@@ -26,14 +30,17 @@ function barcodeReader(): BarcodeReader | null {
  */
 export function BarcodeScan({ onFound }: { onFound: (food: FoodVersion) => void }) {
   const [code, setCode] = useState('');
+  const [lastProduct, setLastProduct] = useState<{ code: string; name: string } | null>(null);
   const { busy, error, run } = useBusy();
   const canScan = barcodeReader() !== null;
 
   /** Look up one barcode number and pass on what it finds. */
   async function lookUp(text: string) {
     await run(async () => {
-      onFound(await lookUpBarcode(readBarcodeDigits(text), crypto.randomUUID()));
-      setCode('');
+      const digits = readBarcodeDigits(text);
+      const food = await lookUpBarcode(digits, crypto.randomUUID());
+      setLastProduct({ code: digits, name: food.name });
+      onFound(food);
     });
   }
 
@@ -59,6 +66,15 @@ export function BarcodeScan({ onFound }: { onFound: (food: FoodVersion) => void 
     });
   }
 
+  /** Send a redrawn label photo after the person asks to read it. */
+  async function reviewPacket(photo: File, name: string) {
+    await run(async () => {
+      const digits = readBarcodeDigits(code);
+      const image = await shrinkPhoto(photo, LABEL_LONGEST_SIDE);
+      onFound(await readPacketLabel(digits, name, image, crypto.randomUUID()));
+    });
+  }
+
   /** Look up the number that was typed. */
   function handleSubmit(event: FormEvent) {
     event.preventDefault();
@@ -70,10 +86,12 @@ export function BarcodeScan({ onFound }: { onFound: (food: FoodVersion) => void 
       <div><p className="eyebrow">PACKAGED FOOD</p><h2 id="barcode-heading" className="heading">Scan a barcode</h2></div>
       {canScan && <label className="button plate-button">Take a photo of the barcode<input className="visually-hidden" type="file" accept="image/*" disabled={busy} onChange={handlePhoto} /></label>}
       <form className="row" onSubmit={handleSubmit}>
-        <input id="barcode-code" className="input" inputMode="numeric" autoComplete="off" aria-label="Barcode number" placeholder="Or type the number" style={{ flex: 1 }} value={code} onChange={event => setCode(event.target.value)} />
+        <input id="barcode-code" className="input" inputMode="numeric" autoComplete="off" aria-label="Barcode number" disabled={busy} placeholder="Or type the number" style={{ flex: 1 }} value={code} onChange={event => setCode(event.target.value)} />
         <button type="submit" className="button button-secondary" disabled={busy}>{busy ? 'Looking…' : 'Look up'}</button>
       </form>
       <p className="hint">Check the digits against the packet before tapping Look up. Only the barcode number is sent. Compare any result with the packet label.</p>
+      <PacketLabelCapture key={code} barcodeReady={code.trim() !== ''} busy={busy}
+        knownName={lastProduct?.code === code.replace(/\s/g, '') ? lastProduct.name : ''} onRead={reviewPacket} />
       <ErrorLine error={error} />
     </section>
   );

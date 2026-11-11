@@ -11,9 +11,11 @@ from .http_policy import read_http_policy
 from .barcode import BarcodeRecordConflict, look_up_barcode
 from .barcode_verify import verify_barcode_label
 from .exercises import load_library
+from .failures import PROVIDER_FAILURES
 from .llm import COACH_MODELS, PHOTO_MODELS, HostedConversation
-from .models import BarcodeReply, BarcodeRequest, CoachReply, CoachRequest, EstimateRequest, Estimate, NutritionistReply, NutritionistRequest, PhotoReply, PhotoRequest, TrainerReply, TrainerRequest
+from .models import BarcodeReply, BarcodeRequest, CoachReply, CoachRequest, EstimateRequest, Estimate, NutritionistReply, NutritionistRequest, PacketLabelRequest, PhotoReply, PhotoRequest, TrainerReply, TrainerRequest
 from .nutritionist import suggest_meals
+from .packet_label import PacketBarcodeMismatch, read_packet_label
 from .photo import list_foods
 from .pipeline import estimate_food
 from .rag.answer import answer_question
@@ -100,6 +102,21 @@ async def barcode(request: Request, item: BarcodeRequest):
     if found is None:
         raise HTTPException(404, 'That barcode is not in Open Food Facts.')
     return found
+
+
+@app.post('/api/barcode/label', response_model=BarcodeReply)
+async def barcode_label(request: Request, item: PacketLabelRequest):
+    """Transcribe a label only from the photo the person chose to send."""
+    check_local(request)
+    try:
+        result = await read_packet_label(item.image, item.code, item.name, HostedConversation(PHOTO_MODELS))
+    except PacketBarcodeMismatch as problem:
+        raise HTTPException(409, str(problem)) from problem
+    except PROVIDER_FAILURES as problem:
+        raise HTTPException(503, 'The label reader is unavailable right now.') from problem
+    if result is None:
+        raise HTTPException(422, 'Use a clear nutrition panel photo and supply the product name if needed.')
+    return result
 
 
 @app.post('/api/coach', response_model=CoachReply)

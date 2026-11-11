@@ -5,6 +5,10 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { readBarcodeDigits } from '../../../data/api/barcode';
 import { BarcodeScan } from './BarcodeScan';
 
+vi.mock('../../../vision/shrinkPhoto', () => ({
+  shrinkPhoto: vi.fn().mockResolvedValue('data:image/jpeg;base64,ZmFrZQ=='),
+}));
+
 // A label reply shaped like the service's, with every nutrient key present
 const NUTRIENTS = { kcal: 400, protein_g: 10, carbs_g: 70, fibre_g: 5, total_sugar_g: 20, added_sugar_g: null, fat_g: 8, satfat_g: 2, unsatfat_g: null, sodium_mg: 300 };
 const RANGE = Object.fromEntries(Object.entries(NUTRIENTS).map(([key, value]) => [key, value === null ? null : { low: value, high: value }]));
@@ -109,7 +113,30 @@ describe('Scan a barcode', () => {
     expect(container.querySelector('[role="alert"]')?.textContent).toContain('8 to 14 digits');
   });
 
+  it('offers a label photo after a missing lookup and uploads it only after a tap', async () => {
+    const fetchMock = vi.fn().mockResolvedValue({ ok: false, status: 404, json: async () => ({}) });
+    vi.stubGlobal('fetch', fetchMock);
+    await lookUp('9556001234567');
+    fetchMock.mockClear().mockResolvedValue({ ok: true, status: 200, json: async () => REPLY });
+
+    // Choosing a file stays local until the explicit photo-reading action.
+    const file = container.querySelector<HTMLInputElement>('details input[type="file"]')!;
+    Object.defineProperty(file, 'files', { value: [new File(['fictional'], 'label.jpg')] });
+    await act(async () => file.dispatchEvent(new Event('change', { bubbles: true })));
+    expect(fetchMock).not.toHaveBeenCalled();
+    expect(onFound).not.toHaveBeenCalled();
+
+    const read = container.querySelector<HTMLButtonElement>('details button')!;
+    await act(async () => read.click());
+    expect(fetchMock.mock.calls[0]![0]).toBe('/api/barcode/label');
+    expect(JSON.parse(fetchMock.mock.calls[0]![1].body)).toEqual({
+      code: '9556001234567', name: '', image: 'data:image/jpeg;base64,ZmFrZQ==',
+    });
+    expect(onFound).toHaveBeenCalledOnce();
+  });
+
   it('hides the camera where the browser cannot read barcodes', () => {
-    expect(container.querySelector('input[type="file"]')).toBeNull();
+    expect(container.textContent).not.toContain('Take a photo of the barcode');
+    expect(container.textContent).toContain('Read a packet label with AI');
   });
 });

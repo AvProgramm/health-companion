@@ -70,29 +70,6 @@ class BarcodeEndpointTests(unittest.TestCase):
                 self.assertEqual(response.status_code, 409)
                 self.assertNotIn('estimate', response.json())
 
-    def test_reviewed_label_recovers_the_reported_barcode(self):
-        """Replace the conflicting data with the checked per-100-g label."""
-        # Public product code and conflicting database values reported on 11 Nov.
-        code = '9310947004582'
-        product = {**PRODUCT, 'code': code, 'product_name': 'Fictional spread',
-                   'nutriments': {'energy-kcal_100g': 52.2, 'energy-kj_100g': 2410, 'fat_100g': 5}}
-        transport = httpx.MockTransport(lambda _request: httpx.Response(200, json={'status': 1, 'product': product}))
-        client_class = httpx.AsyncClient
-        with patch('coach.barcode.httpx.AsyncClient',
-                   side_effect=lambda **options: client_class(**options, transport=transport)):
-            response = TestClient(app).post('/api/barcode', json={'code': code})
-
-        self.assertEqual(response.status_code, 200)
-        result = response.json()['estimate']
-        self.assertEqual(result['basis'], {'amount': 100, 'unit': 'g'})
-        self.assertAlmostEqual(result['nutrients']['kcal'], 576.0, places=1)
-        self.assertEqual(result['nutrients']['fat_g'], 65)
-        self.assertEqual(result['nutrients']['satfat_g'], 17.3)
-        self.assertAlmostEqual(result['nutrients']['unsatfat_g'], 47.4, places=9)
-        self.assertEqual(result['nutrients']['sodium_mg'], 350)
-        self.assertIsNone(result['nutrients']['protein_g'])
-        self.assertNotEqual(result['sources'][0]['provider'], 'Open Food Facts')
-
     def test_an_unknown_product_is_a_404(self):
         async def nothing(_code):
             return None

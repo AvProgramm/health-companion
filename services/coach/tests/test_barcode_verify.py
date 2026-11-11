@@ -14,6 +14,16 @@ EVIDENCE = WebEvidence('source-1', NAME, 'https://example.org/label',
 
 
 class BarcodeVerificationTests(unittest.TestCase):
+    def test_previously_reported_barcode_also_requires_evidence(self):
+        """Keep the original reported code on the same path as every other product."""
+        from coach.barcode_verify import verify_barcode_label
+
+        search = AsyncMock(return_value=[])
+        ask = AsyncMock()
+        self.assertIsNone(asyncio.run(verify_barcode_label('9310947004582', NAME, 'g', search, ask)))
+        search.assert_awaited_once()
+        ask.assert_not_awaited()
+
     def test_model_selects_evidence_and_code_reads_and_converts_values(self):
         """Take the values from the cited label and keep inequalities unknown."""
         from coach.barcode_verify import verify_barcode_label

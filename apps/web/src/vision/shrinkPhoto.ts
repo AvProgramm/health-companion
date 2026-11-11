@@ -9,9 +9,9 @@ const JPEG_QUALITY = 0.8;
  * Re-drawing it on a canvas also drops the camera's location and other metadata,
  * so only the pixels leave the phone.
  */
-export async function shrinkPhoto(photo: Blob): Promise<string> {
+export async function shrinkPhoto(photo: Blob, longestSide = LONGEST_SIDE): Promise<string> {
   const bitmap = await createImageBitmap(photo, { imageOrientation: 'from-image' });
-  const scale = Math.min(1, LONGEST_SIDE / Math.max(bitmap.width, bitmap.height));
+  const scale = Math.min(1, longestSide / Math.max(bitmap.width, bitmap.height));
 
   // Draw the photo at the smaller size
   const canvas = document.createElement('canvas');
