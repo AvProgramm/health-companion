@@ -22,6 +22,14 @@ class BarcodeReplyTests(unittest.TestCase):
         self.assertAlmostEqual(reply.estimate.nutrients.sodium_mg, 300)
         self.assertIsNone(reply.estimate.nutrients.fat_g)
 
+    def test_kilojoule_only_label_has_calories_on_the_same_basis(self):
+        """Convert the per-100-unit value and ignore the per-serving value."""
+        product = {**PRODUCT, 'nutriments': {'energy-kj_100g': 418.4, 'energy-kj_serving': 83.68}}
+        reply = barcode_reply({'status': 1, 'product': product}, PRODUCT['code'])
+        self.assertAlmostEqual(reply.estimate.nutrients.kcal, 100, places=9)
+        self.assertEqual((reply.estimate.basis.amount, reply.estimate.basis.unit), (100, 'g'))
+        self.assertIsNone(reply.estimate.nutrients.protein_g)
+
     def test_a_liquid_keeps_its_unit(self):
         reply = barcode_reply({'status': 1, 'product': {**PRODUCT, 'product_quantity_unit': 'ml'}}, '9556001234567')
         self.assertEqual(reply.estimate.basis.unit, 'mL')
@@ -50,12 +58,38 @@ class BarcodeEndpointTests(unittest.TestCase):
     def test_another_site_is_refused(self):
         self.assertEqual(TestClient(app).post('/api/barcode', json={'code': '9556001234567'}, headers={'origin': 'https://example.org'}).status_code, 403)
 
+    def test_canonical_energy_resolves_the_unit_conflict_without_ai(self):
+        """Use OFF's canonical energy when a separate calorie entry disagrees."""
+        # Observed on 11 Nov, using a fictional product and a consistent fat label.
+        product = {**PRODUCT, 'nutriments': {
+            'energy_100g': 2410, 'energy-kj_100g': 2410, 'energy-kcal_100g': 52.2,
+            'energy-kj_serving': 241, 'fat_100g': 65, 'saturated-fat_100g': 17.3,
+        }}
+        transport = httpx.MockTransport(
+            lambda _request: httpx.Response(200, json={'status': 1, 'product': product}),
+        )
+        client_class = httpx.AsyncClient
+        verifier = AsyncMock(return_value=None)
+        with patch('coach.barcode.httpx.AsyncClient',
+                   side_effect=lambda **options: client_class(**options, transport=transport)), \
+                patch('coach.app.verify_barcode_label', verifier):
+            response = TestClient(app).post('/api/barcode', json={'code': PRODUCT['code']})
+
+        self.assertEqual(response.status_code, 200)
+        estimate = response.json()['estimate']
+        self.assertAlmostEqual(estimate['nutrients']['kcal'], 576, places=1)
+        self.assertEqual(estimate['nutrients']['fat_g'], 65)
+        self.assertEqual(estimate['sources'][0]['provider'], 'Open Food Facts')
+        verifier.assert_not_awaited()
+
     def test_conflicting_database_nutrition_is_not_offered_as_a_label(self):
         """Refuse conflicting energy units or a fat breakdown above total fat."""
         # Reported on the phone on 11 Nov: 52.2 kcal and 2410 kJ were both per 100 g.
         for nutriments in (
             {'energy-kcal_100g': 52.2, 'energy-kj_100g': 2410, 'fat_100g': 65},
-            {'energy-kcal_100g': 576, 'fat_100g': 5, 'saturated-fat_100g': 17.3},
+            {'energy_100g': 2410, 'energy-kj_100g': 200, 'fat_100g': 65},
+            {'energy_100g': 2410, 'energy-kj_100g': 2410, 'energy-kcal_100g': 52.2,
+             'fat_100g': 5, 'saturated-fat_100g': 17.3},
         ):
             with self.subTest(nutriments=nutriments):
                 product = {**PRODUCT, 'nutriments': nutriments}

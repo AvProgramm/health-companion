@@ -4,8 +4,8 @@ import json
 import re
 from urllib.parse import urlsplit
 
-from .barcode import KJ_PER_KCAL, has_conflicting_nutrition
-from .databases import Match, average_matches, relevant
+from .barcode import has_conflicting_nutrition
+from .databases import KJ_PER_KCAL, Match, average_matches, relevant
 from .enrichment import BASIS, compatible_factor, explicit_value
 from .failures import PROVIDER_FAILURES
 from .llm import HostedConversation

@@ -3,8 +3,8 @@ import re
 
 from pydantic import ValidationError
 
-from .barcode import KJ_PER_KCAL, has_conflicting_nutrition
-from .databases import Match, average_matches, number, unsaturated
+from .barcode import has_conflicting_nutrition
+from .databases import KJ_PER_KCAL, Match, average_matches, number, unsaturated
 from .models import BarcodeReply, Basis, Nutrients, Source
 
 # Accept exact printed values with units. Inequalities and invented units stay unknown.

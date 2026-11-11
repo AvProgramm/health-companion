@@ -12,12 +12,19 @@ USDA_KEYS = {1008: ('kcal', 'KCAL'), 1003: ('protein_g', 'G'), 1005: ('carbs_g',
 USDA_VOLUME_UNITS = {'ML', 'MLT'}
 # Unsaturated fat is published in two parts that must both be known to add up
 USDA_UNSATURATED = {1292: 'mono', 1293: 'poly'}
-# Open Food Facts stores energy separately from grams of each nutrient.
-OFF_KEYS = {'energy-kcal': 'kcal', 'proteins': 'protein_g', 'carbohydrates': 'carbs_g', 'fiber': 'fibre_g',
+# Read the mass nutrients from the source's per-100-unit column.
+OFF_KEYS = {'proteins': 'protein_g', 'carbohydrates': 'carbs_g', 'fiber': 'fibre_g',
             'sugars': 'total_sugar_g', 'added-sugars': 'added_sugar_g', 'fat': 'fat_g', 'saturated-fat': 'satfat_g'}
 OFF_UNSATURATED = {'monounsaturated-fat': 'mono', 'polyunsaturated-fat': 'poly'}
 # Open Food Facts publishes sodium in grams; the diary uses milligrams like labels do
 MG_PER_G = 1000
+# A kilocalorie equals this many kilojoules.
+KJ_PER_KCAL = 4.184
+# Allow normal label rounding when comparing independently printed energy units.
+ENERGY_REL_TOLERANCE = 0.05
+ENERGY_ABS_TOLERANCE = 5
+# The canonical and explicit kJ fields report the same measurement.
+SAME_UNIT_ROUNDING_KJ = 1
 
 
 @dataclass
@@ -35,6 +42,35 @@ def number(value):
     if isinstance(value, bool) or not isinstance(value, (int, float)):
         return None
     return value if math.isfinite(value) and value >= 0 else None
+
+
+def energy_units_conflict(kcal, kilojoules):
+    """Check whether separately supplied energy units disagree beyond label rounding."""
+    return kcal is not None and kilojoules is not None and not math.isclose(
+        kcal, kilojoules / KJ_PER_KCAL, rel_tol=ENERGY_REL_TOLERANCE, abs_tol=ENERGY_ABS_TOLERANCE,
+    )
+
+
+def off_energy_kcal(nutriments):
+    """Return per-100-unit kcal and whether unresolved energy data needs review."""
+    primary_kj = number(nutriments.get('energy_100g'))
+    kilojoules = number(nutriments.get('energy-kj_100g'))
+    kcal = number(nutriments.get('energy-kcal_100g'))
+
+    # OFF's canonical energy is in kJ. Keep it unless two kJ fields disagree.
+    if primary_kj is not None:
+        if kilojoules is not None and not math.isclose(
+            primary_kj, kilojoules, rel_tol=0, abs_tol=SAME_UNIT_ROUNDING_KJ,
+        ):
+            return None, True
+        return primary_kj / KJ_PER_KCAL, False
+
+    # Older records can supply a single unit. A conflicting pair has no tie-breaker.
+    if energy_units_conflict(kcal, kilojoules):
+        return None, True
+    if kcal is not None:
+        return kcal, False
+    return (None if kilojoules is None else kilojoules / KJ_PER_KCAL), False
 
 
 def unsaturated(parts):
@@ -103,7 +139,12 @@ def parse_off(payload, name):
         raw = product.get('nutriments')
         if not isinstance(raw, dict):
             continue
+        # Ignore conflicting energy because a name lookup must not average incompatible values.
+        kcal, energy_conflict = off_energy_kcal(raw)
+        if energy_conflict:
+            continue
         values = {key: number(raw.get(f'{field}_100g')) for field, key in OFF_KEYS.items()}
+        values['kcal'] = kcal
         values['unsatfat_g'] = unsaturated({part: number(raw.get(f'{field}_100g')) for field, part in OFF_UNSATURATED.items()})
         sodium_g = number(raw.get('sodium_100g'))
         values['sodium_mg'] = None if sodium_g is None else sodium_g * MG_PER_G

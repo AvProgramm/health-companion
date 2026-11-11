@@ -1,7 +1,6 @@
 """Look up one packaged food by its barcode, sending nothing but the number."""
-from math import isclose
 import httpx
-from .databases import average_matches, number, parse_off
+from .databases import average_matches, energy_units_conflict, number, off_energy_kcal, parse_off
 from .models import BarcodeReply
 
 # Long enough for a public database, short enough that the browser's wait is never reached
@@ -12,11 +11,7 @@ USER_AGENT = 'HealthCompanion/0.1 (local diary prototype)'
 FIELDS = 'code,product_name,nutriments,product_quantity_unit'
 
 
-# Convert the label's two energy units before comparing them.
-KJ_PER_KCAL = 4.184
-# Allow for the way a packet rounds its energy and grams.
-ENERGY_REL_TOLERANCE = 0.05
-ENERGY_ABS_TOLERANCE = 5
+# Allow for the way a packet rounds its grams.
 FAT_ROUNDING_G = 0.5
 # These components do not overlap, so their known sum cannot exceed total fat.
 FAT_COMPONENTS = ('saturated-fat_100g', 'monounsaturated-fat_100g', 'polyunsaturated-fat_100g')
@@ -36,10 +31,11 @@ def has_conflicting_nutrition(nutriments):
     """Check for energy units or a fat breakdown that contradict each other."""
     kcal = number(nutriments.get('energy-kcal_100g'))
     kilojoules = number(nutriments.get('energy-kj_100g'))
-    if kcal is not None and kilojoules is not None and not isclose(
-            kcal, kilojoules / KJ_PER_KCAL, rel_tol=ENERGY_REL_TOLERANCE, abs_tol=ENERGY_ABS_TOLERANCE):
-        return True
+    return energy_units_conflict(kcal, kilojoules) or fat_breakdown_conflicts(nutriments)
 
+
+def fat_breakdown_conflicts(nutriments):
+    """Check that the known fat components fit within the reported total fat."""
     # Compare known components only when total fat was also supplied.
     fat = number(nutriments.get('fat_100g'))
     known_fats = [value for key in FAT_COMPONENTS if (value := number(nutriments.get(key))) is not None]
@@ -57,9 +53,11 @@ def barcode_reply(payload, code):
 
     # Ignore contradictory values because the database cannot tell us which entry to trust.
     nutriments = product.get('nutriments')
-    if isinstance(nutriments, dict) and has_conflicting_nutrition(nutriments):
-        unit = 'mL' if product.get('product_quantity_unit') in ('ml', 'mL') else 'g'
-        raise BarcodeRecordConflict(name, unit)
+    if isinstance(nutriments, dict):
+        _, energy_conflict = off_energy_kcal(nutriments)
+        if energy_conflict or fat_breakdown_conflicts(nutriments):
+            unit = 'mL' if product.get('product_quantity_unit') in ('ml', 'mL') else 'g'
+            raise BarcodeRecordConflict(name, unit)
 
     # Reuse the search parser, so a missing label value stays unknown here too.
     matches = parse_off({'products': [{'code': code, **product}]}, name)
