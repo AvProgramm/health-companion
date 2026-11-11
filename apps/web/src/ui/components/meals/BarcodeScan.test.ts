@@ -85,6 +85,22 @@ describe('Scan a barcode', () => {
     expect(onFound).not.toHaveBeenCalled();
   });
 
+  it('passes the partial food and its review note to the editor', async () => {
+    const reviewNote = 'Check the fat values against the packet. The database values disagree, so those fields are blank.';
+    const estimate = { ...REPLY.estimate, nutrients: { ...NUTRIENTS, fat_g: null, satfat_g: null },
+      range: { ...RANGE, fat_g: null, satfat_g: null } };
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue({
+      ok: true, status: 200, json: async () => ({ ...REPLY, estimate, reviewNote }),
+    }));
+
+    await lookUp('9556001234567');
+
+    expect(onFound).toHaveBeenCalledWith(
+      expect.objectContaining({ nutrients: expect.objectContaining({ kcal: 400, fat_g: null, satfat_g: null }) }),
+      reviewNote,
+    );
+  });
+
   it('keeps an unknown label value unknown', async () => {
     vi.stubGlobal('fetch', vi.fn().mockResolvedValue({ ok: true, status: 200, json: async () => REPLY }));
     await lookUp('9556001234567');

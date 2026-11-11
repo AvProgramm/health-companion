@@ -15,6 +15,8 @@ FIELDS = 'code,product_name,nutriments,product_quantity_unit'
 FAT_ROUNDING_G = 0.5
 # These components do not overlap, so their known sum cannot exceed total fat.
 FAT_COMPONENTS = ('saturated-fat_100g', 'monounsaturated-fat_100g', 'polyunsaturated-fat_100g')
+# These are the alternative entries for the same per-100 energy value.
+ENERGY_FIELDS = ('energy_100g', 'energy-kj_100g', 'energy-kcal_100g')
 
 
 class BarcodeRecordConflict(ValueError):
@@ -42,6 +44,22 @@ def fat_breakdown_conflicts(nutriments):
     return fat is not None and sum(known_fats) > fat + FAT_ROUNDING_G
 
 
+def review_nutriments(nutriments):
+    """Withhold each conflicting group and list what needs checking."""
+    # Ignore a conflicting group because the database cannot tell us which value is right.
+    withheld = []
+    review = []
+    _, energy_conflict = off_energy_kcal(nutriments)
+    if energy_conflict:
+        withheld.extend(ENERGY_FIELDS)
+        review.append('energy')
+    if fat_breakdown_conflicts(nutriments):
+        withheld.extend(('fat_100g', *FAT_COMPONENTS))
+        review.append('fat')
+
+    return {key: value for key, value in nutriments.items() if key not in withheld}, review
+
+
 def barcode_reply(payload, code):
     """Return one product's label values per 100 g or mL, or None if it cannot be used."""
     # Ignore an unknown barcode or a malformed reply
@@ -51,19 +69,26 @@ def barcode_reply(payload, code):
         return None
     name = name.strip()[:80]
 
-    # Ignore contradictory values because the database cannot tell us which entry to trust.
+    # Keep the usable values on their original basis and leave disputed fields blank.
     nutriments = product.get('nutriments')
-    if isinstance(nutriments, dict):
-        _, energy_conflict = off_energy_kcal(nutriments)
-        if energy_conflict or fat_breakdown_conflicts(nutriments):
+    if not isinstance(nutriments, dict):
+        return None
+    clean, review = review_nutriments(nutriments)
+    matches = parse_off({'products': [{'code': code, **product, 'nutriments': clean}]}, name)
+    if not matches:
+        if review:
             unit = 'mL' if product.get('product_quantity_unit') in ('ml', 'mL') else 'g'
             raise BarcodeRecordConflict(name, unit)
-
-    # Reuse the search parser, so a missing label value stays unknown here too.
-    matches = parse_off({'products': [{'code': code, **product}]}, name)
-    if not matches:
         return None
-    return BarcodeReply(name=name, estimate=average_matches(matches[:1], {'amount': 100, 'unit': matches[0].unit}))
+
+    # Describe any withheld values before the person edits the draft.
+    estimate = average_matches(matches[:1], {'amount': 100, 'unit': matches[0].unit})
+    note = None
+    if review:
+        fields = ' and '.join(review)
+        note = f'Check the {fields} values against the packet. The database values disagree, so those fields are blank.'
+        estimate = estimate.model_copy(update={'reason': 'Values from the public product record. Check them against the packet.'})
+    return BarcodeReply(name=name, estimate=estimate, reviewNote=note)
 
 
 async def look_up_barcode(code):

@@ -34,8 +34,13 @@ export function readBarcodeDigits(text: string): string {
 }
 
 /** Return a food built from one barcode's label values, sending only the number. */
-export async function lookUpBarcode(code: string, id: string): Promise<FoodVersion> {
-  return labelFood(await postJson('/api/barcode', { code }, BARCODE_TIMEOUT_MS, MESSAGES), id);
+export async function lookUpBarcode(code: string, id: string): Promise<{ food: FoodVersion; reviewNote?: string }> {
+  const reply = await postJson('/api/barcode', { code }, BARCODE_TIMEOUT_MS, MESSAGES);
+  const food = labelFood(reply, id);
+
+  // A service without a review note can still return a complete draft.
+  const reviewNote = (reply as { reviewNote?: unknown }).reviewNote;
+  return typeof reviewNote === 'string' && reviewNote.trim() !== '' ? { food, reviewNote } : { food };
 }
 
 /** Return an editable label from one explicitly submitted packet photo. */

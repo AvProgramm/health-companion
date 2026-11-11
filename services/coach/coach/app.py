@@ -92,7 +92,7 @@ async def nutritionist(request: Request, item: NutritionistRequest):
 async def barcode(request: Request, item: BarcodeRequest):
     """Return one packaged food's label values; only the barcode number is sent."""
     check_local(request)
-    # Distinguish a matched record with conflicting numbers from a missing barcode.
+    # Try a second source when a conflict leaves no usable values.
     try:
         found = await look_up_barcode(item.code)
     except BarcodeRecordConflict as problem:

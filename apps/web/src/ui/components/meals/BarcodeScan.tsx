@@ -28,7 +28,7 @@ function barcodeReader(): BarcodeReader | null {
  * The barcode is read on the device and only its number is looked up. Nothing is saved
  * here: the label values open in the food editor to be checked first.
  */
-export function BarcodeScan({ onFound }: { onFound: (food: FoodVersion) => void }) {
+export function BarcodeScan({ onFound }: { onFound: (food: FoodVersion, reviewNote?: string) => void }) {
   const [code, setCode] = useState('');
   const [lastProduct, setLastProduct] = useState<{ code: string; name: string } | null>(null);
   const { busy, error, run } = useBusy();
@@ -38,9 +38,9 @@ export function BarcodeScan({ onFound }: { onFound: (food: FoodVersion) => void 
   async function lookUp(text: string) {
     await run(async () => {
       const digits = readBarcodeDigits(text);
-      const food = await lookUpBarcode(digits, crypto.randomUUID());
+      const { food, reviewNote } = await lookUpBarcode(digits, crypto.randomUUID());
       setLastProduct({ code: digits, name: food.name });
-      onFound(food);
+      onFound(food, reviewNote);
     });
   }
 

@@ -82,27 +82,53 @@ class BarcodeEndpointTests(unittest.TestCase):
         self.assertEqual(estimate['sources'][0]['provider'], 'Open Food Facts')
         verifier.assert_not_awaited()
 
-    def test_conflicting_database_nutrition_is_not_offered_as_a_label(self):
-        """Refuse conflicting energy units or a fat breakdown above total fat."""
-        # Reported on the phone on 11 Nov: 52.2 kcal and 2410 kJ were both per 100 g.
-        for nutriments in (
-            {'energy-kcal_100g': 52.2, 'energy-kj_100g': 2410, 'fat_100g': 65},
-            {'energy_100g': 2410, 'energy-kj_100g': 200, 'fat_100g': 65},
-            {'energy_100g': 2410, 'energy-kj_100g': 2410, 'energy-kcal_100g': 52.2,
-             'fat_100g': 5, 'saturated-fat_100g': 17.3},
+    def test_a_conflicting_record_keeps_the_usable_fields_for_review(self):
+        """Open a partial draft without running the verifier when some values are usable."""
+        # Reported on the phone on 11 Nov, with a fictional product and code.
+        for nutriments, kept, withheld, note in (
+            ({'energy_100g': 2410, 'energy-kj_100g': 2410, 'energy-kcal_100g': 52.2,
+              'fat_100g': 5, 'saturated-fat_100g': 17.3,
+              'monounsaturated-fat_100g': 33.3, 'polyunsaturated-fat_100g': 12.1},
+             {'kcal': 576.003824}, ('fat_g', 'satfat_g', 'unsatfat_g'), 'fat'),
+            ({'energy-kcal_100g': 52.2, 'energy-kj_100g': 2410, 'fat_100g': 65},
+             {'fat_g': 65}, ('kcal',), 'energy'),
+            ({'energy_100g': 2410, 'energy-kj_100g': 200, 'fat_100g': 65},
+             {'fat_g': 65}, ('kcal',), 'energy'),
         ):
             with self.subTest(nutriments=nutriments):
-                product = {**PRODUCT, 'nutriments': nutriments}
-                transport = httpx.MockTransport(
-                    lambda _request: httpx.Response(200, json={'status': 1, 'product': product}),
-                )
-                client_class = httpx.AsyncClient
-                with patch('coach.barcode.httpx.AsyncClient',
-                           side_effect=lambda **options: client_class(**options, transport=transport)), \
-                        patch('coach.app.verify_barcode_label', AsyncMock(return_value=None)):
-                    response = TestClient(app).post('/api/barcode', json={'code': PRODUCT['code']})
-                self.assertEqual(response.status_code, 409)
-                self.assertNotIn('estimate', response.json())
+                response, verifier = self.lookup_nutriments(nutriments)
+                self.assertEqual(response.status_code, 200)
+                draft = response.json()
+                self.assertIn(note, draft['reviewNote'])
+                self.assertEqual(draft['estimate']['basis'], {'amount': 100, 'unit': 'g'})
+                self.assertEqual(draft['estimate']['sources'][0]['provider'], 'Open Food Facts')
+                for key, value in kept.items():
+                    self.assertAlmostEqual(draft['estimate']['nutrients'][key], value, places=5)
+                for key in withheld:
+                    self.assertIsNone(draft['estimate']['nutrients'][key])
+                    self.assertIsNone(draft['estimate']['range'][key])
+                verifier.assert_not_awaited()
+
+    def test_a_conflict_without_usable_values_still_offers_the_packet_fallback(self):
+        """Keep the fallback when there is nothing left to prefill."""
+        response, verifier = self.lookup_nutriments({'fat_100g': 5, 'saturated-fat_100g': 17.3})
+        self.assertEqual(response.status_code, 409)
+        self.assertNotIn('estimate', response.json())
+        verifier.assert_awaited_once_with(PRODUCT['code'], PRODUCT['product_name'], 'g')
+
+    def lookup_nutriments(self, nutriments):
+        """Look up a fictional record and track whether verification was needed."""
+        product = {**PRODUCT, 'nutriments': nutriments}
+        transport = httpx.MockTransport(
+            lambda _request: httpx.Response(200, json={'status': 1, 'product': product}),
+        )
+        client_class = httpx.AsyncClient
+        verifier = AsyncMock(return_value=None)
+        with patch('coach.barcode.httpx.AsyncClient',
+                   side_effect=lambda **options: client_class(**options, transport=transport)), \
+                patch('coach.app.verify_barcode_label', verifier):
+            response = TestClient(app).post('/api/barcode', json={'code': PRODUCT['code']})
+        return response, verifier
 
     def test_an_unknown_product_is_a_404(self):
         async def nothing(_code):

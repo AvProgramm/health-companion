@@ -63,7 +63,7 @@ export function TodayView({ db, foods, currentFoods, hideNumbers, durability, di
   const { date, setDate, meals, workouts, sleeps, reloadDay } = useDiaryDay(db, today, setNotice);
   const dateLabel = date === today ? 'today' : formatDiaryDate(date);
   // A food found by barcode, waiting to be reviewed before it is saved
-  const [scanned, setScanned] = useState<FoodVersion | null>(null);
+  const [scanned, setScanned] = useState<{ food: FoodVersion; reviewNote?: string } | null>(null);
   const { panel, busy, showPanel, saveDraft, saveCorrection, closeSavedLog, setDraftRows, applyEstimate, saveCreatedFood } = useEntryPanel({ db, date, dateLabel, foods, onSaveFood, setNotice, reloadDay });
   const [text, setText] = useState(initialEntry);
   const [openMealId, setOpenMealId] = useState<string | null>(null);
@@ -148,8 +148,11 @@ export function TodayView({ db, foods, currentFoods, hideNumbers, durability, di
       <div className="today-layout">
       <div className="today-main">
       {panel === null && <PlatePhoto onPick={fillEntryFromPhoto} onEntry={fillEntryFromList} />}
-      {panel === null && <BarcodeScan onFound={setScanned} />}
-      {scanned !== null && <FoodEditor key={scanned.id} initialFood={scanned} onSave={onSaveFood} onClose={() => setScanned(null)} />}
+      {panel === null && <BarcodeScan onFound={(food, reviewNote) => setScanned({ food, reviewNote })} />}
+      {scanned !== null && (
+        <FoodEditor key={scanned.food.id} initialFood={scanned.food} reviewNote={scanned.reviewNote}
+          onSave={onSaveFood} onClose={() => setScanned(null)} />
+      )}
 
       <Composer text={text} onTextChange={setText} reviewing={panel !== null} onSubmit={handleSubmit} onAddManually={startManualDraft} />
 
