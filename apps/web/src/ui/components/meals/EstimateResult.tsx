@@ -4,25 +4,43 @@ import { formatQuantity, formatTotal, NUTRIENT_LABELS, SOURCE_LABELS } from '../
 
 // Every tracked nutrient after energy, so nothing a source gave is hidden; unknown ones say so
 const DETAIL_NUTRIENTS = NUTRIENT_KEYS.filter((key) => key !== 'kcal');
+// Recognise the explicit counted containers the service stores on its piece basis.
+const NAMED_COUNT = /^(\d+(?:[.,]\d+)?)\s*(bowl|cup|plate|glass|can|slice|spoon|mug|packet|serving)(?:es|s)?$/i;
 
 interface EstimateResultProps {
   estimate: NutritionEstimate;
   hideNumbers: boolean;
-  typicalServing: boolean;
+  portionText: string;
   busy: boolean;
   onAccept: () => void;
   onEdit: () => void;
 }
 
+/** Describe the basis without showing a named container as a generic piece. */
+function describePortion(estimate: NutritionEstimate, portionText: string): string {
+  const typed = portionText.trim().toLowerCase();
+  if (typed === '') return 'For 1 typical serving. Review the assumptions below.';
+
+  // Keep the request label only when the returned basis covers the same count.
+  const { basis } = estimate;
+  const named = NAMED_COUNT.exec(typed);
+  if (basis.unit !== 'piece' || named === null || Number(named[1]!.replace(',', '.')) !== basis.amount) {
+    return `For ${formatQuantity(basis)}.`;
+  }
+  const unit = named[2]!;
+  const plural = unit === 'glass' ? 'es' : 's';
+  return `For ${basis.amount} ${unit}${basis.amount === 1 ? '' : plural}.`;
+}
+
 /** Present a proposal with its primary action beside the nutrition range. */
-export function EstimateResult({ estimate, hideNumbers, typicalServing, busy, onAccept, onEdit }: EstimateResultProps) {
+export function EstimateResult({ estimate, hideNumbers, portionText, busy, onAccept, onEdit }: EstimateResultProps) {
   const kcal = estimate.nutrients.kcal;
   return (
     <div className="estimate-result" aria-live="polite">
       <div className="card-head"><span className="badge badge-estimate">{SOURCE_LABELS[estimate.sourceKind]}</span><span className="hint">Not saved</span></div>
       {!hideNumbers && <p className="estimate-energy numbers">{kcal == null ? 'Energy unknown' : formatTotal({ known: kcal, knownItems: 1, unknownItems: 0,
         ...(estimate.range.kcal == null ? {} : { range: estimate.range.kcal }) }, 'kcal')}</p>}
-      <p className="hint">{typicalServing ? 'For 1 typical serving. Review the assumptions below.' : `For ${formatQuantity(estimate.basis)}.`}</p>
+      <p className="hint">{describePortion(estimate, portionText)}</p>
       {!hideNumbers && (
         <div className="estimate-macros">
           {DETAIL_NUTRIENTS.map((key) => {

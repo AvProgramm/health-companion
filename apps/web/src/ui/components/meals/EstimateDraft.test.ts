@@ -105,6 +105,35 @@ describe('estimate draft', () => {
   });
 });
 
+describe('portions left open after a photo', () => {
+  // Typed on the phone on 11 Nov. The missing portion caused an automatic typical-serving guess.
+  it('waits for a portion or an explicit typical-serving request', async () => {
+    const fetchMock = vi.fn().mockResolvedValue({ ok: true, json: async () => proposal });
+    vi.stubGlobal('fetch', fetchMock);
+    await act(async () => root.render(createElement(EstimateDraft, {
+      name: 'salted rgg fish', portionText: '', hideNumbers: false, onUse: vi.fn(), onEdit: vi.fn(),
+    })));
+    expect(fetchMock).not.toHaveBeenCalled();
+    expect(container.textContent).toContain('Enter a portion');
+    await tap('Estimate a typical serving');
+    expect(JSON.parse(fetchMock.mock.calls[0]![1].body)).toEqual({ name: 'salted rgg fish', portionText: '' });
+  });
+
+  // Reported on the phone on 11 Nov: the returned count had a generic piece basis.
+  it.each([
+    ['1 cup', 1, 'For 1 cup.'],
+    ['3 slice', 3, 'For 3 slices.'],
+    ['3 slice', 2, 'For 2 pieces.'],
+  ])('shows the requested container %s only when its count matches', async (portionText, amount, label) => {
+    const counted = { ...proposal, basis: { amount, unit: 'piece' } };
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue({ ok: true, json: async () => counted }));
+    await act(async () => root.render(createElement(EstimateDraft, {
+      name: 'Fictional food', portionText, hideNumbers: false, onUse: vi.fn(), onEdit: vi.fn(),
+    })));
+    expect(container.querySelector('.estimate-result')?.textContent).toContain(label);
+  });
+});
+
 describe('accepted and deferred estimate rows', () => {
   it('keeps an accepted estimate labelled with its source and range', async () => {
     const food = estimatedFood('Fictional oats', readEstimate(proposal), 'food');
@@ -163,7 +192,7 @@ describe('phone estimate regression', () => {
       range: Object.fromEntries(Object.keys(proposal.range).map((key) => [key, null])),
     }) }));
     await act(async () => root.render(createElement(EstimateDraft, { name: 'nasi lemak', portionText: '', hideNumbers: false, onUse, onEdit: vi.fn() })));
-    await tap('Estimate nutrition');
+    await tap('Estimate a typical serving');
     expect(container.textContent).toContain('No nutrition values');
     expect([...container.querySelectorAll('button')].some((button) => button.textContent === 'Use estimate')).toBe(false);
     expect(onUse).not.toHaveBeenCalled();
@@ -191,6 +220,10 @@ describe('counted photo containers', () => {
       rows: parsed.items.map(toDraftRow), foods: new Map(), currentFoods: [], hideNumbers: false, dateLabel: 'today', busy: false,
       onRowsChange: vi.fn(), onSave, onCancel: vi.fn(), onCreateFood: vi.fn(), onUseEstimate, onEditEstimate: vi.fn(),
     })));
+    if (portionText === '') {
+      expect(fetchMock).not.toHaveBeenCalled();
+      await tap('Estimate a typical serving');
+    }
     expect(JSON.parse(fetchMock.mock.calls[0]![1].body)).toEqual({ name, portionText });
     expect(onUseEstimate).not.toHaveBeenCalled();
     expect(onSave).not.toHaveBeenCalled();

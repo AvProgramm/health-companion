@@ -27,6 +27,8 @@ export function EstimateDraft({ name: initialName, portionText: initialPortion, 
   const [busy, setBusy] = useState(false);
   const mounted = useRef(true);
   const foodId = useRef(crypto.randomUUID());
+  const portionMissing = portionText.trim() === '';
+  const lookupLabel = estimate === null ? 'Estimate nutrition' : 'Estimate again';
 
   // Ignore a late response because its draft row may have been removed.
   useEffect(() => {
@@ -34,9 +36,9 @@ export function EstimateDraft({ name: initialName, portionText: initialPortion, 
     return () => { mounted.current = false; };
   }, []);
 
-  // Fetch the estimate as soon as the food is identified, so nobody has to ask for it; it is still only a proposal
+  // Look up an explicit portion automatically and leave an unspecified one for the user.
   useEffect(() => {
-    if (name.trim() !== '') void loadEstimate();
+    if (name.trim() !== '' && !portionMissing) void loadEstimate();
     // Run once for the food this row started with; later edits are sent by the button
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -81,10 +83,13 @@ export function EstimateDraft({ name: initialName, portionText: initialPortion, 
         <input className="input" maxLength={80} value={name} disabled={busy} onChange={(event) => { setName(event.target.value); setEstimate(null); }} />
       </Field>
       <Field label="Portion text">
-        <input className="input" maxLength={80} placeholder="Typical serving, or e.g. 150 g" value={portionText} disabled={busy} onChange={(event) => { setPortionText(event.target.value); setEstimate(null); }} />
+        <input className="input" maxLength={80} placeholder="e.g. 150 g or 2 slices" value={portionText} disabled={busy} onChange={(event) => { setPortionText(event.target.value); setEstimate(null); }} />
       </Field>
       </div>
-      <button type="button" className="button button-secondary estimate-trigger" disabled={busy || name.trim() === ''} onClick={loadEstimate}>{estimate === null ? 'Estimate nutrition' : 'Estimate again'}</button>
+      {portionMissing && <p className="hint">Enter a portion or request a typical-serving estimate.</p>}
+      <button type="button" className="button button-secondary estimate-trigger" disabled={busy || name.trim() === ''} onClick={loadEstimate}>
+        {portionMissing ? 'Estimate a typical serving' : lookupLabel}
+      </button>
   </>;
 
   return (
@@ -93,7 +98,7 @@ export function EstimateDraft({ name: initialName, portionText: initialPortion, 
       {estimate === null ? inputFields : <details className="estimate-inputs"><summary>{name} · {portionText.trim() || 'Typical serving'} <span>Change</span></summary>{inputFields}</details>}
       {busy && <div className="skeleton estimate-loading" role="status" aria-label="Looking up nutrition" />}
       {error !== null && <p className="field-error" role="status">{error}</p>}
-      {estimate !== null && <EstimateResult estimate={estimate} hideNumbers={hideNumbers} typicalServing={portionText.trim() === ''}
+      {estimate !== null && <EstimateResult estimate={estimate} hideNumbers={hideNumbers} portionText={portionText}
         busy={busy} onAccept={() => accept()} onEdit={() => onEdit(estimatedFood(name, estimate, foodId.current))} />}
       <details className="manual-options"><summary>Log without an estimate</summary>
       <button type="button" className="button button-quiet" disabled={busy || name.trim() === ''} onClick={() => accept(true)}>Log with unknown values</button>

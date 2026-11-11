@@ -73,6 +73,17 @@ class ListFoodsTests(unittest.TestCase):
         self.assertIn('Omit a food if no useful name is supported', prompt)
         self.assertIn('Use grams or millilitres only for an explicitly visible measurement', prompt)
 
+    def test_keeps_an_identified_food_without_an_observable_portion(self):
+        """Keep names without guessing quantities and reject incomplete amount pairs."""
+        ask = answering({'foods': [
+            {'name': 'fictional stew', 'amount': None, 'unit': None},
+            {'name': 'naan', 'amount': 2, 'unit': 'piece'},
+            {'name': 'fictional salad', 'amount': None, 'unit': 'cup'},
+            {'name': 'fictional soup', 'amount': 1, 'unit': []},
+        ]})
+        reply = run(ask)
+        self.assertEqual([food.entry for food in reply.foods], ['fictional stew', '2 naan'])
+
     def test_no_usable_food_says_so(self):
         self.assertEqual((run(answering({'foods': []})).mode, run(answering({'nonsense': 1})).message), ('nothing', NOTHING))
 

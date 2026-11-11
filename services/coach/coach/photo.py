@@ -25,12 +25,14 @@ SYSTEM = (
     'Coating and sauce alone cannot distinguish fish from chicken. Do not infer the protein, sauce or recipe '
     'from colour alone. Use a broader name when it is still informative, such as rice if the variety is unclear. '
     'Omit a food if no useful name is supported. '
-    'Give each entry a name, a numeric amount and one unit: piece, bowl, cup, plate, glass, can, slice, spoon, g, ml. '
-    'Count visible pieces where possible. For an uncountable portion, use a rough household measure, including '
-    'fractions when appropriate. Use a plate only when that food occupies a full plate on its own. '
+    'Give each entry a name. Supply an amount and unit only when the portion is clear. '
+    'Count distinct visible pieces, such as naan or cucumber slices. Count a bowl or cup of rice only if it is '
+    'actually served in that visible container. A mound on a plate does not show a cup measurement. '
+    'Allowed units are piece, bowl, cup, plate, glass, can, slice, spoon, g, ml. '
     'Use grams or millilitres only for an explicitly visible measurement of the portion shown. '
+    'If the portion is unclear, use null for both amount and unit and keep the food name. '
     'Never state calories or nutrients. Return an empty list if no food can be identified. '
-    'Reply with only JSON: {"foods": [{"name": "...", "amount": 1, "unit": "piece"}]}.'
+    'Reply with only JSON: {"foods": [{"name": "...", "amount": null, "unit": null}]}.'
 )
 
 # What the person reads with the list
@@ -52,21 +54,30 @@ def valid_food(item):
     if SEPARATOR.search(name) or NUTRIENT_WORD.search(name) or any(character.isdigit() for character in name):
         return False
 
-    # Ignore an amount that is not a positive, believable number, or a unit outside the list
+    # Keep an identified food when both portion fields are unknown.
+    if amount is None and unit is None:
+        return True
+
+    # Ignore an invalid count or an incomplete pair because it cannot describe a portion.
     if isinstance(amount, bool) or not isinstance(amount, (int, float)) or not 0 < amount <= MAX_AMOUNT:
         return False
-    return unit in UNITS
+    return isinstance(unit, str) and unit in UNITS
 
 
 def entry_text(food):
     """
     Return one food as someone would type it in the diary.
 
-    Pieces read "12 almonds" and weights "150 g rice", which the composer takes as amounts.
-    A container reads "1 bowl of dal", which the composer keeps as portion text for the estimate.
+    Keep an unknown portion as the food name alone. Explicit pieces, weights and
+    containers retain the measured amount for the composer.
     """
-    amount = int(food['amount']) if float(food['amount']).is_integer() else food['amount']
-    name, unit = food['name'].strip().lower(), food['unit']
+    name, amount = food['name'].strip().lower(), food.get('amount')
+    if amount is None:
+        return name
+
+    # Drop the decimal on a whole count so "12.0 almonds" reads as "12 almonds".
+    amount = int(amount) if float(amount).is_integer() else amount
+    unit = food['unit']
     if unit == 'piece':
         return f'{amount} {name}'
     if unit in ('g', 'ml'):
