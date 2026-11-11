@@ -21,10 +21,15 @@ SYSTEM = (
     'Look at one photo of food or drink for a personal diary app. Return one entry per separately served food '
     'or drink you can see, up to 8, largest first. Count ingredients inside a mixed side only as part of that side. '
     'For example, list a cucumber salad once when the cucumber belongs to the salad. '
-    'Use the most specific everyday English name supported by the visible food, without brand names. '
+    'Scan the whole plate before answering. Check for a main dish beside the rice or other starch, '
+    'including pieces partly covered by sauce or leaves. Use visible cues such as cut, fibres and skin. '
+    'Use the most specific everyday English name supported by the visible food, without brand names or portion '
+    'words such as slice when the unit already says slice. '
     'Coating and sauce alone cannot distinguish fish from chicken. Do not infer the protein, sauce or recipe '
     'from colour alone. Use a broader name when it is still informative, such as rice if the variety is unclear. '
-    'Omit a food if no useful name is supported. '
+    'Set hasUnidentifiedFood to true if a visible portion has no supported food name. '
+    'Leave that portion out of foods and keep any identified foods. '
+    'Set hasUnidentifiedFood to false when every visible portion is accounted for or there is no food. '
     'Give each entry a name. Supply an amount and unit only when the portion is clear. '
     'Count distinct visible pieces, such as naan or cucumber slices. Count a bowl or cup of rice only if it is '
     'actually served in that visible container. A mound on a plate does not show a cup measurement. '
@@ -32,11 +37,13 @@ SYSTEM = (
     'Use grams or millilitres only for an explicitly visible measurement of the portion shown. '
     'If the portion is unclear, use null for both amount and unit and keep the food name. '
     'Never state calories or nutrients. Return an empty list if no food can be identified. '
-    'Reply with only JSON: {"foods": [{"name": "...", "amount": null, "unit": null}]}.'
+    'Reply with only JSON: {"foods": [{"name": "...", "amount": null, "unit": null}], "hasUnidentifiedFood": false}.'
 )
 
 # What the person reads with the list
 LISTED = 'Check the suggested foods and amounts. Put them in the entry box to edit or add anything missing. Nothing is saved yet.'
+# Prompt a review when the model or validator leaves a gap in the list.
+INCOMPLETE = 'The list may be incomplete. Check the whole plate and add anything missing in the entry box before reviewing the meal.'
 # What the person reads when the model could not be asked or found nothing usable
 NOTHING = 'No foods could be read from this photo. Type what you ate in the entry box instead.'
 
@@ -109,8 +116,16 @@ async def list_foods(image, ask):
     except PROVIDER_FAILURES:
         return PhotoReply(mode='nothing', message=NOTHING, foods=[])
 
-    # Keep only what passed every check
-    foods = checked_foods(reply.get('foods') if isinstance(reply, dict) else None)
+    # Ignore a reply without an object because it has no food list to check.
+    if not isinstance(reply, dict):
+        return PhotoReply(mode='nothing', message=NOTHING, foods=[])
+
+    # Surface both a model-reported gap and any item lost during validation.
+    proposed = reply.get('foods')
+    foods = checked_foods(proposed)
+    dropped_item = isinstance(proposed, list) and len(foods) < len(proposed)
+    if reply.get('hasUnidentifiedFood') is True or dropped_item:
+        return PhotoReply(mode='foods' if foods else 'nothing', message=INCOMPLETE, foods=foods)
     if not foods:
         return PhotoReply(mode='nothing', message=NOTHING, foods=[])
     return PhotoReply(mode='foods', message=LISTED, foods=foods)

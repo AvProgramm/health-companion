@@ -70,7 +70,7 @@ class ListFoodsTests(unittest.TestCase):
         self.assertIn('one entry per separately served food', prompt)
         self.assertIn('Count ingredients inside a mixed side only as part of that side', prompt)
         self.assertIn('Coating and sauce alone cannot distinguish fish from chicken', prompt)
-        self.assertIn('Omit a food if no useful name is supported', prompt)
+        self.assertIn('Set hasUnidentifiedFood to true if a visible portion has no supported food name', prompt)
         self.assertIn('Use grams or millilitres only for an explicitly visible measurement', prompt)
 
     def test_keeps_an_identified_food_without_an_observable_portion(self):
@@ -83,6 +83,27 @@ class ListFoodsTests(unittest.TestCase):
         ]})
         reply = run(ask)
         self.assertEqual([food.entry for food in reply.foods], ['fictional stew', '2 naan'])
+
+    def test_a_missing_main_is_flagged_without_adding_a_guess(self):
+        """Keep the identified food and warn when the plate list is incomplete."""
+        # Phone report on 11 Nov: the recognisable sides appeared without the main.
+        known = {'name': 'fictional rice', 'amount': None, 'unit': None}
+        for model_reply in (
+            {'foods': [known], 'hasUnidentifiedFood': True},
+            {'foods': [known, {'name': 'fictional stew', 'amount': 1, 'unit': 'invalid'}]},
+        ):
+            with self.subTest(model_reply=model_reply):
+                reply = run(answering(model_reply))
+                self.assertEqual(reply.mode, 'foods')
+                self.assertEqual([food.entry for food in reply.foods], ['fictional rice'])
+                self.assertIn('list may be incomplete', reply.message)
+
+    def test_only_unidentified_food_asks_for_manual_entry(self):
+        """Show an incomplete result even when no food names can be used."""
+        reply = run(answering({'foods': [], 'hasUnidentifiedFood': True}))
+        self.assertEqual((reply.mode, reply.foods), ('nothing', []))
+        self.assertIn('entry box', reply.message)
+        self.assertIn('list may be incomplete', reply.message)
 
     def test_no_usable_food_says_so(self):
         self.assertEqual((run(answering({'foods': []})).mode, run(answering({'nonsense': 1})).message), ('nothing', NOTHING))
