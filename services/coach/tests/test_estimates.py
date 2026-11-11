@@ -97,6 +97,11 @@ class EstimateTests(unittest.TestCase):
         self.assertIsNone(average_matches(matches, {'amount': 2, 'unit': 'piece'}))
         self.assertIsNone(average_matches(matches, {'amount': 100, 'unit': 'mL'}))
 
+    def test_off_record_whose_fats_exceed_its_total_fat_is_ignored(self):
+        """Skip a record that contradicts itself, as the phone's spread did on 11 Nov (fat 5 g, saturated 17.3 g)."""
+        nutriments = {'energy_100g': 2410, 'fat_100g': 5, 'saturated-fat_100g': 17.3, 'monounsaturated-fat_100g': 35.3, 'polyunsaturated-fat_100g': 12.1}
+        self.assertEqual(parse_off({'products': [{'code': '111', 'product_name': 'oats', 'nutriments': nutriments}]}, 'oats'), [])
+
     def test_off_and_average_spread(self):
         """Average known matches and leave missing nutrients null."""
         payload = {'products': [

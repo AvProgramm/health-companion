@@ -156,6 +156,9 @@ def parse_off(payload, name):
         values = {key: number(raw.get(f'{field}_100g')) for field, key in OFF_KEYS.items()}
         values['kcal'] = kcal
         values['unsatfat_g'] = unsaturated({part: number(raw.get(f'{field}_100g')) for field, part in OFF_UNSATURATED.items()})
+        # Ignore a record whose fats add up to more than its total fat, because one of them is a typing mistake
+        if label_values_conflict(None, None, values['fat_g'], values['satfat_g'], values['unsatfat_g']):
+            continue
         sodium_g = number(raw.get('sodium_100g'))
         values['sodium_mg'] = None if sodium_g is None else sodium_g * MG_PER_G
         if all(value is None for value in values.values()):

@@ -498,3 +498,18 @@ So "not in the database" is the true answer for this packet, and the packet's ow
 | Scan from the camera, label photo read, compare, save, reload | Phone | NOT TESTED |
 
 Not established: that the label reader transcribes this packet correctly. Its output is a draft to compare with the packet.
+
+### Two databases and an estimate by name (11 Nov, later, commits 0571fde and the one after)
+
+Yash asked for more than one database and an automatic fallback. Checked against a second copy of the service on port 8001, sending only barcode digits:
+
+| Barcode | Result | Time |
+|---|---|---|
+| 9300650658516 (Vegemite) | 200, Open Food Facts label; fat left unknown | 0.9 s |
+| 009800830022 | 200, USDA label | 0.9 s |
+| 1234567890128 | 200, Open Food Facts label | 0.9 s |
+| 9310947004582 (the phone's spread) | 404 twice (5 s and 11 s): its record contradicts itself, and the estimate by name did not arrive in time. The same name sent to `/api/estimate` returned 576 kcal, fat 65 g, saturated 17.3 g once in 7.7 s | unreliable |
+
+Found on the way: the named-food estimator accepted that same broken record (fat 5 g beside 17.3 g saturated). `parse_off` now skips a record whose fats exceed its total fat (test written first).
+
+Honest state: a second database now answers many non-US packets. For a product whose record is wrong, the estimate by name is slow and sometimes fails, and then the packet-label reader is the path. On the phone the label reader read this packet as 576 kcal, fat 65, saturated 17.3, unsaturated 47.4, sodium 350, with protein, carbohydrate and sugars left unknown (Yash's screenshot; not yet compared line by line with the packet). NOT TESTED on the phone: the automatic lookup after a scan, and the second database.
