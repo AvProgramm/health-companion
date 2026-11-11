@@ -42,22 +42,33 @@ export function BarcodeScan({ onFound }: { onFound: (food: FoodVersion) => void 
     // Ignore a cancelled camera, because there is nothing to read
     if (photo === undefined) return;
     enterCode('');
+    let agreed: string | null = null;
     await run(async () => {
       const scan = await scanBarcode(photo);
-      if (scan.kind === 'agreed') setCode(scan.digits);
+      if (scan.kind === 'agreed') agreed = scan.digits;
       else setScanChoices(scan.digits);
     });
+
+    // Look up digits both readers agree on straight away, so one photo is the whole step
+    if (agreed !== null) await lookUp(agreed);
   }
 
-  /** Look up the number in the field, and remember it when the database does not hold it. */
-  function handleSubmit(event: FormEvent) {
-    event.preventDefault();
-    void run(async () => {
-      const digits = readBarcodeDigits(code);
+  /** Look up one number, and remember it when nothing is known about it. */
+  async function lookUp(text: string) {
+    setCode(text);
+    setScanChoices([]);
+    await run(async () => {
+      const digits = readBarcodeDigits(text);
       const food = await lookUpBarcode(digits, crypto.randomUUID());
       if (food === null) setMissing(digits);
       else onFound(food);
     });
+  }
+
+  /** Look up the number typed in the field. */
+  function handleSubmit(event: FormEvent) {
+    event.preventDefault();
+    void lookUp(code);
   }
 
   /** Send a redrawn label photo after the person asks to read it. */
@@ -75,10 +86,10 @@ export function BarcodeScan({ onFound }: { onFound: (food: FoodVersion) => void 
       {scanChoices.length > 0 && (
         <fieldset className="fieldset">
           <legend className="label">Confirm the barcode</legend>
-          <p className="hint">The photo could not be read with certainty. Choose the number printed below the bars, or type it.</p>
+          <p className="hint">The photo could not be read with certainty. Tap the number printed below the bars to look it up, or type it.</p>
           <div className="row">
             {scanChoices.map((digits) => (
-              <button key={digits} type="button" className="button button-secondary" onClick={() => enterCode(digits)}>
+              <button key={digits} type="button" className="button button-secondary" onClick={() => void lookUp(digits)}>
                 Use {digits}
               </button>
             ))}
@@ -89,8 +100,8 @@ export function BarcodeScan({ onFound }: { onFound: (food: FoodVersion) => void 
         <input id="barcode-code" className="input" inputMode="numeric" autoComplete="off" aria-label="Barcode number" disabled={busy} placeholder="Or type the number" style={{ flex: 1 }} value={code} onChange={event => enterCode(event.target.value)} />
         <button type="submit" className="button button-secondary" disabled={busy || scanChoices.length > 0}>{busy ? 'Looking…' : 'Look up'}</button>
       </form>
-      <p className="hint">Check the digits against the packet before tapping Look up. Only the barcode number is sent.</p>
-      {notFound && <p className="notice notice-conflict" role="status">This barcode is not in the food database, which mostly holds products sold in the United States. Your packet's own label is the best source: read it below, or add the food by hand in Foods.</p>}
+      <p className="hint">Only the barcode number is sent. Two food databases are asked; if neither has a usable label, you get an estimate by the product's name to check against the packet.</p>
+      {notFound && <p className="notice notice-conflict" role="status">Neither food database knows this barcode. Your packet's own label is the best source: read it below, or add the food by hand in Foods.</p>}
       <ErrorLine error={error} />
       <PacketLabelCapture key={code} open={notFound} barcodeReady={code.trim() !== ''} busy={busy} onRead={reviewPacket} />
     </section>

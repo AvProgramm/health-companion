@@ -1,12 +1,13 @@
-"""Check packaged-food lookup against fictional branded records."""
+"""Check packaged-food lookup against fictional records from both databases."""
 import json
 import unittest
-from unittest.mock import patch
+from unittest.mock import AsyncMock, patch
 
 import httpx
 from fastapi.testclient import TestClient
 
 from coach.app import app
+from coach.models import Estimate
 
 
 # Match the phone's input shape with fictional public records and nutrients.
@@ -19,6 +20,21 @@ FOOD = {
         {'nutrientId': 1093, 'unitName': 'MG', 'value': 30},
     ],
 }
+# A fictional crowd-sourced record whose values agree with one another
+PRODUCT = {'code': CODE, 'product_name': 'Fictional oat spread', 'product_quantity_unit': 'g', 'nutriments': {
+    'energy_100g': 2092, 'energy-kj_100g': 2092, 'energy-kcal_100g': 500, 'fat_100g': 50, 'saturated-fat_100g': 10,
+    'proteins_100g': 2, 'sugars_100g': 1, 'sugars_modifier': '<', 'added-sugars_100g': 0, 'sodium_100g': 0.3}}
+# The same record with the two mistakes seen on the phone: energy and total fat a tenth of what the label says
+BROKEN = {**PRODUCT, 'nutriments': {**PRODUCT['nutriments'], 'energy-kcal_100g': 50, 'fat_100g': 5}}
+# Every nutrient key, unknown unless a test fills it in
+UNKNOWN = dict.fromkeys(('kcal', 'protein_g', 'carbs_g', 'fibre_g', 'total_sugar_g', 'added_sugar_g',
+                         'fat_g', 'satfat_g', 'unsatfat_g', 'sodium_mg'))
+# What the named-food estimator would return for the product's name
+BY_NAME = Estimate.model_validate({
+    'basis': {'amount': 100.0, 'unit': 'g'}, 'sourceKind': 'ai_estimate', 'reason': 'Fictional estimate.',
+    'nutrients': {**UNKNOWN, 'kcal': 480.0, 'fat_g': 52.0},
+    'range': {**UNKNOWN, 'kcal': {'low': 440.0, 'high': 520.0}, 'fat_g': {'low': 48.0, 'high': 56.0}},
+    'sources': [{'provider': 'Fictional model', 'description': 'Fictional', 'url': 'https://example.org/model'}]})
 
 
 class BarcodeEndpointTests(unittest.TestCase):
@@ -42,39 +58,80 @@ class BarcodeEndpointTests(unittest.TestCase):
         """Ignore a different barcode and use the current exact record."""
         different = {**FOOD, 'gtinUpc': '9556001234568', 'description': 'Different oat drink'}
         older = {**FOOD, 'fdcId': 18, 'publishedDate': '2025-01-01', 'description': 'Older oat drink'}
-        response = self.lookup([different, older, FOOD])
+        response = self.lookup([different, older, FOOD], product=PRODUCT)
         self.assertEqual(response.status_code, 200)
         draft = response.json()
-        self.assertEqual(draft['name'], 'Fictional oat drink')
+        self.assertEqual((draft['name'], draft['match']), ('Fictional oat drink', 'barcode'))
         self.assertEqual(draft['estimate']['basis'], {'amount': 100, 'unit': 'mL'})
         self.assertEqual(draft['estimate']['nutrients']['sodium_mg'], 30)
         self.assertIsNone(draft['estimate']['nutrients']['fat_g'])
         self.assertEqual(draft['estimate']['sources'][0]['provider'], 'USDA')
 
-    def test_a_contradictory_record_is_not_returned(self):
+    def test_a_contradictory_usda_record_is_not_returned(self):
         """Treat a label whose saturated fat exceeds its total fat as no usable match."""
         broken = {**FOOD, 'foodNutrients': FOOD['foodNutrients'] + [
             {'nutrientId': 1004, 'unitName': 'G', 'value': 5}, {'nutrientId': 1258, 'unitName': 'G', 'value': 17}]}
         self.assertEqual(self.lookup([broken]).status_code, 404)
 
-    def test_a_miss_says_so_at_once_without_searching_the_web(self):
-        """
-        Answer a barcode the database does not hold with a plain miss.
+    def test_the_second_database_answers_when_the_first_does_not_hold_the_product(self):
+        """Use a consistent crowd-sourced label, keeping qualified and estimated values unknown."""
+        response = self.lookup([], product=PRODUCT)
+        self.assertEqual(response.status_code, 200)
+        draft = response.json()
+        self.assertEqual((draft['name'], draft['match']), ('Fictional oat spread', 'barcode'))
+        self.assertEqual(draft['estimate']['sources'][0]['provider'], 'Open Food Facts')
+        self.assertEqual((draft['estimate']['nutrients']['fat_g'], draft['estimate']['nutrients']['sodium_mg']), (50, 300))
+        # "<1 g" is not 1 g, and the database's added sugar is its own guess from the ingredients
+        self.assertIsNone(draft['estimate']['nutrients']['total_sugar_g'])
+        self.assertIsNone(draft['estimate']['nutrients']['added_sugar_g'])
 
-        Seen on the phone on 11 Nov with 9310947004582: the retailer search behind the miss
-        returned nothing for seven codes tried, and only added a wait before the same answer.
+    def test_a_record_that_contradicts_itself_becomes_an_estimate_by_name(self):
         """
-        response = self.lookup([{**FOOD, 'gtinUpc': '9556001234568'}], code='9310947004582')
+        Estimate by the product's name when its record cannot be trusted, and say so.
+
+        Seen on the phone on 11 Nov with 9310947004582: the record held 52.2 kcal beside
+        2410 kJ and 5 g of fat beside 35.3 g of monounsaturated fat.
+        """
+        by_name = AsyncMock(return_value=BY_NAME)
+        with patch('coach.barcode.estimate_food', by_name):
+            response = self.lookup([], product=BROKEN)
+        self.assertEqual(response.status_code, 200)
+        draft = response.json()
+        by_name.assert_awaited_once_with('Fictional oat spread', '100 g')
+        self.assertEqual((draft['name'], draft['match']), ('Fictional oat spread', 'name'))
+        self.assertEqual(draft['estimate']['nutrients']['fat_g'], 52)
+        self.assertEqual(draft['estimate']['sourceKind'], 'ai_estimate')
+        self.assertIn('estimate for "Fictional oat spread"', draft['estimate']['reason'])
+
+    def test_a_product_neither_database_holds_is_a_plain_miss(self):
+        """Answer 404 so the phone can move on to the packet's own label."""
+        response = self.lookup([{**FOOD, 'gtinUpc': '9556001234568'}])
         self.assertEqual(response.status_code, 404)
         self.assertNotIn('estimate', response.json())
 
-    def test_an_outage_is_distinguished_from_a_database_miss(self):
-        """Report a temporary failure when the database could not be asked."""
-        self.assertEqual(self.lookup(None).status_code, 503)
+    def test_a_named_product_nobody_can_estimate_is_a_plain_miss(self):
+        with patch('coach.barcode.estimate_food', AsyncMock(return_value=None)):
+            self.assertEqual(self.lookup([], product=BROKEN).status_code, 404)
 
-    def lookup(self, foods, code=CODE):
-        """Call the barcode API with a fictional USDA reply; a request to any other host fails the test."""
+    def test_an_outage_is_distinguished_from_a_database_miss(self):
+        """Report a temporary failure when a database could not be asked and the other had nothing."""
+        self.assertEqual(self.lookup(None).status_code, 503)
+        self.assertEqual(self.lookup([], product='outage').status_code, 503)
+
+    def test_one_database_being_down_does_not_hide_the_other(self):
+        self.assertEqual(self.lookup(None, product=PRODUCT).status_code, 200)
+
+    def lookup(self, foods, product=None, code=CODE):
+        """Call the barcode API with fictional replies from both databases; any other host fails the test."""
         def respond(request):
+            # Answer Open Food Facts with the product, a miss, or an outage
+            if request.url.host == 'world.openfoodfacts.org':
+                self.assertTrue(request.url.path.endswith(f'/{code}.json'))
+                if product == 'outage':
+                    raise httpx.ReadTimeout('Fictional timeout')
+                return httpx.Response(200, json={'status': 0} if product is None else {'status': 1, 'product': product})
+
+            # Answer USDA with its records or an outage
             self.assertEqual(request.url.host, 'api.nal.usda.gov')
             self.assertEqual(json.loads(request.content)['query'], code)
             if foods is None:
@@ -84,7 +141,7 @@ class BarcodeEndpointTests(unittest.TestCase):
         transport = httpx.MockTransport(respond)
         client_class = httpx.AsyncClient
         with patch.dict('os.environ', {'USDA_API_KEY': 'fictional', 'TAVILY_API_KEY': 'fictional'}), \
-                patch('httpx.AsyncClient', side_effect=lambda **options: client_class(**options, transport=transport)):
+                patch('httpx.AsyncClient', side_effect=lambda **options: client_class(**{**options, 'transport': transport})):
             return TestClient(app).post('/api/barcode', json={'code': code})
 
 

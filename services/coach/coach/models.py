@@ -163,6 +163,8 @@ class Estimate(StrictModel):
 class BarcodeReply(StrictModel):
     """Return one packaged food's name and label values, as a draft to review."""
     name: str = Field(min_length=1, max_length=80)
+    # Whether the values are this barcode's own label, or an estimate for a product of that name
+    match: Literal['barcode', 'name'] = 'barcode'
     estimate: Estimate
 
 

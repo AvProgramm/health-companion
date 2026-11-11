@@ -48,11 +48,13 @@ export async function readPacketLabel(code: string, name: string, image: string,
 
 /** Validate a label reply before opening it for review. */
 function labelFood(value: unknown, id: string): FoodVersion {
-  const reply = value as { name?: unknown; estimate?: unknown } | null;
+  const reply = value as { name?: unknown; estimate?: unknown; match?: unknown } | null;
   if (reply === null || typeof reply.name !== 'string' || reply.name.trim() === '') {
     throw new Error('That product has no usable name. Add the food by hand from its label.');
   }
   const food = estimatedFood(reply.name, readEstimate(reply.estimate), id);
+  // Keep an estimate by name marked as an estimate, because it is not this packet's label
+  if (reply.match === 'name') return food;
   // Keep label provenance in the editor for both database and photo drafts.
   return { ...food, source: { ...food.source, kind: 'label' } };
 }

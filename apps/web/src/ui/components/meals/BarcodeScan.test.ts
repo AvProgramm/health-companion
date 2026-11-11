@@ -61,7 +61,7 @@ describe('Scan a barcode', () => {
     expect(onFound.mock.calls[0]![0]).toMatchObject({ name: 'Fictional oat biscuit', basis: { amount: 100, unit: 'g' } });
   });
 
-  it('shows agreed scan digits before looking up the product', async () => {
+  it('looks up agreed scan digits straight away, sending only the number', async () => {
     vi.mocked(confirmBarcode).mockResolvedValueOnce('9556001234567');
     const fetchMock = vi.fn().mockResolvedValue({ ok: true, status: 200, json: async () => REPLY });
     vi.stubGlobal('fetch', fetchMock);
@@ -75,11 +75,11 @@ describe('Scan a barcode', () => {
     const photo = container.querySelector<HTMLInputElement>('input[type="file"]')!;
     Object.defineProperty(photo, 'files', { value: [new File(['fictional'], 'barcode.jpg')] });
     await act(async () => photo.dispatchEvent(new Event('change', { bubbles: true })));
-    expect(fetchMock).not.toHaveBeenCalled();
+    // Asked for on the phone on 11 Nov: one photo should be the whole step
     expect(container.querySelector<HTMLInputElement>('#barcode-code')?.value).toBe('9556001234567');
-
-    await act(async () => container.querySelector('form')!.requestSubmit());
+    expect(fetchMock).toHaveBeenCalledTimes(1);
     expect(JSON.parse(fetchMock.mock.calls[0]![1].body)).toEqual({ code: '9556001234567' });
+    expect(onFound).toHaveBeenCalledOnce();
   });
 
   it.each([
@@ -112,10 +112,15 @@ describe('Scan a barcode', () => {
     if (native !== null && checked !== null) expect(container.textContent).toContain(native);
     await act(async () => choice!.click());
     expect(field.value).toBe(chosen);
-    expect(fetchMock).not.toHaveBeenCalled();
-
-    await act(async () => container.querySelector('form')!.requestSubmit());
     expect(JSON.parse(fetchMock.mock.calls[0]![1].body)).toEqual({ code: chosen });
+  });
+
+  it('keeps an estimate by name marked as an estimate, not a label', async () => {
+    const byName = { ...REPLY, match: 'name', estimate: { ...REPLY.estimate, sourceKind: 'ai_estimate', reason: 'No trustworthy label was found for this barcode.' } };
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue({ ok: true, status: 200, json: async () => byName }));
+    await lookUp('9556001234567');
+    expect(onFound.mock.calls[0]![0].source.kind).toBe('ai_estimate');
+    expect(onFound.mock.calls[0]![0].source.reference).toContain('No trustworthy label');
   });
 
   it('keeps an unknown label value unknown', async () => {
@@ -137,7 +142,7 @@ describe('Scan a barcode', () => {
     expect(container.querySelector('details')?.open).toBe(false);
     await lookUp('9310947004582');
     expect(container.querySelector('[role="alert"]')).toBeNull();
-    expect(container.querySelector('[role="status"]')?.textContent).toContain('not in the food database');
+    expect(container.querySelector('[role="status"]')?.textContent).toContain('Neither food database knows this barcode');
     expect(container.querySelector('details')?.open).toBe(true);
     expect(onFound).not.toHaveBeenCalled();
   });
