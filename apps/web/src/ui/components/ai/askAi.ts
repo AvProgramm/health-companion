@@ -1,6 +1,7 @@
 import { askCoach } from '../../../data/api/coach';
 import { askNutritionist } from '../../../data/api/nutritionist';
 import { requestTrainerPlan } from '../../../data/api/trainer';
+import type { ChatTurn } from '../../../domain/chat/chatHistory';
 import { chatIntent } from '../../../domain/chat/chatIntent';
 import type { CoachReply } from '../../../domain/coach/coachReply';
 import type { NutritionistReply } from '../../../domain/nutrition/nutritionistReply';
@@ -31,9 +32,10 @@ export interface TrainerContext {
  * Only the typed message is sent, or for a session the goal with the length, place,
  * difficulty and body areas read from it. The saved profile stays here and adapts the plan afterwards.
  * Diary lines are passed only when the person switched sharing on, and then go with a
- * question or a food request, so the answer can be about their own week.
+ * question or a food request, so the answer can be about their own week. The earlier
+ * messages of the open chat go with a question to the Coach, so a follow-up makes sense.
  */
-export async function askAi(text: string, context: TrainerContext, diaryLines: readonly string[] = []): Promise<ChatAnswer> {
+export async function askAi(text: string, context: TrainerContext, diaryLines: readonly string[] = [], history: readonly ChatTurn[] = []): Promise<ChatAnswer> {
   const intent = chatIntent(text);
 
   // Plan a session, then run the proposal through the checks on this device
@@ -49,13 +51,13 @@ export async function askAi(text: string, context: TrainerContext, diaryLines: r
 
   // Answer from the shared diary, under the role the message was meant for
   if (diaryLines.length > 0) {
-    return { kind: 'coach', role: intent.kind === 'nutritionist' ? 'Nutritionist' : 'Coach', reply: await askCoach(text, diaryLines) };
+    return { kind: 'coach', role: intent.kind === 'nutritionist' ? 'Nutritionist' : 'Coach', reply: await askCoach(text, diaryLines, history) };
   }
 
   // Ask for food ideas; with no reviewed guidance on the goal, answer it as a general question instead
   if (intent.kind === 'nutritionist') {
     const reply = await askNutritionist(text);
-    return reply.mode === 'no_evidence' ? { kind: 'coach', role: 'Nutritionist', reply: await askCoach(text) } : { kind: 'nutritionist', role: 'Nutritionist', reply };
+    return reply.mode === 'no_evidence' ? { kind: 'coach', role: 'Nutritionist', reply: await askCoach(text, [], history) } : { kind: 'nutritionist', role: 'Nutritionist', reply };
   }
-  return { kind: 'coach', role: 'Coach', reply: await askCoach(text) };
+  return { kind: 'coach', role: 'Coach', reply: await askCoach(text, [], history) };
 }

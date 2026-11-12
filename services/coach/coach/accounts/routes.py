@@ -138,11 +138,16 @@ def sign_in(request: Request, item: Credentials):
     return signed_in(account, request, secret, 200)
 
 
+def current_account(request):
+    """Return the account a request's session cookie names, or None when nobody is signed in."""
+    account_id = read_account_id(request.cookies.get(SESSION_COOKIE), session_secret())
+    return store.find_by_id(account_id) if account_id else None
+
+
 @router.get('/session')
 def session(request: Request):
     """Return the signed-in account when the cookie's token is valid and the account still exists."""
-    account_id = read_account_id(request.cookies.get(SESSION_COOKIE), session_secret())
-    account = store.find_by_id(account_id) if account_id else None
+    account = current_account(request)
     if account is None:
         raise HTTPException(401, 'Sign in to continue.')
     return {'id': account['id'], 'email': account['email']}

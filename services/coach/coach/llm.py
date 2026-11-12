@@ -10,6 +10,10 @@ COACH_TIMEOUT = 12.0
 # The models a coach can ask. Hugging Face is left out, because its hosted inference returns
 # HTTP 402 on this laptop and it has never been checked on a coach's prompt.
 COACH_MODELS = ('Groq', 'Gemini')
+# The only models that may see shared diary lines. Groq does not keep inference data by default,
+# while the Gemini free tier may use what it is sent to improve Google products and Hugging Face
+# routes to providers nobody here has checked. A request with diary lines never falls back past this list.
+DIARY_MODELS = ('Groq',)
 # The models that can read a photo; Groq's default model reads text only
 PHOTO_MODELS = ('Gemini',)
 

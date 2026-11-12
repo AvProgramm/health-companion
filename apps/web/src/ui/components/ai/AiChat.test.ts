@@ -46,6 +46,11 @@ function answering(replies: Record<string, unknown>) {
   return vi.fn(async (path: string, _init: RequestInit) => ({ ok: true, status: 200, json: async () => replies[path] }));
 }
 
+/** Return the credentials mode of each request a fetch was called with. */
+function credentialsSent(fetchMock: ReturnType<typeof answering>) {
+  return fetchMock.mock.calls.map(([, init]) => init.credentials);
+}
+
 /** Return the paths and bodies a fetch was called with. */
 function sent(fetchMock: ReturnType<typeof answering>) {
   return fetchMock.mock.calls.map(([path, init]) => [path, JSON.parse(String(init.body))]);
@@ -136,17 +141,95 @@ describe('AI chat', () => {
     expect(container.textContent).toContain('Fictional general claim.');
   });
 
-  it('keeps diary sharing disabled for the current free-tier setup', async () => {
+  it('offers diary sharing switched off, saying what would be sent and to whom', async () => {
     const fetchMock = answering({ '/api/coach': GENERAL_ANSWER });
     vi.stubGlobal('fetch', fetchMock);
     await show();
     const sharing = container.querySelector<HTMLInputElement>('input[type="checkbox"]')!;
-    expect(sharing.disabled).toBe(true);
-    await act(async () => sharing.click());
+    expect([sharing.disabled, sharing.checked]).toEqual([false, false]);
+    expect(container.textContent).toContain('one line per day of food, training and sleep');
+    expect(container.textContent).toContain('only one AI provider, which does not keep it by default');
+    expect(container.textContent).toContain('Your profile and photos are not sent.');
+
+    // Left off, a question about the week sends no diary and no cookie
     await say('What did I eat this week?');
     expect(loadDiary).not.toHaveBeenCalled();
     expect(sent(fetchMock)).toEqual([['/api/coach', { question: 'What did I eat this week?' }]]);
-    expect(container.textContent).toContain('Diary sharing is paused');
+    expect(credentialsSent(fetchMock)).toEqual(['omit']);
+  });
+
+  it('sends the diary summary and the session cookie only while sharing is on', async () => {
+    const fetchMock = answering({ '/api/coach': GENERAL_ANSWER, '/api/trainer': SESSION });
+    vi.stubGlobal('fetch', fetchMock);
+    await show();
+    const sharing = container.querySelector<HTMLInputElement>('input[type="checkbox"]')!;
+    await act(async () => sharing.click());
+    await say('What did I eat this week?');
+    expect(sent(fetchMock)[0]).toEqual(['/api/coach', { question: 'What did I eat this week?', context: await loadDiary.mock.results[0]!.value }]);
+
+    // A session never carries the diary, and switching off stops it for a question too
+    await say('A 30 minute workout with no equipment');
+    await act(async () => sharing.click());
+    await say('Fictional question?');
+    expect(sent(fetchMock)[1]![1]).not.toHaveProperty('context');
+    expect(sent(fetchMock)[2]![1]).not.toHaveProperty('context');
+    expect(credentialsSent(fetchMock)).toEqual(['same-origin', 'omit', 'omit']);
+  });
+
+  it('starts with sharing off again whenever the screen is reopened', async () => {
+    vi.stubGlobal('fetch', answering({ '/api/coach': GENERAL_ANSWER }));
+    await show();
+    await act(async () => container.querySelector<HTMLInputElement>('input[type="checkbox"]')!.click());
+    await act(async () => root.unmount());
+    root = createRoot(container);
+    await show();
+    expect(container.querySelector<HTMLInputElement>('input[type="checkbox"]')!.checked).toBe(false);
+  });
+
+  it('asks the person to sign in again when the session ended while sharing', async () => {
+    vi.stubGlobal('fetch', vi.fn(async () => ({ ok: false, status: 401, json: async () => ({ detail: 'Sign in to share your diary with the AI.' }) })));
+    await show();
+    await act(async () => container.querySelector<HTMLInputElement>('input[type="checkbox"]')!.click());
+    await say('What did I eat this week?');
+    expect(container.querySelector('[role="alert"]')?.textContent).toContain('Sign in again to share your diary with the AI');
+  });
+
+  it('sends the earlier answered messages with a follow-up, and never the profile', async () => {
+    const fetchMock = answering({ '/api/coach': GENERAL_ANSWER });
+    vi.stubGlobal('fetch', fetchMock);
+    await show({ ...EMPTY_PROFILE, seatedOnly: true, diabetes: true });
+    await say('Fictional question?');
+    await say('And for dinner?');
+    expect(sent(fetchMock)[1]).toEqual(['/api/coach', { question: 'And for dinner?',
+      history: [{ role: 'user', text: 'Fictional question?' }, { role: 'assistant', text: 'Fictional general claim.' }] }]);
+  });
+
+  it('keeps at most six earlier messages, and leaves out a refused one', async () => {
+    const refusal = { mode: 'refused', message: 'I cannot advise on doses.', claims: [], sources: [] };
+    const replies: Record<string, unknown> = { '/api/coach': refusal };
+    const fetchMock = answering(replies);
+    vi.stubGlobal('fetch', fetchMock);
+    await show();
+    await say('Fictional refused question?');
+    replies['/api/coach'] = GENERAL_ANSWER;
+    for (const number of [1, 2, 3, 4]) await say(`Fictional question ${number}?`);
+    await say('And then?');
+    const { history } = sent(fetchMock)[5]![1];
+    expect(history).toHaveLength(6);
+    expect(history[0]).toEqual({ role: 'user', text: 'Fictional question 2?' });
+    expect(JSON.stringify(sent(fetchMock))).not.toContain('"text":"Fictional refused question?"');
+  });
+
+  it('forgets the chat whenever the screen is reopened', async () => {
+    const fetchMock = answering({ '/api/coach': GENERAL_ANSWER });
+    vi.stubGlobal('fetch', fetchMock);
+    await show();
+    await say('Fictional question?');
+    await act(async () => root.unmount());
+    root = createRoot(container);
+    await show();
+    await say('And for dinner?');
+    expect(sent(fetchMock)[1]).toEqual(['/api/coach', { question: 'And for dinner?' }]);
   });
 
   it('plans a session from the message, sending only what it says', async () => {

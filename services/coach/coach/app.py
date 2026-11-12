@@ -2,18 +2,20 @@
 from pathlib import Path
 from dotenv import load_dotenv
 from fastapi import Depends, FastAPI, HTTPException, Request
+from fastapi.concurrency import run_in_threadpool
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 from starlette.middleware.trustedhost import TrustedHostMiddleware
 from .cloud.config import web_config
 from .cloud.session import verify_session
-from .accounts.routes import mark_accounts_no_store, router as accounts_router
+from .accounts.backup_routes import router as account_backup_router
+from .accounts.routes import current_account, mark_accounts_no_store, router as accounts_router
 from .accounts.tokens import read_secret
 from .http_policy import check_json, read_http_policy
 from .barcode import look_up_barcode
 from .exercises import load_library
 from .failures import PROVIDER_FAILURES
-from .llm import COACH_MODELS, PHOTO_MODELS, HostedConversation
+from .llm import COACH_MODELS, DIARY_MODELS, PHOTO_MODELS, HostedConversation
 from .models import BarcodeReply, BarcodeRequest, CoachReply, CoachRequest, EstimateRequest, Estimate, NutritionistReply, NutritionistRequest, PacketLabelRequest, PhotoReply, PhotoRequest, TrainerReply, TrainerRequest
 from .nutritionist import suggest_meals
 from .packet_label import PacketBarcodeMismatch, read_packet_label
@@ -57,6 +59,7 @@ def check_local(request):
 read_secret()
 app.middleware('http')(mark_accounts_no_store)
 app.include_router(accounts_router, dependencies=[Depends(check_origin)])
+app.include_router(account_backup_router, dependencies=[Depends(check_origin)])
 
 
 async def credited(coach_reply, written_by_model, names=COACH_MODELS):
@@ -132,12 +135,16 @@ async def barcode_label(request: Request, item: PacketLabelRequest):
 async def coach(request: Request, item: CoachRequest):
     """Return an answer checked against reviewed cards, or an honest reason for none."""
     check_local(request)
-    # Ignore diary context because the selected Gemini account is on the unpaid tier.
-    if item.context:
-        raise HTTPException(403, 'Diary sharing is paused for the current free-tier setup. Send only your question.')
+    # Ignore diary lines from a visitor who is not signed in, because only an account holder may share a diary.
+    if item.context and await run_in_threadpool(current_account, request) is None:
+        raise HTTPException(401, 'Sign in to share your diary with the AI.')
     if not item.question.strip():
         raise HTTPException(422, 'Type a question first.')
-    return await credited(lambda ask: answer_question(item.question.strip(), knowledge(), ask, item.context), lambda reply: reply.mode in ('answer', 'general'))
+
+    # Ask only the models allowed to see diary lines when the request carries any
+    names = DIARY_MODELS if item.context else COACH_MODELS
+    return await credited(lambda ask: answer_question(item.question.strip(), knowledge(), ask, item.context, item.history),
+                          lambda reply: reply.mode in ('answer', 'general'), names)
 
 
 @app.post('/api/photo', response_model=PhotoReply)

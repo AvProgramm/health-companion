@@ -6,6 +6,7 @@ import { countMeals } from '../../data/storage/mealsRepo';
 import type { Durability } from '../../data/storage/persistence';
 import type { Profile, ProfileSnapshot } from '../../domain/profile/profile';
 import { ProfileEditor } from '../components/me/ProfileEditor';
+import { AccountBackupCard } from '../components/me/AccountBackupCard';
 import { AccountCard } from '../components/me/AccountCard';
 import { BodyCard } from '../components/me/BodyCard';
 import { DURABILITY_TEXT, errorText } from '../format';
@@ -179,6 +180,8 @@ export function MeView({ db, profileSnapshot, onSaveProfile, durability, foodCou
           </div>
         )}
       </section>
+
+      <AccountBackupCard db={db} onDiaryReplaced={onDiaryReplaced} />
 
       <section className="card" aria-labelledby="display-heading">
         <h2 id="display-heading" className="heading">Display</h2>

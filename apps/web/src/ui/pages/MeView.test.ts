@@ -24,7 +24,12 @@ it('opens local settings without Google sign-in or a Firebase request', async ()
       accountEmail: 'person@example.org', accountOffline: false, onSignOut: vi.fn(),
     })));
     expect(container.textContent).not.toContain('Connect with Google');
-    expect(fetchMock).not.toHaveBeenCalled();
+    // The one request on opening asks when the account backup was saved; it carries no diary and no body
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    expect(fetchMock.mock.calls[0]![0]).toBe('/api/account/backup/status');
+    expect(fetchMock.mock.calls[0]![1]).toMatchObject({ method: 'GET', body: undefined });
+    expect(container.textContent).toContain('Could not reach the account service.');
+    expect(container.textContent).toContain('Save backup to my account');
     expect(container.textContent).toContain('Download backup');
     expect(container.textContent).toContain('Signed in as person@example.org.');
   } finally {

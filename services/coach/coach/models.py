@@ -34,10 +34,18 @@ class TrainerReply(StrictModel):
     answeredBy: AnsweredBy = None
 
 
+class ChatTurn(StrictModel):
+    """Hold one earlier message of the open chat: who said it, and the text that was on screen."""
+    role: Literal['user', 'assistant']
+    text: str = Field(min_length=1, max_length=500)
+
+
 class CoachRequest(StrictModel):
-    """Accept the typed question and, only when the person switched it on, one line per recent diary day."""
+    """Accept the typed question, a few earlier messages and, only when the person switched it on, one line per recent diary day."""
     question: str = Field(min_length=1, max_length=300)
     context: list[Annotated[str, Field(min_length=1, max_length=200)]] = Field(default=[], max_length=7)
+    # Enough for a follow-up to make sense, and a limit on what one request can carry
+    history: list[ChatTurn] = Field(default=[], max_length=6)
 
 
 class CoachClaim(StrictModel):

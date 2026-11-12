@@ -16,7 +16,8 @@ interface AiViewProps {
 /**
  * Every AI helper in one chat: the Coach, who also plans sessions, and the Nutritionist.
  *
- * Only the typed message is sent, and nothing here can save anything: an answer becomes
+ * The typed message is sent with the last few messages of the chat, and a summary of the diary
+ * only while sharing is switched on. Nothing here can save anything: an answer becomes
  * a draft or a plan the person still checks.
  */
 export function AiView({ db, foods, profile, onDraftEntry }: AiViewProps) {
@@ -34,7 +35,7 @@ export function AiView({ db, foods, profile, onDraftEntry }: AiViewProps) {
     <>
       <header className="masthead">
         <h1 className="title">AI</h1>
-        <p className="status">One chat for questions, food ideas and sessions. Your diary stays on this device.</p>
+        <p className="status">One chat for questions, food ideas and sessions. Your diary stays on this device unless you switch sharing on.</p>
       </header>
 
       <ErrorLine error={error} />

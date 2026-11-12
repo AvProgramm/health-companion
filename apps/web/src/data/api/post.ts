@@ -17,13 +17,14 @@ export class ServiceError extends Error {
 /**
  * Return the parsed JSON reply from a laptop service, or throw a message the person can act on.
  *
- * Credentials are left out, and only the body the caller builds is ever sent.
+ * Only the body the caller builds is ever sent. Credentials are left out unless the caller
+ * asks for the session cookie, which only a request that must prove who is signed in does.
  */
-export async function postJson(path: string, body: unknown, timeoutMs: number, messages: ServiceMessages): Promise<unknown> {
+export async function postJson(path: string, body: unknown, timeoutMs: number, messages: ServiceMessages, credentials: 'omit' | 'same-origin' = 'omit'): Promise<unknown> {
   let response: Response;
   try {
     response = await fetch(path, {
-      method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'omit',
+      method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials,
       body: JSON.stringify(body), signal: AbortSignal.timeout(timeoutMs),
     });
   } catch (problem) {
