@@ -521,3 +521,26 @@ Honest state: a second database now answers many non-US packets. For a product w
 - BUG for 12 Nov: typing an exercise on Today ("did 30 min run" style) is drafted as FOOD. Reproduce with Yash's exact phrase as a failing test in parse.test.ts first (workoutEntry parser order/keywords).
 - Request for 12 Nov: let a Gym plan be logged to the diary as a workout from the Gym tab (reuse the existing workout save path; nothing saves without confirmation).
 - NOT TESTED yet: Gym, meal correction on phone, workout/sleep, offline, Me/backup, layout. Then Render (render.yaml at root, b63ee75) and Vercel (copy deploy/vercel.json.example with the real Render host).
+
+## 12 Nov: sign-in, Gym logging and first hosting
+
+Build: `a3c3bf9` on `main` and `feat/ai-trainer`.
+
+| Check | Where | Result |
+|---|---|---|
+| `npm run check` (680 web, 265 coach, 33 router, 92 vision) and build | laptop | PASS |
+| "planks for 5 min" opens Review training, not a food draft | browser pane, fictional diary | PASS |
+| Gym: Find a plan, then "I did this session: log it to today"; entries survive a reload | browser pane, fictional diary | PASS |
+| Sign-up, short-password refusal, reload stays signed in, sign-out, wrong password, sign-in | browser pane against the local service, fictional accounts | PASS |
+| Session cookie is not readable by page scripts | browser pane | PASS |
+| A second account gets its own empty diary; the first diary is untouched | browser pane | PASS |
+| Accounts routes against a real Postgres 16 (temporary container): sign-up, duplicate 409, session, sign-out, wrong password, unknown email, injection-shaped email 422, argon2id hash stored | laptop | PASS |
+| Render service `health-companion-coach-mhlb` with its Postgres: `/api/health` ok, `/api/auth/session` 401 without a cookie, another site's origin 403, the Vercel origin accepted | curl | PASS |
+| Vercel frontend: site, `sw.js` and `/api/health` through the rewrite | curl, on an earlier deployment | PASS |
+| Sign-up on the hosted site | hosted | NOT TESTED |
+| Sign-in and offline reopen on the phone | phone | NOT TESTED |
+
+Hosting notes:
+- Two earlier Render services (`health-companion-coach`, `-c3h4`) were replaced; each new Blueprint creates a new address and an empty database. Redeploy the existing service instead.
+- Vercel's Hobby plan blocked deployments of commits whose author is not the project owner's GitHub account. Commits meant to deploy must be authored by that account.
+- Known limits: model and lookup routes do not require a session; the attempt limiter may see every visitor as one address behind the proxy; a session token stays valid until it expires (30 days); the free Postgres is temporary.
