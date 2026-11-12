@@ -38,6 +38,11 @@ const ACTIVITY_MINUTES = /(\d+(?:\.\d+)?)\s*(?:min|mins|minutes)\b/;
 const ACTIVITY_HOURS = /(\d+(?:\.\d+)?)\s*(?:h|hr|hrs|hours?)\b/;
 const ACTIVITY_KM = /(\d+(?:\.\d+)?)\s*(?:km|k)\b/;
 
+// Bodyweight movements people count without the word "reps" ("20 pushups"); a short list, so "20 almonds" stays food
+const COUNTED = /^(\d+)\s+(push[- ]?ups?|pull[- ]?ups?|chin[- ]?ups?|sit[- ]?ups?|squats?|lunges?|burpees?|crunches|jumping jacks|star jumps|dips|planks?)$/;
+// Words left around a duration once the number is taken out ("planks for 5 min")
+const DURATION_FILLER = /\b(?:for|of|in|about)\b/g;
+
 /**
  * Return a workout, or null if the text is not about training.
  */
@@ -48,7 +53,7 @@ export function parseWorkout(clean: string, foods: readonly FoodVersion[]): Pars
   if (WORKOUT_SKIP.test(body)) {
     return { kind: 'workout', draft: { movement: 'Gym', status: 'skipped', sets: [] }, problem: null };
   }
-  return readStrength(body, foods) ?? readActivity(body);
+  return readStrength(body, foods) ?? readActivity(body) ?? readCounted(body) ?? readTimed(body, foods);
 }
 
 /**
@@ -109,6 +114,42 @@ function readActivity(body: string): ParseResult | null {
     };
   }
   return null;
+}
+
+/**
+ * Return one set of a counted bodyweight movement ("20 pushups"), or null for anything else.
+ */
+function readCounted(body: string): ParseResult | null {
+  const counted = COUNTED.exec(body);
+  if (counted === null) {
+    return null;
+  }
+  const set: WorkoutSet = { reps: Number(counted[1]), load: null, loadUnit: null, perHand: false, minutes: null, distanceKm: null };
+  return { kind: 'workout', draft: { movement: capitalise(counted[2]!), status: 'done', sets: [set] }, problem: null };
+}
+
+/**
+ * Return any exercise typed with a duration ("planks for 5 min", "30 min gym"), or null without one.
+ *
+ * Minutes and hours are never a food amount, so a duration marks training. The name is
+ * whatever was typed around it, and a bare duration is not read at all.
+ */
+function readTimed(body: string, foods: readonly FoodVersion[]): ParseResult | null {
+  const minutesMatch = ACTIVITY_MINUTES.exec(body);
+  const hoursMatch = minutesMatch === null ? ACTIVITY_HOURS.exec(body) : null;
+  const duration = minutesMatch ?? hoursMatch;
+  if (duration === null) {
+    return null;
+  }
+
+  // Ignore a saved food or a bare duration, because neither names an exercise
+  const name = body.replace(duration[0], ' ').replace(DURATION_FILLER, ' ').replace(/\s+/g, ' ').trim();
+  if (name === '' || !/^[a-z][a-z\s'-]*$/.test(name) || findFoods(name, foods).length > 0) {
+    return null;
+  }
+  const minutes = minutesMatch !== null ? Number(minutesMatch[1]) : Number(hoursMatch![1]) * 60;
+  const set: WorkoutSet = { reps: null, load: null, loadUnit: null, perHand: false, minutes, distanceKm: null };
+  return { kind: 'workout', draft: { movement: capitalise(name), status: 'done', sets: [set] }, problem: null };
 }
 
 /**

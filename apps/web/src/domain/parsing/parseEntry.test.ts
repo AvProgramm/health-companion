@@ -156,6 +156,23 @@ describe('parseEntry: training', () => {
     expect(result).toEqual({ kind: 'workout', draft: { movement: 'Run', status: 'done', sets: [{ reps: null, load: null, loadUnit: null, perHand: false, minutes: 30, distanceKm: 5 }] }, problem: null });
   });
 
+  it('reads any exercise with a duration as training, never as food', () => {
+    // Reported from the phone on 11 Nov: an exercise typed on Today was drafted as a food
+    for (const [text, movement] of [['planks for 5 min', 'Planks'], ['30 min gym', 'Gym'], ['did squats 10 minutes', 'Squats'], ['1 hour workout', 'Workout']] as const) {
+      const result = parseEntry(text, TEST_FOODS);
+      expect(result.kind === 'workout' ? result.draft.movement : text).toBe(movement);
+    }
+    const timed = parseEntry('planks for 5 min', TEST_FOODS);
+    expect(timed.kind === 'workout' ? timed.draft.sets[0]!.minutes : null).toBe(5);
+  });
+
+  it('reads a counted bodyweight movement as one set', () => {
+    const result = parseEntry('20 pushups', TEST_FOODS);
+    expect(result).toMatchObject({ kind: 'workout', draft: { movement: 'Pushups', sets: [{ reps: 20 }] } });
+    // A counted food stays a meal, because only known movements are read this way
+    expect(parseEntry('20 almonds', TEST_FOODS).kind).toBe('meal');
+  });
+
   it('asks for the time when an activity has none', () => {
     const result = parseEntry('badminton', TEST_FOODS);
     expect(result.kind === 'workout' ? result.problem : null).toMatch(/how long/);

@@ -22,7 +22,7 @@ afterEach(async () => { await act(async () => root.unmount()); container.remove(
 
 /** Render a supplied pool without using the real exercise catalogue. */
 async function render(cards: readonly MovementCard[]) {
-  await act(async () => root.render(createElement(PlanSession, { cards })));
+  await act(async () => root.render(createElement(PlanSession, { db: {} as IDBDatabase, cards, onSaved: () => {} })));
 }
 
 /** Click a real form control so React handles its change normally. */

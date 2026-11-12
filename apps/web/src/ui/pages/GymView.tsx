@@ -117,7 +117,7 @@ export function GymView({ db, profile = EMPTY_PROFILE, hideNumbers = false }: { 
           onAdd={card => persistChoice(card, false)} onRemove={async choice => {
             try { await persistChoice(choice.card, true); } catch (problem) { setError(errorText(problem)); }
           }} />}
-        <div className="gym-planner-column">{choicesReady ? <PlanSession cards={cards} profile={profile} /> : <div className="skeleton skeleton-card" role="status" aria-label="Loading exercise choices" />}<p className="device-note"><ShieldCheck size={20} />Exercise searches and choices stay on this device. Log completed training on Today.</p></div>
+        <div className="gym-planner-column">{choicesReady ? <PlanSession db={db} cards={cards} profile={profile} onSaved={reloadEntries} /> : <div className="skeleton skeleton-card" role="status" aria-label="Loading exercise choices" />}<p className="device-note"><ShieldCheck size={20} />Exercise searches and choices stay on this device. Log a finished plan here, or type what you did on Today.</p></div>
       </div>
 
       <ErrorLine error={error} />

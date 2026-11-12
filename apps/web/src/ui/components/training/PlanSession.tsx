@@ -6,6 +6,7 @@ import { bestPlan, type PlanResult } from '../../../domain/training/planner';
 import { OWN_EXERCISE_PREFIX } from '../../../domain/training/customCards';
 import { Choices } from '../shared/Choices';
 import { EQUIPMENT_LABELS } from '../../format';
+import { LogPlan } from './LogPlan';
 import { CATEGORY_CHOICES, PlanResultView } from './PlanResultView';
 import { ErrorLine } from '../shared/NoticeLine';
 
@@ -17,7 +18,7 @@ const EQUIPMENT_CHOICES = Object.entries(EQUIPMENT_LABELS) as [Equipment, string
  *
  * The plan is only a suggestion; logging what was actually done stays on Today.
  */
-export function PlanSession({ cards, profile = EMPTY_PROFILE }: { cards: readonly MovementCard[]; profile?: Profile }) {
+export function PlanSession({ db, cards, profile = EMPTY_PROFILE, onSaved }: { db: IDBDatabase; cards: readonly MovementCard[]; profile?: Profile; onSaved: () => void }) {
   const [minutesText, setMinutesText] = useState('20');
   // Start with a bodyweight session; choosing an exercise does not establish equipment ownership.
   const [equipmentMode, setEquipmentMode] = useState<'without' | 'with'>('without');
@@ -94,6 +95,7 @@ export function PlanSession({ cards, profile = EMPTY_PROFILE }: { cards: readonl
       <ErrorLine error={error} />
 
       <PlanResultView result={result} minutesText={minutesText} areaCount={categories.length} />
+      {result?.status === 'plan' && <LogPlan db={db} session={result} onSaved={onSaved} />}
     </section>
   );
 }
