@@ -1,7 +1,7 @@
 import { IDBFactory } from 'fake-indexeddb';
 import 'fake-indexeddb/auto';
 import { beforeEach, describe, expect, it } from 'vitest';
-import { openDiary } from './connection';
+import { DIARY_NAME, openDiary } from './connection';
 import { listCustomCards, saveCustomCard } from './customCardsRepo';
 import type { CustomCardSelection } from '../../domain/training/customCards';
 import { exportDiary, restoreDiary, wipeDiary } from './backup/transfer';
@@ -12,7 +12,7 @@ const choice: CustomCardSelection = { id: 'free-exercise-db:fictional', version:
   savedAt: '2026-11-07T10:00:00Z', deleted: false, source: { dataset: 'free-exercise-db', revision: 'a'.repeat(40) },
   card: { id: 'free-exercise-db:fictional', name: 'Fictional row', category: 'pull', equipment: ['dumbbells'], requires: [], minutes: 5, cue: 'Fictional cue.' } };
 let db: IDBDatabase;
-beforeEach(async () => { db = await openDiary(new IDBFactory()); });
+beforeEach(async () => { db = await openDiary(DIARY_NAME, new IDBFactory()); });
 
 describe('chosen exercise snapshots', () => {
   it('replays a confirmation and refuses a stale change', async () => {

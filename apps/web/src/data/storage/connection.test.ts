@@ -3,7 +3,7 @@ import 'fake-indexeddb/auto';
 import { describe, expect, it } from 'vitest';
 import { startMeal } from '../../domain/meals/revisions';
 import { MILK, TEST_FOOD_MAP } from '../../test/testFoods';
-import { DB_VERSION, openDiary } from './connection';
+import { DB_VERSION, DIARY_NAME, openDiary } from './connection';
 import { confirmMeal, mealsOn } from './mealsRepo';
 
 /**
@@ -71,7 +71,7 @@ describe('upgrading an existing diary', () => {
     old.close();
 
     // Opening with the current app runs every later step
-    const upgraded = await openDiary(factory);
+    const upgraded = await openDiary(DIARY_NAME, factory);
     expect(upgraded.version).toBe(DB_VERSION);
     if (version === 4) {
       const choices = await new Promise(resolve => {
@@ -99,7 +99,7 @@ describe('upgrading an existing diary', () => {
     });
     old.close();
     // Compare the stored snapshots byte-for-byte after the additive upgrade.
-    const upgraded = await openDiary(factory);
+    const upgraded = await openDiary(DIARY_NAME, factory);
     for (const [store, entry] of [['workouts', workout], ['sleep', sleep]] as const) {
       const record = await new Promise(resolve => {
         const request = upgraded.transaction(store).objectStore(store).get(entry.id);
@@ -111,7 +111,7 @@ describe('upgrading an existing diary', () => {
   });
 
   it('opens an empty diary at the current version', async () => {
-    const db = await openDiary(new IDBFactory());
+    const db = await openDiary(DIARY_NAME, new IDBFactory());
     expect(db.version).toBe(DB_VERSION);
     expect(await confirmMeal(db, OLD_MEAL, TEST_FOOD_MAP)).toMatchObject({ status: 'saved' });
   });

@@ -28,10 +28,18 @@ const TABS: readonly { id: Tab; label: string }[] = [
   { id: 'me', label: 'Me' },
 ];
 
+interface AppProps {
+  // The diary database of the signed-in account on this device
+  diaryName: string;
+  accountEmail: string;
+  accountOffline: boolean;
+  onSignOut: () => Promise<void>;
+}
+
 /**
- * The app shell: opens the diary, holds the saved foods and settings, and switches tabs.
+ * The app shell: opens the account's diary, holds the saved foods and settings, and switches tabs.
  */
-export function App() {
+export function App({ diaryName, accountEmail, accountOffline, onSignOut }: AppProps) {
   const [db, setDb] = useState<IDBDatabase | null>(null);
   const [savedProfile, setSavedProfile] = useState<ProfileSnapshot | null>(null);
   const profile = savedProfile?.value ?? EMPTY_PROFILE;
@@ -53,16 +61,19 @@ export function App() {
 
   useEffect(() => {
     let cancelled = false;
+    // Kept so signing out closes this account's diary instead of leaving it open behind the next one
+    let shown: IDBDatabase | null = null;
 
     // Open the diary, load the foods, and ask once per launch to keep the data
     async function load() {
       try {
-        const opened = await openDiary();
+        const opened = await openDiary(diaryName);
         const [saved, loadedProfile] = await Promise.all([listFoods(opened), readProfile(opened)]);
         if (cancelled) {
           opened.close();
           return;
         }
+        shown = opened;
         setDb(opened);
         setAllFoods(saved);
         setSavedProfile(loadedProfile);
@@ -76,8 +87,9 @@ export function App() {
     load();
     return () => {
       cancelled = true;
+      shown?.close();
     };
-  }, []);
+  }, [diaryName]);
 
   /**
    * Save a new food version and reload the food list.
@@ -174,6 +186,9 @@ export function App() {
               writeHideNumbers(hide);
             }}
             onDiaryReplaced={handleDiaryReplaced}
+            accountEmail={accountEmail}
+            accountOffline={accountOffline}
+            onSignOut={onSignOut}
           />
         )}
       </main>

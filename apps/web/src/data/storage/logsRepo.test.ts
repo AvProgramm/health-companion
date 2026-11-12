@@ -3,12 +3,12 @@ import 'fake-indexeddb/auto';
 import { beforeEach, describe, expect, it } from 'vitest';
 import { buildSleep, resolveSleep, type SleepEntry } from '../../domain/sleep/sleep';
 import { buildWorkout, type WorkoutEntry } from '../../domain/training/workouts';
-import { openDiary } from './connection';
+import { DIARY_NAME, openDiary } from './connection';
 import { logsOn, saveLogEntry, setLogDeleted } from './logsRepo';
 
 let db: IDBDatabase;
 beforeEach(async () => {
-  db = await openDiary(new IDBFactory());
+  db = await openDiary(DIARY_NAME, new IDBFactory());
 });
 
 // A row session saved on 10 Nov

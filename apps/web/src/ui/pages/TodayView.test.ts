@@ -6,7 +6,7 @@ import { createRoot, type Root } from 'react-dom/client';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { foodKey } from '../../domain/nutrition/aggregate';
 import type { FoodVersion } from '../../domain/nutrition/types';
-import { openDiary } from '../../data/storage/connection';
+import { DIARY_NAME, openDiary } from '../../data/storage/connection';
 import { logsOn } from '../../data/storage/logsRepo';
 import { commitEdit, mealsOn } from '../../data/storage/mealsRepo';
 import { TEST_FOODS } from '../../test/testFoods';
@@ -120,7 +120,7 @@ beforeEach(async () => {
   vi.mocked(useToday).mockReturnValue(TODAY);
   window.scrollTo = scrollTo;
   currentFoods = TEST_FOODS;
-  db = await openDiary(new IDBFactory());
+  db = await openDiary(DIARY_NAME, new IDBFactory());
   container = document.createElement('div');
   document.body.append(container);
   root = createRoot(container);

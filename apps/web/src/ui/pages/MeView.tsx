@@ -6,6 +6,7 @@ import { countMeals } from '../../data/storage/mealsRepo';
 import type { Durability } from '../../data/storage/persistence';
 import type { Profile, ProfileSnapshot } from '../../domain/profile/profile';
 import { ProfileEditor } from '../components/me/ProfileEditor';
+import { AccountCard } from '../components/me/AccountCard';
 import { BodyCard } from '../components/me/BodyCard';
 import { DURABILITY_TEXT, errorText } from '../format';
 import { NoticeLine } from '../components/shared/NoticeLine';
@@ -19,14 +20,17 @@ interface MeViewProps {
   hideNumbers: boolean;
   onHideNumbersChange: (hide: boolean) => void;
   onDiaryReplaced: () => Promise<void>;
+  accountEmail: string;
+  accountOffline: boolean;
+  onSignOut: () => Promise<void>;
 }
 
 type Message = { kind: 'saved' | 'error'; text: string };
 
 /**
- * Me: storage status, backup and restore, display settings and erase.
+ * Me: the account, storage status, backup and restore, display settings and erase.
  */
-export function MeView({ db, profileSnapshot, onSaveProfile, durability, foodCount, hideNumbers, onHideNumbersChange, onDiaryReplaced }: MeViewProps) {
+export function MeView({ db, profileSnapshot, onSaveProfile, durability, foodCount, hideNumbers, onHideNumbersChange, onDiaryReplaced, accountEmail, accountOffline, onSignOut }: MeViewProps) {
   const [mealCount, setMealCount] = useState<number | null>(null);
   const [usage, setUsage] = useState<string | null>(null);
   const [pending, setPending] = useState<Extract<BackupCheck, { ok: true }> | null>(null);
@@ -138,6 +142,7 @@ export function MeView({ db, profileSnapshot, onSaveProfile, durability, foodCou
 
       <NoticeLine notice={message} />
 
+      <AccountCard email={accountEmail} offline={accountOffline} onSignOut={onSignOut} />
       <ProfileEditor snapshot={profileSnapshot} onSave={onSaveProfile} />
       <BodyCard db={db} snapshot={profileSnapshot} hideNumbers={hideNumbers} currentYear={new Date().getFullYear()} onSave={onSaveProfile} />
 

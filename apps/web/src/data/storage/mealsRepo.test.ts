@@ -5,14 +5,14 @@ import { startMeal } from '../../domain/meals/revisions';
 import type { MealEditRequest, MealRevision } from '../../domain/meals/types';
 import type { Quantity } from '../../domain/shared/units';
 import { MILK, TEST_FOOD_MAP } from '../../test/testFoods';
-import { openDiary } from './connection';
+import { DIARY_NAME, openDiary } from './connection';
 import { saveFoodVersion } from './foodsRepo';
 import { commitEdit, confirmMeal, countMeals, listRevisions, mealsOn } from './mealsRepo';
 
 // A fresh in-memory database for every test, so tests cannot leak into each other
 let db: IDBDatabase;
 beforeEach(async () => {
-  db = await openDiary(new IDBFactory());
+  db = await openDiary(DIARY_NAME, new IDBFactory());
   await saveFoodVersion(db, MILK);
 });
 
@@ -115,13 +115,13 @@ describe('commitEdit', () => {
 
   it('keeps everything after the database is closed and reopened', async () => {
     const factory = new IDBFactory();
-    const first = await openDiary(factory);
+    const first = await openDiary(DIARY_NAME, factory);
     await saveFoodVersion(first, MILK);
     await confirmMeal(first, milkMeal(), TEST_FOOD_MAP);
     await commitEdit(first, correction(), TEST_FOOD_MAP);
     first.close();
 
-    const reopened = await openDiary(factory);
+    const reopened = await openDiary(DIARY_NAME, factory);
     expect(await latestRevision(reopened)).toBe(2);
     expect(await listRevisions(reopened, 'm1')).toHaveLength(2);
   });

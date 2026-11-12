@@ -9,7 +9,7 @@ import { summariseDay } from '../../../domain/nutrition/day';
 import { buildSleep, resolveSleep, type SleepEntry } from '../../../domain/sleep/sleep';
 import { buildWorkout, type WorkoutEntry } from '../../../domain/training/workouts';
 import { MILK, RICE, TEST_FOOD_MAP, WEETABIX } from '../../../test/testFoods';
-import { openDiary } from '../connection';
+import { DIARY_NAME, openDiary } from '../connection';
 import { listCustomCards, saveCustomCard } from '../customCardsRepo';
 import { saveFoodVersion } from '../foodsRepo';
 import { logsOn, saveLogEntry } from '../logsRepo';
@@ -33,7 +33,7 @@ function milkCorrection(operationKey: string, expectedRevision = 1, amount = 250
 
 // A diary on 9 Nov with two meals (one corrected), a gym session and a night's sleep
 beforeEach(async () => {
-  db = await openDiary(new IDBFactory());
+  db = await openDiary(DIARY_NAME, new IDBFactory());
   for (const food of [MILK, WEETABIX, RICE]) {
     await saveFoodVersion(db, food);
   }

@@ -5,14 +5,14 @@ import type { BodyFacts } from '../../domain/profile/body';
 import { EMPTY_PROFILE } from '../../domain/profile/profile';
 import { exportDiary, restoreDiary, wipeDiary } from './backup/transfer';
 import { validateBackup } from './backup/validate';
-import { openDiary } from './connection';
+import { DIARY_NAME, openDiary } from './connection';
 import { listProfileVersions, readProfile, saveProfile } from './profileRepo';
 
 // A fictional person's facts
 const BODY: BodyFacts = { heightCm: 175, weightKg: 70, birthYear: null, sex: null, activity: null };
 
 let db: IDBDatabase;
-beforeEach(async () => { db = await openDiary(new IDBFactory()); });
+beforeEach(async () => { db = await openDiary(DIARY_NAME, new IDBFactory()); });
 
 /** Save one fictional profile version. */
 async function save(version: number, weightKg: number | null) {

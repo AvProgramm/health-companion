@@ -1,14 +1,14 @@
 import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
 import { registerServiceWorker } from './sw/register';
-import { App } from './ui/App';
+import { AccountGate } from './ui/AccountGate';
 import '@fontsource-variable/geist/wght.css';
 import './ui/app.css';
 import './ui/gym.css';
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
-    <App />
+    <AccountGate />
   </StrictMode>,
 );
 

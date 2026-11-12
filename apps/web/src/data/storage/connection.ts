@@ -5,8 +5,9 @@
  * so every write commits as a whole or not at all.
  */
 
+// The diary this device has always had. Never rename or delete it: phones in the field hold data under this name
+export const DIARY_NAME = 'health-companion';
 // Bump only together with a new step in upgradeSchema
-const DB_NAME = 'health-companion';
 // Version 5 adds immutable, device-only profile snapshots.
 export const DB_VERSION = 5;
 
@@ -15,13 +16,15 @@ export const STORE_NAMES = ['foods', 'meals', 'revisions', 'operations', 'workou
 export type StoreName = (typeof STORE_NAMES)[number];
 
 /**
- * Open the diary database, creating or upgrading the stores as needed.
+ * Open the diary database of this name, creating or upgrading the stores as needed.
  *
+ * The name is a parameter because each account on a device has its own diary
+ * (data/storage/account.ts decides which), all sharing this one schema.
  * The factory is a parameter so the tests can pass an in-memory IndexedDB.
  */
-export function openDiary(factory: IDBFactory = indexedDB): Promise<IDBDatabase> {
+export function openDiary(name: string, factory: IDBFactory = indexedDB): Promise<IDBDatabase> {
   return new Promise((resolve, reject) => {
-    const request = factory.open(DB_NAME, DB_VERSION);
+    const request = factory.open(name, DB_VERSION);
     request.onupgradeneeded = (event) => upgradeSchema(request.result, request.transaction!, event.oldVersion);
     request.onsuccess = () => {
       const db = request.result;
