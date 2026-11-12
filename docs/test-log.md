@@ -544,3 +544,25 @@ Hosting notes:
 - Two earlier Render services (`health-companion-coach`, `-c3h4`) were replaced; each new Blueprint creates a new address and an empty database. Redeploy the existing service instead.
 - Vercel's Hobby plan blocked deployments of commits whose author is not the project owner's GitHub account. Commits meant to deploy must be authored by that account.
 - Known limits: model and lookup routes do not require a session; the attempt limiter may see every visitor as one address behind the proxy; a session token stays valid until it expires (30 days); the free Postgres is temporary.
+
+## 12 Nov, evening: chat memory, diary sharing, account backup, security headers
+
+Build: `7b1070d`, live at `https://health-companion-flax.vercel.app` with the coach service `health-companion-coach-mhlb`.
+
+| Check | Where | Result |
+|---|---|---|
+| `npm run check` (302 coach tests, web suite, router, vision) and build | laptop | PASS |
+| Diary question signed out is refused (401); signed in it is answered by Groq only | browser pane, local service, fictional account | PASS |
+| A follow-up ("and how much per day?") uses the earlier turn; more than 6 turns refused (422) | browser pane | PASS |
+| Sharing switch enabled, off by default, says what is sent | browser pane | PASS |
+| Save backup to account, status line, restore after confirming, entries intact | browser pane | PASS |
+| Backup routes on Postgres 16: save, replace, round trip, no cross-account access, delete | laptop, temporary container | PASS |
+| Hosted: Vercel built the commit; backup route 401 without a session; diary share 401 signed out; `X-Frame-Options`, `nosniff` and the enforced policy present; cookie HttpOnly, Secure, SameSite=Strict | curl | PASS |
+| Hosted sign-up, diary sharing and backup with a real account | hosted | NOT TESTED |
+| All of the above on the phone | phone | NOT TESTED |
+
+Notes:
+- Groq misread one summary line in the diary test (said sleep was not logged on a day that had 7.5 h). Answers stay labelled as unchecked.
+- The account backup is the first feature that stores diary contents on the service (readable text in Postgres), and only after Save is pressed.
+- The strict script policy is report-only until the photo model and barcode reader are checked under it.
+- Vercel's Hobby plan builds only commits authored by the project owner's GitHub account; this repository's Git author is now set to that account.
