@@ -1,7 +1,9 @@
-"""Read exact deployment hosts and frontend origins while preserving local defaults."""
+"""Read exact deployment hosts and frontend origins while preserving local defaults, and check a request's shape."""
 import os
 import re
 from urllib.parse import urlsplit
+
+from fastapi import HTTPException, Request
 
 # Keep the current local preview, dev server and test client available.
 _LOCAL_HOSTS = ('127.0.0.1', 'localhost', 'testserver')
@@ -9,6 +11,22 @@ _LOCAL_ORIGINS = ('http://localhost:4173', 'http://127.0.0.1:4173',
                   'http://localhost:5173', 'http://127.0.0.1:5173')
 # Require individual DNS labels or IPv4 labels, never wildcard/scheme/path settings.
 _HOST = re.compile(r'[a-z0-9](?:[a-z0-9-]*[a-z0-9])?(?:\.[a-z0-9](?:[a-z0-9-]*[a-z0-9])?)*')
+
+
+def is_local_host(host):
+    """Return whether this hostname is the laptop itself or the test client."""
+    return host in _LOCAL_HOSTS
+
+
+def check_json(request: Request):
+    """
+    Refuse a request whose body is not declared as JSON.
+
+    A browser cannot send JSON to another site without asking first, so this
+    stops a plain cross-site form post.
+    """
+    if not request.headers.get('content-type', '').startswith('application/json'):
+        raise HTTPException(415, 'Send a JSON request.')
 
 
 def checked_host(value):

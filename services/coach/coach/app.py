@@ -1,13 +1,15 @@
 """Serve estimate and coach requests on the laptop loopback interface."""
 from pathlib import Path
 from dotenv import load_dotenv
-from fastapi import FastAPI, HTTPException, Request
+from fastapi import Depends, FastAPI, HTTPException, Request
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 from starlette.middleware.trustedhost import TrustedHostMiddleware
 from .cloud.config import web_config
 from .cloud.session import verify_session
-from .http_policy import read_http_policy
+from .accounts.routes import mark_accounts_no_store, router as accounts_router
+from .accounts.tokens import read_secret
+from .http_policy import check_json, read_http_policy
 from .barcode import look_up_barcode
 from .exercises import load_library
 from .failures import PROVIDER_FAILURES
@@ -37,14 +39,24 @@ async def invalid_request(_request, _error):
     return JSONResponse(status_code=422, content={'detail': 'Send only the fields this screen asks for.'})
 
 
-def check_local(request):
-    """Refuse a request from another site or one that is not JSON."""
+def check_origin(request: Request):
+    """Refuse a request that a browser sent from another site."""
     # Ignore an unrelated browser origin because only explicitly allowed frontends may use this boundary.
     origin = request.headers.get('origin')
     if origin and origin not in ALLOWED_ORIGINS:
         raise HTTPException(403, 'Open the local diary to use this service.')
-    if not request.headers.get('content-type', '').startswith('application/json'):
-        raise HTTPException(415, 'Send a JSON request.')
+
+
+def check_local(request):
+    """Refuse a request from another site or one that is not JSON."""
+    check_origin(request)
+    check_json(request)
+
+
+# Refuse to start with a short session secret, then serve accounts behind the same origin boundary.
+read_secret()
+app.middleware('http')(mark_accounts_no_store)
+app.include_router(accounts_router, dependencies=[Depends(check_origin)])
 
 
 async def credited(coach_reply, written_by_model, names=COACH_MODELS):

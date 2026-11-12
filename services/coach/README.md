@@ -50,3 +50,20 @@ Each lookup stage has a 4-second total deadline, followed by up to 8 seconds per
 Retrieval reads `knowledge/cards.json`, and fuses word search with the MiniLM encoder. The encoder comes from the pinned Hugging Face cache by default; set `MINILM_DIR` to a folder holding `tokenizer.json` and `onnx/model_quint8_avx2.onnx` to use another copy. If it is missing, the service carries on with word search alone. `python -m coach.rag.evaluate dev` compares the designs on the development questions; the sealed result is in `eval/results/retrieval_final.json`.
 
 `python -m coach.mcp_server` serves two read-only tools over stdio (see the root `.mcp.json`).
+
+## Accounts
+
+`coach/accounts/` adds email and password accounts: `POST /api/auth/signup`, `POST /api/auth/signin`, `GET /api/auth/session` and `POST /api/auth/signout`. An account is only an identity. The diary stays in the browser's IndexedDB and nothing from it is stored here.
+
+Two settings, both optional on the laptop (names only; values belong in the ignored root `.env` or the host's dashboard):
+
+- `DATABASE_URL`: the accounts database. Render's Postgres connection string is rewritten to the installed `psycopg` driver. When unset, accounts go to the local SQLite file `services/coach/.data/accounts.sqlite`, which Git ignores. The `accounts` table is created on first use.
+- `AUTH_SECRET`: signs session tokens, at least 32 random characters; the service refuses to start with a shorter one. When unset on the laptop, a random secret is made for each run, so local sessions end when the service restarts. When unset on Render, the account routes answer 503 instead of signing with a throwaway secret. `render.yaml` asks Render to generate it.
+
+Security choices in plain words:
+
+- Passwords are 10 to 128 characters with no other rules. Only a salted argon2id hash is stored (`argon2-cffi` defaults), and an older hash is upgraded at the next successful sign-in. Passwords and hashes are never logged or returned.
+- A session is a 30-day token (JWT, HS256 only, with an owner and an expiry) kept in the `hc_session` cookie: `HttpOnly`, `SameSite=Strict`, `Path=/api`, and `Secure` everywhere except the laptop. The token never appears in a JSON body. Sign-out clears the cookie; there is no server-side list of sessions, so a copied token stays valid until it expires or its account is deleted.
+- A wrong password and an unknown email get the same reply after the same hashing work. Sign-up does say when an email is already registered.
+- Five failed sign-ins for one visitor address and email inside 15 minutes lock that pair out, and one address may sign up ten times an hour. The counts are in memory, so a restart forgets them.
+- Every route refuses another site's `Origin`, every POST (sign-out included) must be `application/json`, and every reply is `Cache-Control: no-store`. All SQL uses bound parameters.
