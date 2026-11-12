@@ -4,7 +4,7 @@
   "rewrites": [
     {
       "source": "/api/:path*",
-      "destination": "https://health-companion-coach.onrender.com/api/:path*"
+      "destination": "https://health-companion-coach-c3h4.onrender.com/api/:path*"
     }
   ],
   "headers": [

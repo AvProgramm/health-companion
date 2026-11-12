@@ -3,8 +3,8 @@ services:
     name: health-companion-coach
     runtime: python
     plan: free
-    branch: feat/ai-trainer
-    autoDeployTrigger: off
+    branch: main
+    autoDeployTrigger: commit
     buildCommand: pip install -r services/coach/requirements.txt
     startCommand: python -m uvicorn coach.app:app --app-dir services/coach --host 0.0.0.0 --port $PORT --no-access-log
     healthCheckPath: /api/health
