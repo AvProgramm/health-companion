@@ -566,3 +566,27 @@ Notes:
 - The account backup is the first feature that stores diary contents on the service (readable text in Postgres), and only after Save is pressed.
 - The strict script policy is report-only until the photo model and barcode reader are checked under it.
 - Vercel's Hobby plan builds only commits authored by the project owner's GitHub account; this repository's Git author is now set to that account.
+
+## 15 Nov: signed-in journey on the hosted site
+
+Build: `9df8c62`, at `https://health-companion-flax.vercel.app`, in the desktop browser pane with the test account (signed in by Yash).
+
+| Check | Result |
+|---|---|
+| Site, backend health through Vercel (0.6 s, cron keeping it awake), Postgres reachable, other-site origin refused | PASS |
+| Barcode lookup for a product the databases hold (Vegemite) | PASS |
+| "planks for 5 min" opens Review training and saves as training | PASS |
+| "200ml milk no wait 300ml" drafts milk · 300 mL from USDA, added sugar Unknown, not saved until confirmed; Use estimate then Save meal | PASS |
+| Gym: Find a plan, then "I did this session: log it to today" | PASS |
+| Coach question answered from reviewed guidance with a citation | PASS |
+| Follow-up ("and is that different if I lift weights?") uses the earlier turn, no greeting | PASS |
+| Sharing on: "What did I log today, and what is missing?" answered "175 kcal from milk and 2 training sessions. Sleep data is missing." | PASS |
+| Save backup to my account: status line and "1 meals, 1 food versions" | PASS |
+| Reload stays signed in with the entries present | PASS |
+| Console: no report-only policy violations on the screens visited | PASS |
+| Plate photo, packet-label reader, restore from account, sign-out and back in | NOT TESTED |
+| Phone on mobile data | NOT TESTED |
+
+Notes:
+- `/models/dish/labels.json` answers 404 on the hosted site because model files are ignored by Git; the on-device fallback is hidden there, as intended. The plate-photo reader does not depend on it.
+- The Firebase billing notice of 15 Nov does not affect the hosted app: the web app has no Firebase code and the service's Firebase route is not configured on Render.
