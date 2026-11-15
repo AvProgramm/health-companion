@@ -27,6 +27,10 @@ export function Composer({ text, onTextChange, reviewing, onSubmit, onAddManuall
           placeholder={'2 weetabix and 300 ml milk\nrow 3x8 at 5kg each hand · slept 23:30 to 7'}
           onChange={(event) => onTextChange(event.target.value)}
           onKeyDown={(event) => {
+            // Ignore Enter while an input method is composing, because it only confirms the word being typed
+            if (event.nativeEvent.isComposing) {
+              return;
+            }
             // Enter sends, Shift+Enter makes a new line
             if (event.key === 'Enter' && !event.shiftKey) {
               event.preventDefault();
