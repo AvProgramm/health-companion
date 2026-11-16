@@ -143,7 +143,7 @@ export function TodayView({ db, foods, currentFoods, hideNumbers, durability, di
 
   return (
     <>
-      <TodayMasthead date={date} today={today} onDateChange={setDate} />
+      <TodayMasthead date={date} today={today} energy={summary.coverage === 'no_entries' ? null : summary.totals.kcal} hideNumbers={hideNumbers} onDateChange={setDate} />
 
       <div className="today-layout">
       <div className="today-main">

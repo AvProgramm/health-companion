@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { errorText, formatEnergyCell, formatSleepCell } from './format';
+import { errorText, formatEnergyCell, formatEnergySoFar, formatSleepCell } from './format';
 
 describe('error text', () => {
   it('shows an error by its message alone', () => {
@@ -30,6 +30,20 @@ describe('energy in the week view', () => {
 
   it('marks a day that includes estimates', () => {
     expect(formatEnergyCell({ known: 1500, knownItems: 3, unknownItems: 0, range: { low: 1300, high: 1700 } })).toBe('≈1500');
+  });
+});
+
+describe('energy so far on the Today button', () => {
+  it('says nothing was logged instead of 0 kcal', () => {
+    expect(formatEnergySoFar(null)).toBe('Nothing logged');
+  });
+
+  it('never shows a number for food with no energy value', () => {
+    expect(formatEnergySoFar({ known: 0, knownItems: 0, unknownItems: 1 })).toBe('Energy unknown');
+  });
+
+  it('shows the rounded kcal with the same marks as the week view', () => {
+    expect(formatEnergySoFar({ known: 1234.6, knownItems: 2, unknownItems: 1, range: { low: 1000, high: 1400 } })).toBe('≈1235+ kcal');
   });
 });
 

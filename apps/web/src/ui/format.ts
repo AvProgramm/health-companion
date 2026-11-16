@@ -105,6 +105,23 @@ export function formatEnergyCell(energy: NutrientTotal | null): string {
 }
 
 /**
+ * Return the energy eaten so far for the button above the date, e.g. "≈1500+ kcal".
+ *
+ * It uses the week view's marks, so an empty day never reads as 0 kcal.
+ */
+export function formatEnergySoFar(energy: NutrientTotal | null): string {
+  // Ignore a day with no meals because nothing was logged, which is not zero
+  if (energy === null) {
+    return 'Nothing logged';
+  }
+  // Ignore a total with no known items because a number here would be invented
+  if (energy.knownItems === 0) {
+    return 'Energy unknown';
+  }
+  return `${formatEnergyCell(energy)} kcal`;
+}
+
+/**
  * Return a day's sleep for a narrow table cell, e.g. "7.5h", or a dash if none was logged.
  */
 export function formatSleepCell(minutes: number | null): string {

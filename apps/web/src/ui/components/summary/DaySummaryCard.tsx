@@ -20,7 +20,7 @@ export function DaySummaryCard({ diabetes = false, summary, dateLabel, hideNumbe
   // An empty day is "nothing logged", never "0 kcal"
   if (summary.coverage === 'no_entries') {
     return (
-      <section className="card summary-card summary-empty" aria-label={`Summary for ${dateLabel}`}>
+      <section id="day-summary" className="card summary-card summary-empty" aria-label={`Summary for ${dateLabel}`}>
         <p className="eyebrow">DAILY OVERVIEW</p><h2 className="heading">A fresh page.</h2><p className="body">Nothing logged for {dateLabel}.</p>
         <p className="hint">Missing meals are not counted as zero.</p>
       </section>
@@ -30,7 +30,7 @@ export function DaySummaryCard({ diabetes = false, summary, dateLabel, hideNumbe
   const meals = `${summary.mealCount} ${summary.mealCount === 1 ? 'meal' : 'meals'} logged`;
 
   return (
-    <section className="card summary-card" aria-labelledby="summary-heading">
+    <section id="day-summary" className="card summary-card" aria-labelledby="summary-heading">
       <div className="card-head">
         <h2 id="summary-heading" className="heading">{dateLabel.charAt(0).toUpperCase() + dateLabel.slice(1)} so far</h2>
         <span className="hint">{meals}</span>
