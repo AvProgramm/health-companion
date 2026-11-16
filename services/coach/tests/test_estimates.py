@@ -196,6 +196,25 @@ class EstimateTests(unittest.TestCase):
         # Energy unknown: nothing to check against
         check_energy_consistency(with_values(kcal=None, protein_g=20, carbs_g=60, fat_g=20))
 
+    # Added 16 Nov after "1 cup of coffee" got no estimate on the hosted site: Groq's reply was rejected
+    def test_near_zero_energy_is_judged_in_kcal_not_percent(self):
+        """Keep a near-zero drink whose rounded macros miss its energy by a few kcal."""
+        def with_values(**values):
+            data = proposal()
+            data['nutrients'] = {**data['nutrients'], **values}
+            data['range'] = {key: None if value is None else {'low': value * 0.9, 'high': value * 1.1}
+                             for key, value in data['nutrients'].items()}
+            return Estimate.model_validate(data)
+
+        # Black coffee: 4 x 0.3 + 9 x 0.05 = 1.65 against 2.4 kcal, 31% apart but under 1 kcal
+        check_energy_consistency(with_values(kcal=2.4, protein_g=0.3, carbs_g=0, fat_g=0.05))
+        # A small total still cannot hide 20 kcal of sugar
+        with self.assertRaises(ValueError):
+            check_energy_consistency(with_values(kcal=2, protein_g=0, carbs_g=5, fat_g=0))
+        # Nor claim 30 kcal for a drink with no macros at all
+        with self.assertRaises(ValueError):
+            check_energy_consistency(with_values(kcal=30, protein_g=0, carbs_g=0, fat_g=0))
+
     def test_counted_servings_are_asked_once_and_multiplied_in_code(self):
         """Ask the model about one serving and scale its values and bounds here."""
         requests = []
