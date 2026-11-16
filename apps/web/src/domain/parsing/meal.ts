@@ -47,6 +47,17 @@ export function parseMeal(clean: string, foods: readonly FoodVersion[]): ParseRe
 }
 
 /**
+ * Return whether a food was saved for one serving of this container, such as "cup of coffee".
+ *
+ * Only an estimate made for that container carries the alias, so "a bowl of weetabix"
+ * still asks how many biscuits were in the bowl.
+ */
+function isEstimatedContainer(food: FoodVersion, container: string): boolean {
+  const wanted = `${container.toLowerCase().replace(/s$/, '')} of ${food.name.toLowerCase()}`;
+  return (food.aliases ?? []).includes(wanted);
+}
+
+/**
  * Return one draft item ("300 ml milk", "2 weetabix", "a mug of milk").
  */
 function parseItem(part: string, foods: readonly FoodVersion[]): DraftItem {
@@ -75,15 +86,17 @@ function parseItem(part: string, foods: readonly FoodVersion[]): DraftItem {
     return { text: part, food, quantity: { amount: read.amount, unit: read.unit }, typedAmount, problem: null };
   }
 
-  // A bare count works for foods counted in pieces ("2 weetabix")
-  if (read.amount !== null && container === null && food.basis.unit === 'piece') {
+  // A bare count works for foods counted in pieces ("2 weetabix"), and so does a count of the
+  // very container the food was estimated for ("2 cups of coffee" when it was saved per cup)
+  if (read.amount !== null && food.basis.unit === 'piece' && (container === null || isEstimatedContainer(food, container[1]!))) {
     return { text: part, food, quantity: { amount: read.amount, unit: 'piece' }, typedAmount, problem: null };
   }
 
   // Otherwise the amount is still open
+  const unit = food.basis.unit === 'piece' ? 'pieces' : food.basis.unit;
   const problem =
     container !== null
-      ? `How much was the ${container[1]}? Enter the amount in ${food.basis.unit}.`
-      : `Enter how much ${food.name}, in ${food.basis.unit}.`;
+      ? `How much was the ${container[1]}? Enter the amount in ${unit}.`
+      : `Enter how much ${food.name}, in ${unit}.`;
   return { text: part, food, quantity: null, typedAmount, problem };
 }

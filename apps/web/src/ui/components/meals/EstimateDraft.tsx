@@ -67,7 +67,7 @@ export function EstimateDraft({ name: initialName, portionText: initialPortion, 
       const food = unknown
         ? buildFoodVersion({ name, aliases: [], basis: { amount: 1, unit: 'piece' },
             nutrients: Object.fromEntries(NUTRIENT_KEYS.map((key) => [key, null])), sourceKind: 'user_estimate' }, foodId.current)
-        : estimatedFood(name, estimate!, foodId.current);
+        : estimatedFood(name, estimate!, foodId.current, portionText);
       await onUse(food);
     } catch (problem) {
       if (mounted.current) setError(errorText(problem));
@@ -98,7 +98,7 @@ export function EstimateDraft({ name: initialName, portionText: initialPortion, 
       {busy && <div className="skeleton estimate-loading" role="status" aria-label="Looking up nutrition" />}
       {error !== null && <p className="field-error" role="status">{error}</p>}
       {estimate !== null && <EstimateResult estimate={estimate} hideNumbers={hideNumbers} portionText={portionText}
-        busy={busy} onAccept={() => accept()} onEdit={() => onEdit(estimatedFood(name, estimate, foodId.current))} />}
+        busy={busy} onAccept={() => accept()} onEdit={() => onEdit(estimatedFood(name, estimate, foodId.current, portionText))} />}
       <details className="manual-options"><summary>Log without an estimate</summary>
       <button type="button" className="button button-quiet" disabled={busy || name.trim() === ''} onClick={() => accept(true)}>Log with unknown values</button>
       <p className="hint">Adds an unknown serving to the draft. Review the amount before saving.</p>

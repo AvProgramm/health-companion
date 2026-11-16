@@ -73,10 +73,32 @@ export function readEstimate(value: unknown): NutritionEstimate {
   return proposal;
 }
 
+// One named container, as in "1 cup" or "a bowl"; a measured portion like "150 g" never matches
+const ONE_CONTAINER = /^(?:1|a|one)\s+([a-z]+)$/i;
+
+// Words that are already units or plain servings, so they name no container
+const NOT_CONTAINERS = new Set(['g', 'kg', 'ml', 'l', 'piece', 'pieces', 'serving']);
+
+/**
+ * Return the other name a one-serving estimate is known by, such as "cup of coffee".
+ *
+ * A model asked about "1 cup" answers for one serving (a piece), so without this the
+ * diary later asks "How much was the cup?" for the very cup it estimated.
+ */
+function containerAliases(name: string, basis: Quantity, portionText: string): string[] {
+  const container = ONE_CONTAINER.exec(portionText.trim())?.[1]?.toLowerCase();
+  // Ignore anything but one serving of one named container, because only that is what the estimate describes
+  if (container === undefined || NOT_CONTAINERS.has(container) || basis.unit !== 'piece' || basis.amount !== 1) {
+    return [];
+  }
+  return [`${container} of ${name.trim().toLowerCase()}`];
+}
+
 /** Return a food version only when the user accepts a checked proposal. */
-export function estimatedFood(name: string, estimate: NutritionEstimate, id: string): FoodVersion {
+export function estimatedFood(name: string, estimate: NutritionEstimate, id: string, portionText = ''): FoodVersion {
   const checked = readEstimate(estimate);
-  const food = buildFoodVersion({ name, aliases: [], basis: checked.basis, nutrients: checked.nutrients, sourceKind: checked.sourceKind }, id);
+  const aliases = containerAliases(name, checked.basis, portionText);
+  const food = buildFoodVersion({ name, aliases, basis: checked.basis, nutrients: checked.nutrients, sourceKind: checked.sourceKind }, id);
   return { ...food, range: checked.range, source: { kind: checked.sourceKind,
     reference: checked.sources.map((source) => `${source.provider}: ${source.description} (${source.url})`).join('; ') + ` · ${checked.reason}` } };
 }

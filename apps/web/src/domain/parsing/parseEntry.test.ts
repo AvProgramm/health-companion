@@ -3,6 +3,16 @@ import { estimateInput } from '../nutrition/estimateInput';
 import { parseEntry } from './parseEntry';
 import type { ParseResult } from './types';
 import { TEST_FOODS } from '../../test/testFoods';
+import { estimatedFood, readEstimate } from '../nutrition/estimates';
+
+// A fictional model estimate for one cup of a drink, as the service returns it
+const ONE_CUP = {
+  basis: { amount: 1, unit: 'piece' },
+  nutrients: { kcal: 10, protein_g: 1, fat_g: null, satfat_g: null, total_sugar_g: null, added_sugar_g: null },
+  range: { kcal: { low: 8, high: 12 }, protein_g: { low: 0.8, high: 1.2 }, fat_g: null, satfat_g: null, total_sugar_g: null, added_sugar_g: null },
+  sourceKind: 'ai_estimate', reason: 'Fictional cup.',
+  sources: [{ provider: 'Fictional AI', description: 'Model estimate, not a database measurement.', url: 'https://example.org/ai' }],
+};
 
 // Return the draft items of a meal result, or fail the test
 function itemsOf(result: ParseResult) {
@@ -32,6 +42,15 @@ describe('parseEntry: meals', () => {
     expect(item?.food).toBe('demo_milk');
     expect(item?.quantity).toBeNull();
     expect(item?.problem).toMatch(/mug/);
+  });
+
+  it('counts a container when the saved food was estimated for exactly that container', () => {
+    // Typed on the hosted site on 16 Nov: "1 cup of coffee" asked "Enter the amount in piece"
+    const coffee = estimatedFood('coffee', readEstimate(ONE_CUP), 'coffee', '1 cup');
+    expect(itemsOf(parseEntry('1 cup of coffee', [coffee]))).toEqual([{ food: 'coffee', quantity: { amount: 1, unit: 'piece' }, problem: null }]);
+    expect(itemsOf(parseEntry('2 cups of coffee', [coffee]))).toEqual([{ food: 'coffee', quantity: { amount: 2, unit: 'piece' }, problem: null }]);
+    // A different container is still a different amount, so it stays open
+    expect(itemsOf(parseEntry('1 mug of coffee', [coffee]))[0]?.problem).toBe('How much was the mug? Enter the amount in pieces.');
   });
 
   it('leaves the amount open when none was typed', () => {
