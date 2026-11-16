@@ -590,3 +590,27 @@ Build: `9df8c62`, at `https://health-companion-flax.vercel.app`, in the desktop 
 Notes:
 - `/models/dish/labels.json` answers 404 on the hosted site because model files are ignored by Git; the on-device fallback is hidden there, as intended. The plate-photo reader does not depend on it.
 - The Firebase billing notice of 15 Nov does not affect the hosted app: the web app has no Firebase code and the service's Firebase route is not configured on Render.
+
+## 16 Nov: one plate photo end to end, before the interview
+
+Build: `4e1bc02` web, service `18fb5fb`, at `https://health-companion-flax.vercel.app`, in the desktop browser pane with the test account (signed in by Yash). One photo only, to save API credit: a thosai plate with dhal curry, sambal tempeh, two chutneys and a cup of coffee, chosen by Yash in the pane.
+
+| Check | Result |
+|---|---|
+| "List every food with AI" sends one `/api/photo` request after the tap; lists curry, tempeh, flatbread, 1 glass of coffee, with no invented amounts | PASS (missed both chutneys, called the thosai "flatbread") |
+| Edited in the entry box to "1 thosai, dhal curry, tempeh, coconut chutney, 1 cup of coffee"; four estimates arrive with ranges and sources | PASS |
+| "coffee · 1 cup" estimate | FAIL, then PASS after `18fb5fb`: the service answered 503 twice |
+| Use estimate on each item, then Save meal; after reload the lunch shows 5 items, 591.8 kcal (466.7–736.9), added sugar Unknown with 5 without a value | PASS (sum checked by hand) |
+| "20 pushups" reviews as training and saves | PASS |
+| "slept 23:30 to 7" saves 7 h 30 min in bed, time asleep not reported | PASS |
+| Gym cardio: walk 30 min 2.5 km at 65 kg shows 98–133 kcal (hand ACSM check about 115) and saves | PASS |
+| Coach "How much sodium is too much in a day?" answered from reviewed guidance with a citation | PASS |
+| Trainer "A 20 minute workout with no equipment": 20 of 20 min, 4 exercises, "covers 3 of 4 chosen areas" | PASS (the AI's summary sentence said "12-exercise circuit"; the plan below it is right) |
+| Save backup asks before replacing the account copy; Restore shows counts and Cancel writes nothing | PASS |
+| Reload keeps the meal, pushups, walk and sleep | PASS |
+| Packet-label reader, sign-out and back in, phone on mobile data | NOT TESTED |
+
+Notes:
+- Coffee cause, traced locally stage by stage: USDA had no match for "1 cup"; Groq's reply (about 2 kcal from 0.3 g protein) failed the 25% energy check on rounding alone; Gemini cited a web result it was not given, which is correctly refused; Hugging Face answered 402 Payment Required (credits used up). The check now allows 5 kcal for near-zero foods, with a test for black coffee.
+- Items with an open portion are saved as "1 piece" in the diary list, even when the estimate was "1 typical serving" or "1 cup". The numbers are per that serving; only the label reads oddly.
+- Choosing "Restore a backup" on first-run setup opens the app without a profile; after a reload, setup is shown again.
